@@ -171,7 +171,7 @@ def get_current_user(request: Request):
 
 @app.middleware("http")
 async def require_auth_middleware(request: Request, call_next):
-    path = request.query_params.get("__orig_path") or request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
+    path = request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
     if not path or path in ["/api/index.py", "/api/index", "/api"]:
         path = "/" 
 
@@ -181,7 +181,6 @@ async def require_auth_middleware(request: Request, call_next):
 
     # 2. Allow public auth endpoints, language change, api tests
     public_paths = [
-        "/api/debug-path",
         "/login",
         "/register",
         "/verify-otp",
@@ -204,15 +203,6 @@ async def require_auth_middleware(request: Request, call_next):
         return RedirectResponse(login_url, status_code=303)
 
     return await call_next(request)
-
-@app.get("/api/debug-path")
-def debug_path_endpoint(request: Request):
-    return JSONResponse({
-        "url_path": request.url.path,
-        "query": str(request.query_params),
-        "headers": dict(request.headers),
-        "scope_path": request.scope.get("path")
-    })
 
 def get_user_lang(request: Request) -> str:
     # 1. Check query parameter ?lang=... (explicit URL override)
