@@ -624,6 +624,1193 @@ def get_live_tunnel_url() -> str:
         pass
     return "http://10.180.160.121:8000"
 
+GLOBAL_PRESTIGE_CSS = """
+/* ========================================================================== */
+/* VETMIND AI ENTERPRISE - PRESTIGE WORLD-CLASS DESIGN SYSTEM */
+/* UNIVERSAL RESPONSIVE ENGINE (ZERO OVERFLOW & FLUID ARCHITECTURE) */
+/* ========================================================================== */
+
+:root {
+    /* Royal Medical Deep Blue & Veterinary Emerald */
+    --primary: #0F4C81;
+    --primary-dark: #0A3357;
+    --primary-light: #EBF3FA;
+    --primary-border: #BCD4E8;
+    
+    --emerald: #0D9488;
+    --emerald-dark: #0F766E;
+    --emerald-light: #ECFDF5;
+    --emerald-border: #A7F3D0;
+
+    --accent: #2563EB;
+    --accent-indigo: #4F46E5;
+    --gold: #D97706;
+    --gold-light: #FEF3C7;
+    
+    --ai-gradient: linear-gradient(135deg, #0F4C81 0%, #2563EB 50%, #0D9488 100%);
+    --ai-gradient-hover: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 50%, #10B981 100%);
+    --ai-glow: rgba(37, 99, 235, 0.25);
+    
+    --bg: #F4F7FB;
+    --card-bg: #FFFFFF;
+    --card-hover: #FAFBFD;
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --text-dim: #94A3B8;
+    --border: #E2E8F0;
+    --border-glass: rgba(226, 232, 240, 0.85);
+    
+    --topbar-bg: rgba(255, 255, 255, 0.94);
+    --bottomnav-bg: rgba(255, 255, 255, 0.95);
+    
+    --danger: #DC2626;
+    --danger-bg: #FEF2F2;
+    --danger-border: #FCA5A5;
+    
+    --success: #10B981;
+    --success-bg: #F0FDF4;
+    --success-border: #86EFAC;
+    
+    --warning: #D97706;
+    --warning-bg: #FFFBEB;
+    --warning-border: #FDE68A;
+
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 10px 30px -5px rgba(15, 76, 129, 0.12), 0 4px 10px -2px rgba(15, 76, 129, 0.06);
+    --shadow-glass: 0 8px 32px 0 rgba(15, 76, 129, 0.1);
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --radius-pill: 9999px;
+    
+    --transition-smooth: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.dark-theme, html.dark-theme {
+    --bg: #090D16;
+    --card-bg: #111827;
+    --card-hover: #162032;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-dim: #64748B;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-glass: rgba(255, 255, 255, 0.12);
+    
+    --topbar-bg: rgba(17, 24, 39, 0.94);
+    --bottomnav-bg: rgba(17, 24, 39, 0.95);
+    
+    --primary: #38BDF8;
+    --primary-light: rgba(15, 76, 129, 0.3);
+    --primary-border: rgba(56, 189, 248, 0.35);
+    --emerald-light: rgba(13, 148, 136, 0.2);
+    --emerald-border: rgba(13, 148, 136, 0.4);
+    
+    --danger-bg: rgba(220, 38, 38, 0.15);
+    --danger-border: rgba(220, 38, 38, 0.35);
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --success-border: rgba(16, 185, 129, 0.35);
+    --warning-bg: rgba(217, 119, 6, 0.15);
+    --warning-border: rgba(217, 119, 6, 0.35);
+
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ========================================================================== */
+/* 1. UNIVERSAL ZERO-OVERFLOW & TEXT-WRAPPING RULES */
+/* ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip !important;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    line-height: 1.55;
+}
+
+/* Ensure all flex and grid children can shrink properly and never force horizontal overflow */
+div, section, article, aside, header, nav, footer, main, form, p, span, h1, h2, h3, h4, h5, h6, a, button, label, input, textarea, select {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Strict wrapping on all text elements so long Latin medical names or URLs never spill out */
+p, span, h1, h2, h3, h4, h5, h6, strong, b, em, i, a, button, label, td, th, li, blockquote, div {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+img, video, iframe, canvas, svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Fluid Typography */
+h1, .h1 {
+    font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.25rem) !important;
+    line-height: 1.25;
+}
+h2, .h2 {
+    font-size: clamp(1.05rem, 1.5vw + 0.4rem, 1.55rem) !important;
+    line-height: 1.3;
+}
+h3, .h3 {
+    font-size: clamp(0.95rem, 1vw + 0.35rem, 1.25rem) !important;
+    line-height: 1.35;
+}
+p, span, button, input, select, textarea, label {
+    font-size: clamp(0.85rem, 0.4vw + 0.75rem, 1.02rem);
+}
+
+/* ========================================================================== */
+/* 2. BROADCAST & DISCLAIMER BANNERS */
+/* ========================================================================== */
+.broadcast-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+    border-bottom: 2px solid;
+    animation: slideDown 0.35s ease-out;
+}
+.broadcast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.broadcast-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: inherit;
+    padding: 4px;
+    line-height: 1;
+}
+
+/* ========================================================================== */
+/* 3. STICKY GLASSMORPHIC TOP BAR (YOUTUBE / FACEBOOK GRADE) */
+/* ========================================================================== */
+.prestige-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: var(--topbar-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+    width: 100%;
+    max-width: 100vw;
+}
+
+.topbar-container {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Brand Link */
+.brand-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text-main);
+    user-select: none;
+    min-width: 0;
+}
+.brand-logo-wrap {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--ai-gradient);
+    box-shadow: 0 4px 12px rgba(15, 76, 129, 0.25);
+    padding: 2px;
+}
+.brand-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.brand-name {
+    font-size: clamp(1.05rem, 1.2vw + 0.4rem, 1.3rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+body.dark-theme .brand-name {
+    color: #F8FAFC;
+}
+.brand-badge {
+    background: var(--ai-gradient);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+.brand-tagline {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hamburger button */
+.mobile-hamburger-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 1.35rem;
+    transition: var(--transition-smooth);
+    padding: 0;
+    flex-shrink: 0;
+}
+.mobile-hamburger-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
+    transform: scale(1.04);
+}
+
+/* Center Smart Search Trigger (YouTube/Facebook style) */
+.topbar-center {
+    flex: 1 1 auto;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+.search-pill-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-decoration: none;
+}
+.search-pill-btn:hover {
+    background: var(--card-bg);
+    border-color: var(--primary-border);
+    box-shadow: 0 2px 10px rgba(15, 76, 129, 0.08);
+    color: var(--text-main);
+}
+.search-shortcut-badge {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-family: monospace;
+    font-weight: 700;
+}
+
+/* Right Actions in Top Bar */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Islamic Prayer Indicator Pill */
+.prayer-indicator-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    background: var(--emerald-light);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald-dark);
+    font-weight: 700;
+    box-sizing: border-box;
+    transition: var(--transition-smooth);
+    overflow: hidden;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.prayer-indicator-pill:hover {
+    background: #D1FAE5;
+    border-color: #6EE7B7;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
+}
+body.dark-theme .prayer-indicator-pill {
+    background: rgba(13, 148, 136, 0.15);
+    border-color: rgba(13, 148, 136, 0.35);
+    color: #5EEAD4;
+}
+body.dark-theme .prayer-indicator-pill:hover {
+    background: rgba(13, 148, 136, 0.25);
+}
+.prayer-pill-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.prayer-pill-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.prayer-pill-countdown {
+    background: rgba(13, 148, 136, 0.15);
+    color: var(--emerald-dark);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+body.dark-theme .prayer-pill-countdown {
+    background: rgba(94, 234, 212, 0.2);
+    color: #5EEAD4;
+}
+
+/* Language selector */
+.lang-selector-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    flex-shrink: 0;
+    transition: var(--transition-smooth);
+}
+.lang-selector-pill:hover {
+    border-color: var(--primary-border);
+}
+.lang-selector-pill select {
+    border: none;
+    background: transparent;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    padding: 2px 0;
+}
+
+/* Action Icon Buttons */
+.icon-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.15rem;
+    transition: var(--transition-smooth);
+    padding: 0;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.icon-action-btn:hover {
+    background: var(--card-bg);
+    border-color: var(--primary-border);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Install Button */
+.btn-install-header {
+    background: var(--ai-gradient);
+    color: #ffffff !important;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-install-header:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+/* User Profile Badge */
+.user-profile-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+}
+.user-avatar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text-main);
+    transition: var(--transition-smooth);
+    font-weight: 700;
+    font-size: 0.82rem;
+    min-width: 0;
+}
+.user-avatar-link:hover {
+    border-color: var(--primary-border);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.user-avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ai-gradient);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+/* Auth Buttons */
+.auth-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.btn-login-pill {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-main);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+.btn-login-pill:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.btn-register-pill {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(15, 76, 129, 0.2);
+    transition: var(--transition-smooth);
+}
+.btn-register-pill:hover {
+    background: var(--primary-dark);
+}
+
+/* ========================================================================== */
+/* 4. YOUTUBE-STYLE COLLAPSIBLE SIDEBAR & MOBILE DRAWER */
+/* ========================================================================== */
+.mobile-drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 99998;
+    transition: opacity 0.3s ease;
+}
+.mobile-drawer-overlay.active {
+    display: block !important;
+}
+
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 330px;
+    max-width: 86vw;
+    background: var(--card-bg);
+    color: var(--text-main);
+    z-index: 99999;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[dir="rtl"] .mobile-drawer {
+    right: 0;
+    transform: translateX(105%);
+}
+[dir="rtl"] .mobile-drawer.active {
+    transform: translateX(0) !important;
+}
+[dir="ltr"] .mobile-drawer {
+    left: 0;
+    transform: translateX(-105%);
+}
+[dir="ltr"] .mobile-drawer.active {
+    transform: translateX(0) !important;
+}
+
+.mobile-drawer-header {
+    background: var(--ai-gradient);
+    color: white;
+    padding: 18px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+}
+.mobile-drawer-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+}
+.mobile-drawer-close:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: rotate(90deg);
+}
+
+.mobile-drawer-content {
+    padding: 12px 14px 60px 14px;
+}
+.mobile-menu-section-title {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 8px 6px 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+    margin-bottom: 3px;
+}
+.mobile-menu-item:hover, .mobile-menu-item:active {
+    background: var(--bg);
+    color: var(--primary);
+    transform: translateX(-3px);
+}
+[dir="ltr"] .mobile-menu-item:hover, [dir="ltr"] .mobile-menu-item:active {
+    transform: translateX(3px);
+}
+.mobile-menu-item.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+}
+.mobile-menu-item .m-icon {
+    font-size: 1.25rem;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.mobile-menu-item .m-label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.mobile-menu-item .m-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+/* ========================================================================== */
+/* 5. INSTAGRAM / YOUTUBE STICKY MOBILE BOTTOM NAVIGATION BAR */
+/* ========================================================================== */
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--bottomnav-bg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid var(--border-glass);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)) 4px;
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+}
+
+@media (min-width: 861px) {
+    .mobile-bottom-nav {
+        display: none !important;
+    }
+}
+
+@media (max-width: 860px) {
+    body {
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
+.bnav-item {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-muted);
+    padding: 4px 2px;
+    border-radius: var(--radius-md);
+    transition: var(--transition-smooth);
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-width: 0;
+}
+.bnav-item:hover, .bnav-item:active {
+    color: var(--primary);
+}
+.bnav-item.active {
+    color: var(--primary);
+    font-weight: 800;
+}
+.bnav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin-bottom: 2px;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bnav-item.active .bnav-icon {
+    transform: scale(1.12);
+}
+.bnav-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.bnav-community {
+    color: #0284c7;
+}
+.bnav-community.active {
+    color: #0369a1;
+}
+
+/* ========================================================================== */
+/* 6. GENERAL COMPONENTS: CARDS, GRIDS, BUTTONS & MODALS */
+/* ========================================================================== */
+.container {
+    max-width: 1360px;
+    margin: 20px auto;
+    padding: 0 16px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+    min-width: 0;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+    min-width: 0;
+}
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition-smooth);
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+.btn:hover {
+    transform: translateY(-1px);
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-accent { background: var(--accent); color: white; }
+.btn-accent:hover { background: #1D4ED8; }
+.btn-gold { background: linear-gradient(135deg, #d97706, #b45309); color: white; }
+.btn-gold:hover { background: #92400e; }
+.btn-download { background: #0284c7; color: white; }
+.btn-download:hover { background: #0369a1; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+.btn-outline:hover { background: var(--bg); border-color: var(--primary-border); }
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+.modal-content {
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
+    max-width: 600px;
+    width: 100%;
+    padding: 26px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+.modal-close {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition-smooth);
+}
+[dir="rtl"] .modal-close { left: 16px; right: auto; }
+[dir="ltr"] .modal-close { right: 16px; left: auto; }
+.modal-close:hover {
+    background: var(--bg);
+    color: var(--danger);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 12px;
+}
+
+/* Quick App Box */
+.mobile-app-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow-sm);
+}
+.mobile-app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+.mobile-app-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    transition: var(--transition-smooth);
+    color: var(--text-main);
+}
+.mobile-app-card:hover, .mobile-app-card:active {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Footer */
+footer {
+    background: #090D16;
+    color: #94A3B8;
+    text-align: center;
+    padding: 32px 16px;
+    margin-top: 40px;
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+footer a { color: #38BDF8; text-decoration: none; }
+
+/* Responsive Media Queries */
+@media (max-width: 900px) {
+    .topbar-center {
+        display: none !important;
+    }
+    .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 0 10px !important;
+        margin: 10px auto !important;
+    }
+    .card {
+        padding: 16px 12px !important;
+        border-radius: 12px !important;
+        margin-bottom: 14px !important;
+    }
+    .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    .mobile-app-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .topbar-container {
+        padding: 8px 10px !important;
+    }
+    .brand-tagline {
+        display: none !important;
+    }
+    .brand-name {
+        font-size: 1.05rem !important;
+    }
+    .prayer-indicator-pill {
+        padding: 4px 8px !important;
+        font-size: 0.72rem !important;
+        max-width: 140px !important;
+    }
+    .prayer-pill-text {
+        max-width: 75px !important;
+    }
+    .user-profile-widget .user-badge {
+        display: none !important;
+    }
+    .topbar-right .btn-install-header {
+        display: none !important;
+    }
+}
+
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+"""
+
+GLOBAL_APP_JS = """
+let deferredPwaPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    console.log('beforeinstallprompt captured');
+    const btns = document.querySelectorAll('.pwa-install-trigger');
+    btns.forEach(b => { b.style.display = 'inline-flex'; });
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'flex';
+});
+
+function triggerPwaInstall() {
+    if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then((choiceResult) => {
+            console.log('User install choice:', choiceResult.outcome);
+            deferredPwaPrompt = null;
+        });
+    } else {
+        openMobileModal();
+    }
+}
+
+function openMobileDrawer() {
+    const d = document.getElementById('mobile-drawer');
+    const o = document.getElementById('mobile-drawer-overlay');
+    if (d) d.classList.add('active');
+    if (o) o.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeMobileDrawer() {
+    const d = document.getElementById('mobile-drawer');
+    const o = document.getElementById('mobile-drawer-overlay');
+    if (d) d.classList.remove('active');
+    if (o) o.classList.remove('active');
+    document.body.style.overflow = '';
+}
+function changeLanguage(langCode) {
+    document.cookie = "vetmind_lang=" + langCode + "; path=/; max-age=31536000; SameSite=Lax";
+    try {
+        let u = new URL(window.location.href);
+        u.searchParams.delete('lang');
+        let target = u.pathname + u.search;
+        window.location.href = "/set-language/" + langCode + "?redirect=" + encodeURIComponent(target);
+    } catch(e) {
+        window.location.href = "/set-language/" + langCode + "?redirect=" + encodeURIComponent(window.location.pathname);
+    }
+}
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+    document.documentElement.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme') || document.documentElement.classList.contains('dark-theme');
+    document.cookie = "vetmind_theme=" + (isDark ? 'dark' : 'light') + "; path=/; max-age=31536000";
+    console.log('Theme toggled, isDark:', isDark);
+}
+function openApiModal() { document.getElementById('api-modal').style.display = 'flex'; }
+function closeApiModal() { document.getElementById('api-modal').style.display = 'none'; }
+function openMobileModal() { document.getElementById('mobile-modal').style.display = 'flex'; }
+function closeMobileModal() { document.getElementById('mobile-modal').style.display = 'none'; }
+function openSearchModal() { 
+    const m = document.getElementById('search-modal');
+    if (m) {
+        m.style.display = 'flex';
+        setTimeout(() => { document.getElementById('modal-search-input')?.focus(); }, 100);
+    }
+}
+function closeSearchModal() { 
+    const m = document.getElementById('search-modal');
+    if (m) m.style.display = 'none'; 
+}
+
+function copyMobileUrl() {
+    const inp = document.getElementById('mobile-url-input');
+    if (inp) {
+        inp.select();
+        navigator.clipboard.writeText(inp.value).then(() => {
+            alert('تم نسخ الرابط بنجاح: ' + inp.value);
+        }).catch(() => {
+            prompt('انسخ الرابط:', inp.value);
+        });
+    }
+}
+
+// Global Keyboard Shortcut (Ctrl+K or Cmd+K)
+window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openSearchModal();
+    }
+    if (e.key === 'Escape') {
+        closeSearchModal();
+        closeApiModal();
+        closeMobileModal();
+        closeMobileDrawer();
+    }
+});
+
+function handleSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        if (val) {
+            window.location.href = '/pharmacy?search=' + encodeURIComponent(val);
+        }
+    }
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/static/sw.js').catch(function(e) {
+            console.log('SW note:', e);
+        });
+    });
+}
+
+async function testAndSaveApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    const statusDiv = document.getElementById('api-key-status');
+    if (!key) {
+        statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; border: 1px solid #fca5a5; font-weight: 700;">❌ يرجى إدخال مفتاح API أولاً</div>';
+        return;
+    }
+    statusDiv.innerHTML = '<span style="color: var(--primary);">⏳ جاري اختبار مفتاح الـ API مع سيرفر Groq...</span>';
+    try {
+        const resp = await fetch('/api/test-key', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({api_key: key})
+        });
+        let data = null;
+        try {
+            data = await resp.json();
+        } catch(e) {
+            data = {status: 'error', message: 'هناك خطأ في الـ API: استجابة غير متوقعة.'};
+        }
+        const isSuccess = data && data.status === 'success';
+        let msg = (data && data.message) ? data.message : (isSuccess ? 'تم التفعيل بنجاح!' : 'هناك خطأ في الـ API');
+        msg = msg.replace(/^[✅❌\\s]+/, '');
+        if (isSuccess) {
+            statusDiv.innerHTML = '<div style="background: var(--success-bg); color: var(--success); padding: 12px; border-radius: 8px; border: 1px solid #86efac; font-weight: 700;">✅ ' + msg + '</div>';
+            document.cookie = "groq_api_key=" + encodeURIComponent(key) + "; path=/; max-age=31536000";
+            setTimeout(() => { window.location.reload(); }, 1800);
+        } else {
+            statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; border: 1px solid #fca5a5; font-weight: 700;">❌ ' + msg + '</div>';
+        }
+    } catch(err) {
+        statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; font-weight: 700;">❌ فشل الاتصال بالسيرفر. يرجى إعادة المحاولة.</div>';
+    }
+}
+
+(function() {
+    const cookies = document.cookie.split(';');
+    for(let c of cookies) {
+        if(c.trim().startsWith('vetmind_theme=dark')) {
+            document.documentElement.classList.add('dark-theme');
+        }
+    }
+})();
+"""
+
 def get_base_html(title: str, body_content: str, current_user, lang: str):
     t = lambda k, d="": get_text(lang, k, d)
     dir_attr = TRANSLATIONS_DB.get(lang, {}).get("dir", "rtl")
@@ -712,23 +1899,25 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     if current_user:
         v_badge = "✅" if current_user.get("verification_status") == "approved" else "⏳"
         user_country = current_user.get("country", "مصر")
+        initial_letter = current_user['name'][0] if current_user.get('name') else "V"
         user_nav = f"""
         <div class="user-profile-widget">
             {premium_badge}
-            <span class="user-badge">{user_country} | VET {v_badge}</span>
-            <span class="user-name">د. {current_user['name']}</span>
-            <a href="/profile" class="nav-item">👤 {t('nav_profile')}</a>
-            <a href="/logout" class="nav-item nav-logout">🚪 {t('nav_logout')}</a>
+            <a href="/profile" class="user-avatar-link" title="الملف الشخصي">
+                <span class="user-avatar-circle">{initial_letter}</span>
+                <span class="user-name">د. {current_user['name']}</span>
+                <span class="user-badge" style="font-size: 0.72rem; color: var(--text-muted);">{v_badge}</span>
+            </a>
+            <a href="/logout" class="icon-action-btn" title="{t('nav_logout', 'تسجيل الخروج')}" style="color: var(--danger);">🚪</a>
         </div>
         """
     else:
         user_nav = f"""
         <div class="auth-buttons">
-            <a href="/login" class="btn btn-login">🔑 {t('nav_login')}</a>
-            <a href="/register" class="btn btn-register">📝 {t('nav_register')}</a>
+            <a href="/login" class="btn-login-pill">🔑 {t('nav_login', 'دخول')}</a>
+            <a href="/register" class="btn-register-pill">📝 {t('nav_register', 'تسجيل')}</a>
         </div>
         """
-
 
     live_mobile_url = get_live_tunnel_url()
     mobile_admin_item = f'<a href="/admin" class="mobile-menu-item" style="color: #ea580c; font-weight: 700;"><span class="m-icon">⚙️</span><span class="m-label">{t("nav_admin")} (لوحة الإدارة)</span></a>' if current_user and current_user.get("is_admin") else ""
@@ -739,7 +1928,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <span class="m-icon">👤</span>
             <span class="m-label">{t('nav_profile')} (د. {current_user['name']})</span>
         </a>
-        <a href="/logout" class="mobile-menu-item" style="color: #dc2626;">
+        <a href="/logout" class="mobile-menu-item" style="color: var(--danger);">
             <span class="m-icon">🚪</span>
             <span class="m-label">{t('nav_logout')}</span>
         </a>
@@ -757,8 +1946,9 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </a>
         """
 
+    # Collapsible YouTube-Style Drawer Navigation
     mobile_drawer_html = f"""
-    <!-- Mobile Navigation Drawer Overlay & Panel (قائمة الـ 3 شرط) -->
+    <!-- YouTube-Style Navigation Drawer Overlay & Panel -->
     <div id="mobile-drawer-overlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()"></div>
     <aside id="mobile-drawer" class="mobile-drawer">
         <div class="mobile-drawer-header">
@@ -768,7 +1958,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 </div>
                 <div>
                     <div style="font-weight: 800; font-size: 1.05rem; color: white;">VetMind AI</div>
-                    <div style="font-size: 0.75rem; opacity: 0.85; color: #ecfdf5;">طبيب بيطري معتمد 🩺</div>
+                    <div style="font-size: 0.75rem; opacity: 0.9; color: #ecfdf5;">المنظومة الإكلينيكية البيطرية 🩺</div>
                 </div>
             </div>
             <button type="button" onclick="closeMobileDrawer()" class="mobile-drawer-close" aria-label="Close">✕</button>
@@ -786,7 +1976,8 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </a>
             <a href="/community" class="mobile-menu-item" style="color: #0284c7; font-weight: 700;">
                 <span class="m-icon">🌐</span>
-                <span class="m-label">VetBook الأطباء البيطريين</span>
+                <span class="m-label">VetBook مجتمع الأطباء</span>
+                <span class="m-badge" style="background: #e0f2fe; color: #0369a1;">جديد</span>
             </a>
             <a href="/clinic" class="mobile-menu-item">
                 <span class="m-icon">🏥</span>
@@ -794,7 +1985,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </a>
             <a href="/clinic/cases-gallery" class="mobile-menu-item">
                 <span class="m-icon">🖼️</span>
-                <span class="m-label">{t("nav_cases_gallery", "معرض الصور")}</span>
+                <span class="m-label">{t("nav_cases_gallery", "معرض الحالات")}</span>
             </a>
             <a href="/rx-prescription" class="mobile-menu-item">
                 <span class="m-icon">📋</span>
@@ -806,7 +1997,8 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </a>
             <a href="/pharmacy" class="mobile-menu-item">
                 <span class="m-icon">💊</span>
-                <span class="m-label">{t('nav_pharmacy')} (1,005 دواء)</span>
+                <span class="m-label">{t('nav_pharmacy')}</span>
+                <span class="m-badge">1,005 دواء</span>
             </a>
             <a href="/vision-detect" class="mobile-menu-item">
                 <span class="m-icon">👁️</span>
@@ -815,21 +2007,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <a href="/tools" class="mobile-menu-item">
                 <span class="m-icon">🛠️</span>
                 <span class="m-label">{t("nav_tools_30", "الأدوات الـ 30")}</span>
+                <span class="m-badge">30 أداة</span>
             </a>
 
-            <div class="mobile-menu-section-title">🌐 لغة المنصة (All Languages)</div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 4px 6px; margin-bottom: 8px;">
-                <a href="/set-language/ar" onclick="changeLanguage('ar'); return false;" class="lang-pill {'active-lang' if lang=='ar' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇸🇦 العربية</a>
-                <a href="/set-language/en" onclick="changeLanguage('en'); return false;" class="lang-pill {'active-lang' if lang=='en' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇬🇧 English</a>
-                <a href="/set-language/fr" onclick="changeLanguage('fr'); return false;" class="lang-pill {'active-lang' if lang=='fr' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇫🇷 Français</a>
-                <a href="/set-language/es" onclick="changeLanguage('es'); return false;" class="lang-pill {'active-lang' if lang=='es' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇪🇸 Español</a>
-                <a href="/set-language/de" onclick="changeLanguage('de'); return false;" class="lang-pill {'active-lang' if lang=='de' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇩🇪 Deutsch</a>
-                <a href="/set-language/it" onclick="changeLanguage('it'); return false;" class="lang-pill {'active-lang' if lang=='it' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇮🇹 Italiano</a>
-                <a href="/set-language/zh" onclick="changeLanguage('zh'); return false;" class="lang-pill {'active-lang' if lang=='zh' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇨🇳 中文</a>
-                <a href="/set-language/ja" onclick="changeLanguage('ja'); return false;" class="lang-pill {'active-lang' if lang=='ja' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇯🇵 日本語</a>
-            </div>
-
-            <div class="mobile-menu-section-title">📚 المراجع والمعلومات</div>
+            <div class="mobile-menu-section-title">📚 المراجع والمعرفة</div>
             <a href="/clinic/prayer-times" class="mobile-menu-item">
                 <span class="m-icon">🕌</span>
                 <span class="m-label">{t("nav_prayer", "مواقيت الصلاة")}</span>
@@ -837,6 +2018,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <a href="/references" class="mobile-menu-item">
                 <span class="m-icon">📚</span>
                 <span class="m-label">{t('nav_references')} (الـ 30 مرجع)</span>
+                <span class="m-badge">30 كتاب</span>
             </a>
             <a href="/about" class="mobile-menu-item">
                 <span class="m-icon">ℹ️</span>
@@ -855,7 +2037,19 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-label">{t('nav_support')}</span>
             </a>
 
-            <div class="mobile-menu-section-title">⚙️ تثبيت التطبيق والتحكم</div>
+            <div class="mobile-menu-section-title">🌐 لغة المنصة (Languages)</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 4px 6px; margin-bottom: 8px;">
+                <a href="/set-language/ar" onclick="changeLanguage('ar'); return false;" class="lang-pill {'active-lang' if lang=='ar' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇸🇦 العربية</a>
+                <a href="/set-language/en" onclick="changeLanguage('en'); return false;" class="lang-pill {'active-lang' if lang=='en' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇬🇧 English</a>
+                <a href="/set-language/fr" onclick="changeLanguage('fr'); return false;" class="lang-pill {'active-lang' if lang=='fr' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇫🇷 Français</a>
+                <a href="/set-language/es" onclick="changeLanguage('es'); return false;" class="lang-pill {'active-lang' if lang=='es' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇪🇸 Español</a>
+                <a href="/set-language/de" onclick="changeLanguage('de'); return false;" class="lang-pill {'active-lang' if lang=='de' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇩🇪 Deutsch</a>
+                <a href="/set-language/it" onclick="changeLanguage('it'); return false;" class="lang-pill {'active-lang' if lang=='it' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇮🇹 Italiano</a>
+                <a href="/set-language/zh" onclick="changeLanguage('zh'); return false;" class="lang-pill {'active-lang' if lang=='zh' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇨🇳 中文</a>
+                <a href="/set-language/ja" onclick="changeLanguage('ja'); return false;" class="lang-pill {'active-lang' if lang=='ja' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇯🇵 日本語</a>
+            </div>
+
+            <div class="mobile-menu-section-title">⚙️ تثبيت التطبيق والنظام</div>
             <button type="button" onclick="openMobileModal(); closeMobileDrawer();" class="mobile-menu-item" style="width: 100%; border: none; background: none; text-align: inherit; cursor: pointer; color: #0284c7; font-weight: 700;">
                 <span class="m-icon">📱</span>
                 <span class="m-label">تحميل وتثبيت التطبيق على الموبايل</span>
@@ -874,753 +2068,202 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     </aside>
     """
 
+    # Active bottom nav items
+    title_l = title.lower()
+    is_home_active = "active" if title in [t('nav_home'), 'الرئيسية', 'Home', 'Accueil', 'Startseite', 'Inicio', 'Главная', '首页'] else ""
+    is_chat_active = "active" if "chat" in title_l or "شات" in title_l or "مساعد" in title_l or "ذكاء" in title_l else ""
+    is_comm_active = "active" if "vetbook" in title_l or "مجتمع" in title_l or "community" in title_l else ""
+    is_clinic_active = "active" if "clinic" in title_l or "عيادة" in title_l or "حالات" in title_l else ""
+
+    # Instagram / YouTube-Style Mobile Bottom Navigation Bar
+    mobile_bottom_nav_html = f"""
+    <nav class="mobile-bottom-nav" aria-label="شريط التنقل السريع">
+        <a href="/" class="bnav-item {is_home_active}" title="{t('nav_home', 'الرئيسية')}">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="bnav-label">{t('nav_home', 'الرئيسية')}</span>
+        </a>
+        <a href="/chat" class="bnav-item {is_chat_active}" title="{t('nav_chat', 'الشات')}">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>
+            </span>
+            <span class="bnav-label">{t('nav_chat', 'الذكاء')}</span>
+        </a>
+        <a href="/community" class="bnav-item bnav-community {is_comm_active}" title="مجتمع VetBook">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+            <span class="bnav-label">VetBook</span>
+        </a>
+        <a href="/clinic" class="bnav-item {is_clinic_active}" title="{t('nav_clinic', 'العيادة')}">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+            </span>
+            <span class="bnav-label">{t('nav_clinic', 'العيادة')}</span>
+        </a>
+        <button type="button" onclick="openMobileDrawer()" class="bnav-item" aria-label="المزيد">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+            </span>
+            <span class="bnav-label">المزيد</span>
+        </button>
+    </nav>
+    """
+
     is_home_page = (title in [t('nav_home'), 'الرئيسية', 'Home', 'Accueil', 'Startseite', 'Inicio', 'Главная', '首页'])
     back_home_html = ""
     if not is_home_page and 'العودة للصفحة الرئيسية' not in body_content and 'btn-return-home' not in body_content:
         back_label = t('back_to_home', 'العودة للصفحة الرئيسية')
-        back_home_html = f'''
-        <div class="global-back-home-bar" style="margin-bottom: 20px;">
-            <a href="/" style="display: inline-flex; align-items: center; gap: 8px; background: var(--card-bg); color: var(--primary); border: 2px solid var(--primary); padding: 8px 18px; border-radius: 25px; font-weight: 800; font-size: 0.92rem; text-decoration: none; box-shadow: 0 2px 6px rgba(4,120,87,0.12); transition: all 0.2s ease;">
-                <span style="font-size: 1.1rem;">🏠</span> <span>{back_label}</span> <span style="font-size: 0.9rem;">⬅️</span>
-            </a>
-        </div>
-        '''
+        back_home_html = f'''<div class="global-back-home-bar" style="margin-bottom: 20px;"><a href="/" style="display: inline-flex; align-items: center; gap: 8px; background: var(--card-bg); color: var(--primary); border: 1.5px solid var(--primary-border); padding: 8px 18px; border-radius: 25px; font-weight: 700; font-size: 0.90rem; text-decoration: none; box-shadow: var(--shadow-sm); transition: var(--transition-smooth);"><span style="font-size: 1.1rem;">🏠</span> <span>{back_label}</span> <span style="font-size: 0.9rem;">⬅️</span></a></div>'''
 
     return f"""<!DOCTYPE html>
 <html lang="{lang}" dir="{dir_attr}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="theme-color" content="#0f766e">
+    <meta name="theme-color" content="#0F4C81">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="VetMind AI">
     <title>{title} | {t('app_name')} {t('version')}</title>
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#047857">
-    <link rel="shortcut icon" href="/favicon.ico?v=4">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=4">
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=4">
-    <link rel="alternate icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v=4">
-    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png?v=4">
-    <link rel="apple-touch-icon" href="/static/icon-192.png?v=4">
+    <link rel="shortcut icon" href="/favicon.ico?v=5">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=5">
+    <link rel="alternate icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v=5">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png?v=5">
+    <link rel="apple-touch-icon" href="/static/icon-192.png?v=5">
     <style>
-        :root {{
-            /* High-Contrast, Eye-Friendly Medical Palette */
-            --primary: #047857;
-            --primary-dark: #065f46;
-            --primary-light: #ecfdf5;
-            --accent: #ea580c;
-            --gold: #d97706;
-            --bg: #f1f5f9;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --border: #cbd5e1;
-            --danger: #dc2626;
-            --danger-bg: #fef2f2;
-            --success: #16a34a;
-            --success-bg: #f0fdf4;
-            --warning: #d97706;
-            --warning-bg: #fffbeb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        }}
-        body.dark-theme {{
-            --bg: #030712;
-            --card-bg: #111827;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --border: #1f2937;
-            --danger-bg: #450a0a;
-            --success-bg: #052e16;
-            --warning-bg: #451a03;
-            --shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-        }}
-        * {{ box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
-        html, body {{
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.5;
-            overflow-x: hidden;
-            width: 100%;
-            max-width: 100vw;
-            box-sizing: border-box;
-            -webkit-text-size-adjust: 100%;
-        }}
-        
-        .broadcast-banner {{
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 20px; font-size: 0.9rem; border-bottom: 2px solid;
-            animation: slideDown 0.4s ease-out;
-        }}
-        .broadcast-content {{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
-        .broadcast-close {{ background: none; border: none; font-size: 1.3rem; cursor: pointer; color: inherit; }}
-
-        .disclaimer-banner {{
-            background: var(--warning-bg); color: #92400e; padding: 8px 16px;
-            font-size: 0.85rem; font-weight: 600; text-align: center; border-bottom: 1px solid #fde68a;
-        }}
-
-        header {{
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-            color: #ffffff; padding: 12px 24px; display: flex; justify-content: space-between;
-            align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 14px rgba(15,118,110,0.2);
-        }}
-        .brand-box {{ display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }}
-        .brand-icon {{ font-size: 1.8rem; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 10px; }}
-        .brand-title {{ font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; }}
-        .brand-version {{ font-size: 0.75rem; background: #ea580c; padding: 2px 8px; border-radius: 12px; font-weight: 700; }}
-
-        nav {{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
-        .nav-item {{
-            color: #e0f2fe; text-decoration: none; padding: 6px 12px; border-radius: 8px;
-            font-size: 0.88rem; font-weight: 600; transition: all 0.2s;
-            display: inline-flex; align-items: center; gap: 5px;
-        }}
-        .nav-item:hover, .nav-item.active {{ background: rgba(255,255,255,0.2); color: #ffffff; }}
-        .nav-admin {{ background: rgba(234,88,12,0.3); border: 1px solid rgba(234,88,12,0.6); }}
-        .nav-premium {{ background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff !important; font-weight: 700; }}
-        .nav-logout {{ background: rgba(220,38,38,0.2); }}
-
-        .top-toolbar {{
-            background: #ffffff; border-bottom: 1px solid var(--border);
-            padding: 8px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-            box-sizing: border-box; width: 100%; max-width: 100vw;
-        }}
-        body.dark-theme .top-toolbar {{ background: #0f172a; }}
-
-        .top-toolbar-left {{
-            display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
-            max-width: 100%; box-sizing: border-box; min-width: 0;
-        }}
-        .top-toolbar-actions {{
-            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-            box-sizing: border-box;
-        }}
-
-        .lang-selector-pill {{
-            display: flex; align-items: center; gap: 6px; background: var(--bg);
-            border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px;
-            flex-shrink: 0; box-sizing: border-box;
-        }}
-        .lang-selector-pill select {{
-            border: none; background: transparent; font-size: 0.82rem; font-weight: 700;
-            color: var(--text-main); cursor: pointer; outline: none; padding: 3px 2px;
-        }}
-
-        .prayer-indicator-pill {{
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 3px 10px; font-size: 0.78rem; border-radius: 20px;
-            text-decoration: none; background: #ecfdf5; border: 1px solid #a7f3d0;
-            color: #047857; font-weight: 700; max-width: 100%; box-sizing: border-box;
-            transition: all 0.2s ease; overflow: hidden; white-space: nowrap;
-        }}
-        .prayer-indicator-pill:hover {{
-            background: #d1fae5; border-color: #6ee7b7; color: #065f46;
-        }}
-        body.dark-theme .prayer-indicator-pill {{
-            background: #064e3b; border-color: #047857; color: #6ee7b7;
-        }}
-        body.dark-theme .prayer-indicator-pill:hover {{
-            background: #047857; color: #ffffff;
-        }}
-        .prayer-pill-icon {{ flex-shrink: 0; font-size: 0.85rem; }}
-        .prayer-pill-text {{
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
-        }}
-        .prayer-pill-countdown {{
-            background: #d1fae5; color: #065f46; padding: 1px 7px;
-            border-radius: 10px; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;
-        }}
-        body.dark-theme .prayer-pill-countdown {{
-            background: #022c22; color: #a7f3d0;
-        }}
-
-        .lang-bar {{ display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }}
-        .lang-pill {{
-            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 20px;
-            padding: 3px 10px; font-size: 0.78rem; cursor: pointer; color: #334155; font-weight: 600;
-        }}
-        .lang-pill.active-lang {{ background: var(--primary); color: #ffffff; border-color: var(--primary); }}
-
-        .btn {{
-            display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-            border-radius: 8px; font-weight: 600; font-size: 0.88rem; text-decoration: none;
-            cursor: pointer; border: none; transition: 0.2s;
-        }}
-        .btn-primary {{ background: var(--primary); color: white; }}
-        .btn-primary:hover {{ background: var(--primary-dark); }}
-        .btn-accent {{ background: var(--accent); color: white; }}
-        .btn-accent:hover {{ background: #c2410c; }}
-        .btn-gold {{ background: linear-gradient(135deg, #d97706, #b45309); color: white; }}
-        .btn-gold:hover {{ background: #92400e; }}
-        .btn-download {{ background: #0284c7; color: white; }}
-        .btn-download:hover {{ background: #0369a1; }}
-        .btn-outline {{ background: transparent; border: 1px solid var(--border); color: var(--text-main); }}
-
-        .container {{ max-width: 1360px; margin: 20px auto; padding: 0 16px; width: 100%; box-sizing: border-box; overflow-x: clip; }}
-        .card {{
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 14px; padding: 22px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }}
-        .grid-2 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }}
-        .grid-3 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }}
-        .grid-4 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }}
-
-        .modal {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }}
-        .modal-content {{ background: var(--card-bg); border-radius: 16px; max-width: 600px; width: 90%; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); position: relative; }}
-        .modal-close {{ position: absolute; top: 16px; left: 16px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); }}
-        [dir="rtl"] .modal-close {{ left: 16px; right: auto; }}
-        [dir="ltr"] .modal-close {{ right: 16px; left: auto; }}
-
-        footer {{
-            background: #0f172a; color: #94a3b8; text-align: center;
-            padding: 24px 16px; margin-top: 40px; font-size: 0.85rem; border-top: 1px solid #1e293b;
-        }}
-        footer a {{ color: #38bdf8; text-decoration: none; }}
-
-        /* ------------------------------------------------------------- */
-        /* MOBILE & TABLET RESPONSIVENESS (Android & iOS Universal Support) */
-        /* ------------------------------------------------------------- */
-        html, body {{
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            -webkit-text-size-adjust: 100%;
-            -webkit-tap-highlight-color: transparent;
-        }}
-        body, p, div, span, h1, h2, h3, h4, h5, h6, strong, b, td, th {{
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }}
-        img, video, iframe, canvas {{
-            max-width: 100% !important;
-            height: auto;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-        }}
-        .table-responsive {{
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 12px;
-        }}
-
-        /* User Profile Widget */
-        .user-profile-widget {{
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }}
-
-        /* Hamburger Button (☰) - Always Accessible */
-        .mobile-hamburger-btn {{
-            display: inline-flex !important;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            color: #ffffff;
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.6rem;
-            transition: all 0.2s ease;
-            padding: 0;
-            flex-shrink: 0;
-        }}
-        .mobile-hamburger-btn:hover, .mobile-hamburger-btn:active {{
-            background: rgba(255, 255, 255, 0.35);
-        }}
-
-        /* Mobile Drawer Overlay */
-        .mobile-drawer-overlay {{
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
-            z-index: 99998;
-        }}
-        .mobile-drawer-overlay.active {{
-            display: block !important;
-        }}
-
-        /* Mobile Drawer Panel (قائمة الـ 3 شرط الجانبية) */
-        .mobile-drawer {{
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 320px;
-            max-width: 86vw;
-            background: var(--card-bg);
-            color: var(--text-main);
-            z-index: 99999;
-            box-shadow: 0 0 35px rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }}
-        [dir="rtl"] .mobile-drawer {{
-            right: -340px;
-            left: auto;
-        }}
-        [dir="rtl"] .mobile-drawer.active {{
-            right: 0 !important;
-        }}
-        [dir="ltr"] .mobile-drawer {{
-            left: -340px;
-            right: auto;
-        }}
-        [dir="ltr"] .mobile-drawer.active {{
-            left: 0 !important;
-        }}
-
-        .mobile-drawer-header {{
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-            color: white;
-            padding: 16px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-        }}
-        .mobile-drawer-close {{
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-        }}
-        .mobile-drawer-close:hover {{
-            background: rgba(255, 255, 255, 0.4);
-        }}
-        .mobile-drawer-content {{
-            padding: 10px 14px 40px 14px;
-        }}
-        .mobile-menu-section-title {{
-            font-size: 0.78rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 12px 8px 6px 8px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 6px;
-        }}
-        .mobile-menu-item {{
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 12px;
-            border-radius: 10px;
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 0.92rem;
-            font-weight: 600;
-            transition: background 0.15s ease, transform 0.1s ease;
-            margin-bottom: 3px;
-        }}
-        .mobile-menu-item:hover, .mobile-menu-item:active {{
-            background: var(--bg);
-            transform: translateX(-3px);
-        }}
-        [dir="ltr"] .mobile-menu-item:hover, [dir="ltr"] .mobile-menu-item:active {{
-            transform: translateX(3px);
-        }}
-        .mobile-menu-item .m-icon {{
-            font-size: 1.3rem;
-            width: 28px;
-            text-align: center;
-            flex-shrink: 0;
-        }}
-        .mobile-menu-item .m-label {{
-            flex: 1;
-        }}
-
-        /* Mobile Quick App Box (صندوق الأيقونات تحت بعضها) */
-        .mobile-app-box {{
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 22px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-        }}
-        .mobile-app-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-            gap: 10px;
-            margin-top: 12px;
-        }}
-        .mobile-app-card {{
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 8px;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            color: var(--text-main);
-        }}
-        .mobile-app-card:hover, .mobile-app-card:active {{
-            transform: translateY(-2px);
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(4,120,87,0.12);
-        }}
-        .mobile-app-card-icon {{
-            font-size: 2rem;
-            line-height: 1;
-        }}
-        .mobile-app-card-title {{
-            font-weight: 700;
-            font-size: 0.86rem;
-            line-height: 1.3;
-        }}
-        .mobile-app-card-sub {{
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            line-height: 1.2;
-        }}
-
-        @media (max-width: 900px) {{
-            .grid-4 {{ grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }}
-            .grid-3 {{ grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }}
-            .desktop-nav {{ display: none !important; }}
-            header {{
-                padding: 10px 14px !important;
-                flex-direction: row !important;
-                justify-content: space-between !important;
-                align-items: center !important;
-            }}
-            .brand-box {{
-                gap: 8px !important;
-            }}
-            .brand-title {{
-                font-size: 1.1rem !important;
-            }}
-            .brand-subtitle {{
-                display: none !important;
-            }}
-            .top-toolbar {{
-                padding: 8px 10px !important;
-                flex-direction: column !important;
-                align-items: stretch !important;
-                gap: 8px !important;
-                width: 100% !important;
-                max-width: 100vw !important;
-                overflow-x: hidden !important;
-                box-sizing: border-box !important;
-            }}
-            .top-toolbar-left {{
-                display: flex !important;
-                align-items: center !important;
-                justify-content: flex-start !important;
-                gap: 6px !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                overflow-x: hidden !important;
-            }}
-            .prayer-indicator-pill {{
-                flex: 1 1 auto !important;
-                min-width: 0 !important;
-                max-width: calc(100% - 130px) !important;
-                padding: 3px 8px !important;
-                font-size: 0.74rem !important;
-            }}
-            .top-toolbar-actions {{
-                justify-content: space-between !important;
-                width: 100% !important;
-                gap: 6px !important;
-            }}
-        }}
-
-        @media (max-width: 480px) {{
-            .top-toolbar-left {{
-                gap: 4px !important;
-            }}
-            .lang-selector-pill {{
-                padding: 2px 6px !important;
-            }}
-            .lang-selector-pill select {{
-                font-size: 0.75rem !important;
-                max-width: 95px !important;
-            }}
-            .prayer-indicator-pill {{
-                font-size: 0.70rem !important;
-                padding: 2px 6px !important;
-                gap: 4px !important;
-                max-width: calc(100% - 110px) !important;
-            }}
-            .prayer-pill-countdown {{
-                font-size: 0.66rem !important;
-                padding: 1px 4px !important;
-            }}
-            .user-profile-widget .nav-item {{
-                display: none !important;
-            }}
-        }}
-
-        @media (max-width: 600px) {{
-            .container {{ padding: 0 8px !important; margin: 8px auto !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: clip !important; }}
-            .card {{
-                padding: 14px 12px !important;
-                border-radius: 12px !important;
-                margin-bottom: 14px !important;
-            }}
-            .grid-2, .grid-3, .grid-4 {{
-                grid-template-columns: 1fr !important;
-                gap: 12px !important;
-            }}
-            .mobile-app-grid {{
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 8px !important;
-            }}
-            .modal-content {{
-                width: 95% !important;
-                padding: 18px 14px !important;
-                max-height: 90vh !important;
-                overflow-y: auto !important;
-            }}
-            table, thead, tbody, th, td, tr {{
-                font-size: 0.8rem !important;
-            }}
-            th, td {{
-                padding: 6px 6px !important;
-            }}
-            input, select, textarea {{
-                font-size: 0.9rem !important;
-            }}
-        }}
-
-        @keyframes slideDown {{ from {{ transform: translateY(-100%); }} to {{ transform: translateY(0); }} }}
+{GLOBAL_PRESTIGE_CSS}
     </style>
     <script>
-        let deferredPwaPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {{
-            e.preventDefault();
-            deferredPwaPrompt = e;
-            console.log('beforeinstallprompt captured');
-            const btns = document.querySelectorAll('.pwa-install-trigger');
-            btns.forEach(b => {{ b.style.display = 'inline-flex'; }});
-            const banner = document.getElementById('pwa-install-banner');
-            if (banner) banner.style.display = 'flex';
-        }});
-
-        function triggerPwaInstall() {{
-            if (deferredPwaPrompt) {{
-                deferredPwaPrompt.prompt();
-                deferredPwaPrompt.userChoice.then((choiceResult) => {{
-                    console.log('User install choice:', choiceResult.outcome);
-                    deferredPwaPrompt = null;
-                }});
-            }} else {{
-                openMobileModal();
-            }}
-        }}
-
-        function openMobileDrawer() {{
-            console.log('Opening mobile drawer...');
-            const d = document.getElementById('mobile-drawer');
-            const o = document.getElementById('mobile-drawer-overlay');
-            if (d) {{
-                d.classList.add('active');
-                d.style.display = 'block';
-            }}
-            if (o) {{
-                o.classList.add('active');
-                o.style.display = 'block';
-            }}
-            document.body.style.overflow = 'hidden';
-        }}
-        function closeMobileDrawer() {{
-            console.log('Closing mobile drawer...');
-            const d = document.getElementById('mobile-drawer');
-            const o = document.getElementById('mobile-drawer-overlay');
-            if (d) {{
-                d.classList.remove('active');
-            }}
-            if (o) {{
-                o.classList.remove('active');
-                o.style.display = 'none';
-            }}
-            document.body.style.overflow = '';
-        }}
-        function changeLanguage(langCode) {{
-            document.cookie = "vetmind_lang=" + langCode + "; path=/; max-age=31536000; SameSite=Lax";
-            try {{
-                let u = new URL(window.location.href);
-                u.searchParams.delete('lang');
-                let target = u.pathname + u.search;
-                window.location.href = "/set-language/" + langCode + "?redirect=" + encodeURIComponent(target);
-            }} catch(e) {{
-                window.location.href = "/set-language/" + langCode + "?redirect=" + encodeURIComponent(window.location.pathname);
-            }}
-        }}
-        function toggleTheme() {{
-            document.body.classList.toggle('dark-theme');
-            document.documentElement.classList.toggle('dark-theme');
-            const isDark = document.body.classList.contains('dark-theme') || document.documentElement.classList.contains('dark-theme');
-            document.cookie = "vetmind_theme=" + (isDark ? 'dark' : 'light') + "; path=/; max-age=31536000";
-            console.log('Theme toggled, isDark:', isDark);
-        }}
-        function openApiModal() {{ document.getElementById('api-modal').style.display = 'flex'; }}
-        function closeApiModal() {{ document.getElementById('api-modal').style.display = 'none'; }}
-        function openMobileModal() {{ document.getElementById('mobile-modal').style.display = 'flex'; }}
-        function closeMobileModal() {{ document.getElementById('mobile-modal').style.display = 'none'; }}
-        function copyMobileUrl() {{
-            const inp = document.getElementById('mobile-url-input');
-            if (inp) {{
-                inp.select();
-                navigator.clipboard.writeText(inp.value).then(() => {{
-                    alert('تم نسخ الرابط بنجاح: ' + inp.value);
-                }}).catch(() => {{
-                    prompt('انسخ الرابط:', inp.value);
-                }});
-            }}
-        }}
-
-        if ('serviceWorker' in navigator) {{
-            window.addEventListener('load', function() {{
-                navigator.serviceWorker.register('/static/sw.js').catch(function(e) {{
-                    console.log('SW note:', e);
-                }});
-            }});
-        }}
-        
-        async function testAndSaveApiKey() {{
-            const key = document.getElementById('api-key-input').value.trim();
-            const statusDiv = document.getElementById('api-key-status');
-            
-            if (!key) {{
-                statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; border: 1px solid #fca5a5; font-weight: 700;">❌ يرجى إدخال مفتاح API أولاً</div>';
-                return;
-            }}
-            
-            statusDiv.innerHTML = '<span style="color: var(--primary);">⏳ جاري اختبار مفتاح الـ API مع سيرفر Groq...</span>';
-            
-            try {{
-                const resp = await fetch('/api/test-key', {{
-                    method: 'POST',
-                    headers: {{'Content-Type': 'application/json'}},
-                    body: JSON.stringify({{api_key: key}})
-                }});
-                let data = null;
-                try {{
-                    data = await resp.json();
-                }} catch(e) {{
-                    data = {{status: 'error', message: 'هناك خطأ في الـ API: استجابة غير متوقعة.'}};
-                }}
-                const isSuccess = data && data.status === 'success';
-                let msg = (data && data.message) ? data.message : (isSuccess ? 'تم التفعيل بنجاح!' : 'هناك خطأ في الـ API');
-                msg = msg.replace(/^[✅❌\\s]+/, '');
-                
-                if (isSuccess) {{
-                    statusDiv.innerHTML = '<div style="background: var(--success-bg); color: var(--success); padding: 12px; border-radius: 8px; border: 1px solid #86efac; font-weight: 700;">✅ ' + msg + '</div>';
-                    document.cookie = "groq_api_key=" + encodeURIComponent(key) + "; path=/; max-age=31536000";
-                    setTimeout(() => {{ window.location.reload(); }}, 1800);
-                }} else {{
-                    statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; border: 1px solid #fca5a5; font-weight: 700;">❌ ' + msg + '</div>';
-                }}
-            }} catch(err) {{
-                statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; font-weight: 700;">❌ فشل الاتصال بالسيرفر. يرجى إعادة المحاولة.</div>';
-            }}
-        }}
-
-        (function() {{
-            const cookies = document.cookie.split(';');
-            for(let c of cookies) {{
-                if(c.trim().startsWith('vetmind_theme=dark')) {{
-                    document.documentElement.classList.add('dark-theme');
-                }}
-            }}
-        }})();
+{GLOBAL_APP_JS}
     </script>
 </head>
 <body>
-    <header>
-        <div style="display: flex; align-items: center; gap: 10px; max-width: 100%;">
-            <button type="button" onclick="openMobileDrawer()" class="mobile-hamburger-btn" aria-label="قائمة الخيارات (☰)">
-                <span style="font-size: 1.6rem; line-height: 1;">☰</span>
-            </button>
-            <a href="/" class="brand-box" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: white;">
-                <span class="brand-icon" style="display: inline-flex; align-items: center; justify-content: center; background: transparent; padding: 0; box-shadow: none;">
-                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="47" fill="#0f766e" stroke="#5eead4" stroke-width="2.5"/>
-                        <path d="M22 28 L50 82 L78 28" stroke="#fde047" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
-                        <line x1="50" y1="15" x2="50" y2="84" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
-                        <circle cx="50" cy="15" r="4.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1"/>
-                        <path d="M38 32 C58 30, 58 40, 50 44 C40 48, 40 58, 50 62 C60 66, 60 76, 48 80" stroke="#34d399" stroke-width="5" stroke-linecap="round" fill="none"/>
-                        <circle cx="38" cy="32" r="4.5" fill="#34d399" stroke="#065f46" stroke-width="1"/>
-                        <circle cx="37" cy="31" r="1.2" fill="#0f172a"/>
-                        <path d="M34 31 L30 30 M34 31 L30 33" stroke="#ef4444" stroke-width="1.2" stroke-linecap="round"/>
-                    </svg>
-                </span>
-                <div>
-                    <div class="brand-title" style="font-weight: 800; line-height: 1.2;">{t('app_name')} <span class="brand-version">{t('version')}</span></div>
-                    <div class="brand-subtitle" style="font-size: 0.76rem; opacity: 0.85;">{t('app_subtitle')}</div>
+    {broadcast_banner}
+
+    <!-- Sticky Glassmorphic Top Bar (YouTube/Facebook Level) -->
+    <header class="prestige-topbar">
+        <div class="topbar-container">
+            <div class="topbar-left">
+                <button type="button" onclick="openMobileDrawer()" class="mobile-hamburger-btn" aria-label="قائمة الخيارات (☰)">
+                    <span style="line-height: 1;">☰</span>
+                </button>
+                <a href="/" class="brand-link" title="{t('app_name')} - الرئيسية">
+                    <span class="brand-logo-wrap">
+                        <svg width="26" height="26" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="47" fill="#0f766e" stroke="#5eead4" stroke-width="2.5"/>
+                            <path d="M22 28 L50 82 L78 28" stroke="#fde047" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+                            <line x1="50" y1="15" x2="50" y2="84" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+                            <circle cx="50" cy="15" r="4.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1"/>
+                            <path d="M38 32 C58 30, 58 40, 50 44 C40 48, 40 58, 50 62 C60 66, 60 76, 48 80" stroke="#34d399" stroke-width="5" stroke-linecap="round" fill="none"/>
+                            <circle cx="38" cy="32" r="4.5" fill="#34d399" stroke="#065f46" stroke-width="1"/>
+                            <circle cx="37" cy="31" r="1.2" fill="#0f172a"/>
+                            <path d="M34 31 L30 30 M34 31 L30 33" stroke="#ef4444" stroke-width="1.2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <div class="brand-titles">
+                        <div class="brand-name">
+                            {t('app_name')} <span class="brand-badge">{t('version')}</span>
+                        </div>
+                        <div class="brand-tagline">{t('app_subtitle')}</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Smart Universal Search Trigger -->
+            <div class="topbar-center">
+                <button type="button" onclick="openSearchModal()" class="search-pill-btn" aria-label="بحث سريع">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>🔍</span>
+                        <span>{t('search_hint', 'ابحث في الأدوية، الحالات، المراجع...')}</span>
+                    </div>
+                    <span class="search-shortcut-badge">Ctrl+K</span>
+                </button>
+            </div>
+
+            <div class="topbar-right">
+                <!-- Islamic Prayer Times Pill -->
+                <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
+                    <span class="prayer-pill-icon">🕌</span>
+                    <span class="prayer-pill-text">{prayer_p_text}</span>
+                    <span class="prayer-pill-countdown">{prayer_c_text}</span>
+                </a>
+
+                <!-- Language Selector -->
+                <div class="lang-selector-pill">
+                    <span style="font-size: 0.85rem;">🌐</span>
+                    <select id="lang-quick-select" onchange="changeLanguage(this.value)" aria-label="اختيار اللغة">
+                        {lang_options}
+                    </select>
                 </div>
-            </a>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" onclick="triggerPwaInstall()" class="btn pwa-install-trigger" style="background: #fde047; color: #854d0e; font-weight: 800; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                📥 <span class="install-btn-text">تحميل التطبيق</span>
-            </button>
+
+                <!-- Theme Toggle -->
+                <button type="button" onclick="toggleTheme()" class="icon-action-btn" title="{t('nav_toggle_theme', 'تبديل نمط العرض')}">
+                    🌓
+                </button>
+
+                <!-- API Key -->
+                <button type="button" onclick="openApiModal()" class="icon-action-btn" title="{t('nav_api_key', 'مفتاح الـ API')}">
+                    🔑
+                </button>
+
+                <!-- Install App -->
+                <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" title="تحميل وتثبيت التطبيق">
+                    📥 <span>تثبيت التطبيق</span>
+                </button>
+
+                <!-- User Profile / Auth -->
+                {user_nav}
+            </div>
         </div>
     </header>
-    {mobile_drawer_html}
 
-    <div class="top-toolbar">
-        <div class="top-toolbar-left">
-            <div class="lang-selector-pill">
-                <span style="font-size: 0.9rem;">🌐</span>
-                <select id="lang-quick-select" onchange="changeLanguage(this.value)">
-                    {lang_options}
-                </select>
+    {mobile_drawer_html}
+    {mobile_bottom_nav_html}
+
+    <!-- Quick Search Modal (Ctrl+K) -->
+    <div id="search-modal" class="modal">
+        <div class="modal-content" style="max-width: 580px;">
+            <button class="modal-close" onclick="closeSearchModal()">×</button>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <span style="font-size: 1.8rem;">🔍</span>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary);">البحث السريع الشامل</h2>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">ابحث فورياً في منظومة VetMind AI بالكامل</div>
+                </div>
             </div>
-            <!-- Live Islamic Prayer Indicator Pill -->
-            <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
-                <span class="prayer-pill-icon">🕌</span>
-                <span class="prayer-pill-text">{prayer_p_text}</span>
-                <span class="prayer-pill-countdown">{prayer_c_text}</span>
-            </a>
-        </div>
-        <div class="top-toolbar-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" onclick="triggerPwaInstall()" class="btn pwa-install-trigger" style="padding: 5px 12px; font-size: 0.82rem; font-weight: 800; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">
-                📥 تحميل التطبيق
-            </button>
-            <button onclick="openApiModal()" class="btn btn-outline" style="padding: 4px 12px; font-size: 0.82rem; font-weight: 700; border-color: var(--primary); color: var(--primary);">
-                🔑 {t('nav_api_key')}
-            </button>
-            <button onclick="toggleTheme()" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem;">{t("nav_toggle_theme", "🌓 نمط العرض")}</button>
-            {user_nav}
+
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="modal-search-input" placeholder="اكتب اسم الدواء، العرض السريري، أو المرجع واضغط Enter..." onkeydown="handleSearchKeydown(event)" style="width: 100%; padding: 12px 14px; border: 2px solid var(--primary-border); border-radius: 12px; font-size: 0.95rem; outline: none; background: var(--bg); color: var(--text-main);">
+            </div>
+
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">روابط سريعة لأقسام البحث:</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                <a href="/pharmacy" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                    <span class="m-icon">💊</span>
+                    <span class="m-label">الصيدلية البيطرية (1,005 دواء)</span>
+                </a>
+                <a href="/clinic" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                    <span class="m-icon">🏥</span>
+                    <span class="m-label">سجلات وحالات العيادة</span>
+                </a>
+                <a href="/references" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                    <span class="m-icon">📚</span>
+                    <span class="m-label">المراجع الـ 30 البيطرية</span>
+                </a>
+                <a href="/tools" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                    <span class="m-icon">🛠️</span>
+                    <span class="m-label">الأدوات الإكلينيكية الـ 30</span>
+                </a>
+            </div>
         </div>
     </div>
 
+    <!-- API Key Modal -->
     <div id="api-modal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeApiModal()">×</button>
@@ -1646,8 +2289,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </div>
     </div>
 
-    <!-- Mobile Connect Modal -->
-        <!-- Mobile Connect & WebAPK Install Modal -->
+    <!-- Mobile Connect & WebAPK Install Modal -->
     <div id="mobile-modal" class="modal">
         <div class="modal-content" style="max-width: 520px; text-align: center;">
             <button class="modal-close" onclick="closeMobileModal()">×</button>
@@ -1658,7 +2300,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             
             <div style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; text-align: right; font-size: 0.85rem; color: #065f46; line-height: 1.6;">
                 ✅ <strong>رابط التثبيت الآمن المعتمد (HTTPS):</strong><br>
-                هذا الرابط مشفر بشهادة SSL رسمية، وهو ما يطلبه متصفح <strong>Google Chrome</strong> على أندرويد لحل رسالة <em>"هذا التطبيق لا يمكن تثبيته"</em>، ويتيح تثبيت التطبيق بضغطة واحدة ليفتح في نافذة خاصة به مثل <strong>YouTube و Facebook</strong>.
+                هذا الرابط مشفر بشهادة SSL رسمية، ويتيح تثبيت التطبيق بضغطة واحدة ليفتح في نافذة خاصة به مثل <strong>YouTube و Facebook</strong>.
             </div>
 
             <div style="background: white; border: 2px solid #047857; border-radius: 12px; padding: 12px; display: inline-block; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(4,120,87,0.15);">
@@ -1676,7 +2318,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     <strong style="color: #0284c7;">🤖 لأجهزة أندرويد (Google Chrome):</strong><br>
                     1. افتح الرابط في متصفح Chrome على هاتفك.<br>
                     2. ستظهر لك رسالة تلقائية بالأسفل: <strong>"إضافة VetMind AI إلى الشاشة الرئيسية"</strong> أو اضغط على قائمة الثلاث نقاط (<strong>⋮</strong>) ثم اختر <strong>"تثبيت التطبيق" (Install app)</strong>.<br>
-                    3. سيتم تثبيت أيقونة التطبيق على هاتفك فوراً، وعند فتحها ستعمل في شاشة كاملة مستقلة تماماً بدون شريط متصفح.
+                    3. سيتم تثبيت أيقونة التطبيق على هاتفك فوراً كنافذة كاملة مستقلة تماماً.
                 </div>
                 <div>
                     <strong style="color: #ea580c;">🍎 لأجهزة آيفون (Apple Safari):</strong><br>
@@ -1684,14 +2326,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     2. اضغط على زر المشاركة (المربع بسهم <strong>⎋</strong> أسفل الشاشة) ➔ ثم اختر <strong>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</strong>.
                 </div>
             </div>
-
-            <div style="text-align: right; font-size: 0.8rem; color: #64748b; margin-top: 10px;">
-                🌐 رابط الشبكة المحلية المباشر (Wi-Fi البديل): <code style="direction: ltr; font-weight: bold;">http://10.180.160.121:8000</code>
-            </div>
         </div>
     </div>
 
-        <main class="container">
+    <main class="container">
         {back_home_html}
         {body_content}
     </main>
@@ -1714,6 +2352,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     </footer>
 </body>
 </html>"""
+
 
 # ==============================================================================
 # ROUTE: SMART RX PRESCRIPTION & DOSAGE CALCULATOR

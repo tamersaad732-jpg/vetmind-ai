@@ -353,6 +353,16 @@ body.dark-theme {
     }
     .fb-mobile-nav {
         display: flex !important;
+        position: static !important;
+        height: auto !important;
+        padding: 10px 12px !important;
+        border-radius: 14px !important;
+        margin-bottom: 12px !important;
+        border: 1px solid var(--fb-border) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    }
+    .vet-messenger-box {
+        bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
     }
 }
 
