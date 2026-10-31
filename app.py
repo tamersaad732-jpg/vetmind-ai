@@ -18,6 +18,7 @@ import urllib.parse
 from datetime import datetime, timedelta
 from PIL import Image, ImageStat
 from fastapi import FastAPI, Form, File, UploadFile, Request, Response, HTTPException
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -627,8 +628,22 @@ def get_live_tunnel_url() -> str:
 GLOBAL_PRESTIGE_CSS = """
 /* ========================================================================== */
 /* VETMIND AI ENTERPRISE - PRESTIGE WORLD-CLASS DESIGN SYSTEM */
-/* ADVANCED ZERO-COLLISION & CLEAN TYPOGRAPHY ENGINE */
+/* UNIVERSAL VIEWPORT & ADVANCED ZERO-COLLISION ENGINE */
 /* ========================================================================== */
+
+/* 1. Universal Viewport & Box Model Enforcement */
+*, *::before, *::after {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+html, body, #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden !important;
+    margin: 0;
+    padding: 0;
+}
 
 :root {
     /* Royal Medical Deep Blue & Veterinary Emerald */
@@ -688,7 +703,10 @@ GLOBAL_PRESTIGE_CSS = """
     --transition-smooth: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-body.dark-theme, html.dark-theme {
+/* Comprehensive Dark Mode Theme Variables & Class Support */
+body.dark-theme, html.dark-theme,
+body.dark, html.dark,
+[data-theme="dark"], .dark {
     --bg: #090D16;
     --card-bg: #111827;
     --card-hover: #162032;
@@ -718,13 +736,61 @@ body.dark-theme, html.dark-theme {
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 
-/* ========================================================================== */
-/* 1. TYPOGRAPHY & ZERO-COLLISION RULES */
-/* ========================================================================== */
-*, *::before, *::after {
-    box-sizing: border-box;
+/* Element-level dark mode styling */
+html.dark-theme body, html.dark body, [data-theme="dark"] body {
+    background-color: var(--bg) !important;
+    color: var(--text-main) !important;
 }
 
+html.dark-theme .card, html.dark .card, [data-theme="dark"] .card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text-main) !important;
+}
+
+html.dark-theme input, html.dark-theme select, html.dark-theme textarea,
+html.dark input, html.dark select, html.dark textarea,
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+    background-color: #1F2937 !important;
+    color: #F8FAFC !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark-theme table, html.dark table, [data-theme="dark"] table {
+    color: #F8FAFC !important;
+}
+
+html.dark-theme thead tr, html.dark thead tr, [data-theme="dark"] thead tr {
+    background-color: #1F2937 !important;
+}
+
+html.dark-theme td, html.dark-theme th,
+html.dark td, html.dark th,
+[data-theme="dark"] td, [data-theme="dark"] th {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark-theme .modal-content, html.dark .modal-content, [data-theme="dark"] .modal-content {
+    background-color: #111827 !important;
+    color: #F8FAFC !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark-theme .mobile-drawer, html.dark .mobile-drawer, [data-theme="dark"] .mobile-drawer {
+    background-color: #111827 !important;
+    color: #F8FAFC !important;
+}
+
+html.dark-theme .mobile-menu-item, html.dark .mobile-menu-item, [data-theme="dark"] .mobile-menu-item {
+    color: #F8FAFC !important;
+}
+html.dark-theme .mobile-menu-item:hover, html.dark .mobile-menu-item:hover, [data-theme="dark"] .mobile-menu-item:hover {
+    background-color: #1F2937 !important;
+}
+
+/* ========================================================================== */
+/* 2. TYPOGRAPHY & ZERO-COLLISION RULES */
+/* ========================================================================== */
 html, body {
     margin: 0;
     padding: 0;
@@ -732,7 +798,7 @@ html, body {
     max-width: 100vw;
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
@@ -787,35 +853,6 @@ img, video, iframe, canvas, svg {
 }
 
 /* ========================================================================== */
-/* 2. BROADCAST & DISCLAIMER BANNERS */
-/* ========================================================================== */
-.broadcast-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 18px;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    border-bottom: 2px solid;
-    animation: slideDown 0.35s ease-out;
-}
-.broadcast-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.broadcast-close {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    cursor: pointer;
-    color: inherit;
-    padding: 4px;
-    line-height: 1;
-}
-
-/* ========================================================================== */
 /* 3. STICKY GLASSMORPHIC TOP BAR (ZERO-COLLISION LAYOUT) */
 /* ========================================================================== */
 .prestige-topbar {
@@ -830,40 +867,47 @@ img, video, iframe, canvas, svg {
     transition: var(--transition-smooth);
     width: 100%;
     max-width: 100vw;
+    box-sizing: border-box;
 }
 
 .topbar-container {
     max-width: 1360px;
     margin: 0 auto;
     padding: 8px 16px;
-    min-height: 60px;
+    min-height: 58px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .topbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-shrink: 0;
+    min-width: 0;
 }
 
 /* Brand Link */
 .brand-link {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     text-decoration: none;
     color: var(--text-main);
     user-select: none;
     flex-shrink: 0;
+    min-width: 0;
 }
 .brand-logo-wrap {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -877,20 +921,24 @@ img, video, iframe, canvas, svg {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
+    min-width: 0;
 }
 .brand-name {
-    font-size: clamp(1.05rem, 1.2vw + 0.4rem, 1.3rem);
+    font-size: clamp(1.0rem, 1.2vw + 0.4rem, 1.25rem);
     font-weight: 800;
     color: var(--primary);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     line-height: 1.3;
     white-space: nowrap;
 }
-body.dark-theme .brand-name {
-    color: #F8FAFC;
+body.dark-theme .brand-name,
+html.dark-theme .brand-name,
+.dark .brand-name,
+[data-theme="dark"] .brand-name {
+    color: #F8FAFC !important;
 }
 .brand-badge {
     background: var(--ai-gradient);
@@ -913,8 +961,8 @@ body.dark-theme .brand-name {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: var(--radius-md);
     background: var(--bg);
     border: 1px solid var(--border);
@@ -935,7 +983,7 @@ body.dark-theme .brand-name {
 /* Center Smart Search Trigger */
 .topbar-center {
     flex: 1 1 auto;
-    max-width: 380px;
+    max-width: 360px;
     display: flex;
     align-items: center;
     min-width: 0;
@@ -977,11 +1025,11 @@ body.dark-theme .brand-name {
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
-/* Islamic Prayer Indicator Pill */
+/* Islamic Prayer Indicator Pill (Fluid Desktop -> Compact Mobile Icon Button) */
 .prayer-indicator-pill {
     display: inline-flex;
     align-items: center;
@@ -1006,13 +1054,13 @@ body.dark-theme .brand-name {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
 }
-body.dark-theme .prayer-indicator-pill {
-    background: rgba(13, 148, 136, 0.15);
-    border-color: rgba(13, 148, 136, 0.35);
-    color: #5EEAD4;
-}
-body.dark-theme .prayer-indicator-pill:hover {
-    background: rgba(13, 148, 136, 0.25);
+body.dark-theme .prayer-indicator-pill,
+html.dark-theme .prayer-indicator-pill,
+.dark .prayer-indicator-pill,
+[data-theme="dark"] .prayer-indicator-pill {
+    background: rgba(13, 148, 136, 0.15) !important;
+    border-color: rgba(13, 148, 136, 0.35) !important;
+    color: #5EEAD4 !important;
 }
 .prayer-pill-icon {
     font-size: 0.95rem;
@@ -1032,35 +1080,116 @@ body.dark-theme .prayer-indicator-pill:hover {
     font-weight: 800;
     flex-shrink: 0;
 }
-body.dark-theme .prayer-pill-countdown {
-    background: rgba(94, 234, 212, 0.2);
-    color: #5EEAD4;
+body.dark-theme .prayer-pill-countdown,
+html.dark-theme .prayer-pill-countdown,
+.dark .prayer-pill-countdown,
+[data-theme="dark"] .prayer-pill-countdown {
+    background: rgba(94, 234, 212, 0.2) !important;
+    color: #5EEAD4 !important;
 }
 
-/* Language selector */
+/* High-Contrast Language Selector */
 .lang-selector-pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    gap: 6px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
     border-radius: var(--radius-pill);
-    padding: 4px 10px;
+    padding: 5px 12px;
     flex-shrink: 0;
     transition: var(--transition-smooth);
+    color: #0F172A !important;
 }
 .lang-selector-pill:hover {
-    border-color: var(--primary-border);
+    background: #E2E8F0;
+    border-color: #94A3B8;
 }
 .lang-selector-pill select {
     border: none;
     background: transparent;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text-main);
+    color: #0F172A !important;
     cursor: pointer;
     outline: none;
     padding: 2px 0;
+}
+.lang-selector-pill select option {
+    background: #FFFFFF;
+    color: #0F172A;
+    font-weight: 600;
+    padding: 6px;
+}
+
+body.dark-theme .lang-selector-pill,
+html.dark-theme .lang-selector-pill,
+body.dark .lang-selector-pill,
+html.dark .lang-selector-pill,
+.dark .lang-selector-pill,
+[data-theme="dark"] .lang-selector-pill {
+    background: #1E293B !important;
+    border-color: #475569 !important;
+    color: #F8FAFC !important;
+}
+body.dark-theme .lang-selector-pill:hover,
+html.dark-theme .lang-selector-pill:hover,
+body.dark .lang-selector-pill:hover,
+html.dark .lang-selector-pill:hover,
+.dark .lang-selector-pill:hover,
+[data-theme="dark"] .lang-selector-pill:hover {
+    background: #334155 !important;
+}
+body.dark-theme .lang-selector-pill select,
+html.dark-theme .lang-selector-pill select,
+body.dark .lang-selector-pill select,
+html.dark .lang-selector-pill select,
+.dark .lang-selector-pill select,
+[data-theme="dark"] .lang-selector-pill select {
+    color: #F8FAFC !important;
+}
+body.dark-theme .lang-selector-pill select option,
+html.dark-theme .lang-selector-pill select option,
+body.dark .lang-selector-pill select option,
+html.dark .lang-selector-pill select option,
+.dark .lang-selector-pill select option,
+[data-theme="dark"] .lang-selector-pill select option {
+    background: #0F172A !important;
+    color: #F8FAFC !important;
+}
+
+/* Language pills in the drawer/menu */
+.lang-pill {
+    background: #F1F5F9;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1;
+    font-weight: 700;
+    transition: var(--transition-smooth);
+}
+.lang-pill:hover, .lang-pill.active-lang {
+    background: #0F4C81 !important;
+    color: #FFFFFF !important;
+    border-color: #0F4C81 !important;
+}
+body.dark-theme .lang-pill,
+html.dark-theme .lang-pill,
+body.dark .lang-pill,
+html.dark .lang-pill,
+.dark .lang-pill,
+[data-theme="dark"] .lang-pill {
+    background: #1E293B !important;
+    color: #F8FAFC !important;
+    border-color: #475569 !important;
+}
+body.dark-theme .lang-pill:hover,
+body.dark-theme .lang-pill.active-lang,
+html.dark-theme .lang-pill.active-lang,
+body.dark .lang-pill.active-lang,
+.dark .lang-pill.active-lang,
+[data-theme="dark"] .lang-pill.active-lang {
+    background: #38BDF8 !important;
+    color: #090D16 !important;
+    border-color: #38BDF8 !important;
 }
 
 /* Action Icon Buttons */
@@ -1099,7 +1228,7 @@ body.dark-theme .prayer-pill-countdown {
     font-size: 0.82rem;
     font-weight: 800;
     cursor: pointer;
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 6px;
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
@@ -1207,9 +1336,11 @@ body.dark-theme .prayer-pill-countdown {
     -webkit-backdrop-filter: blur(6px);
     z-index: 99998;
     transition: opacity 0.3s ease;
+    pointer-events: none;
 }
 .mobile-drawer-overlay.active {
     display: block !important;
+    pointer-events: auto !important;
 }
 
 .mobile-drawer {
@@ -1444,6 +1575,11 @@ body.dark-theme .prayer-pill-countdown {
     box-shadow: var(--shadow-sm);
     transition: var(--transition-smooth);
     line-height: 1.7;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    overflow-wrap: break-word;
 }
 .card:hover {
     box-shadow: var(--shadow-md);
@@ -1515,6 +1651,10 @@ body.dark-theme .prayer-pill-countdown {
     align-items: center;
     padding: 16px;
     box-sizing: border-box;
+    pointer-events: none;
+}
+.modal[style*="display: flex"], .modal[style*="display: block"] {
+    pointer-events: auto !important;
 }
 .modal-content {
     background: var(--card-bg);
@@ -1529,6 +1669,7 @@ body.dark-theme .prayer-pill-countdown {
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
     line-height: 1.7;
+    pointer-events: auto;
 }
 .modal-close {
     position: absolute;
@@ -1601,38 +1742,52 @@ footer a { color: #38BDF8; text-decoration: none; }
 
 @media (max-width: 680px) {
     .container {
-        padding: 12px 10px 30px 10px !important;
+        padding: 10px 8px 30px 8px !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
     }
     .card {
-        padding: 16px 14px !important;
+        padding: 14px 12px !important;
         border-radius: 14px !important;
-        margin-bottom: 16px !important;
+        margin-bottom: 14px !important;
     }
     .grid-2, .grid-3, .grid-4 {
         grid-template-columns: 1fr !important;
-        gap: 14px !important;
+        gap: 12px !important;
     }
     .mobile-app-grid {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
     }
     .topbar-container {
-        padding: 8px 10px !important;
-        gap: 8px !important;
+        padding: 6px 10px !important;
+        gap: 6px !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
     }
     .brand-tagline {
         display: none !important;
     }
     .brand-name {
-        font-size: 1.05rem !important;
+        font-size: 1.0rem !important;
     }
+    /* Compact, beautiful 36x36 icon button on mobile that NEVER overflows */
     .prayer-indicator-pill {
-        padding: 4px 8px !important;
-        font-size: 0.72rem !important;
-        max-width: 130px !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        font-size: 1.05rem !important;
+        background: var(--emerald-light) !important;
+        border: 1px solid var(--emerald-border) !important;
     }
-    .prayer-pill-text {
-        max-width: 68px !important;
+    .prayer-indicator-pill .prayer-pill-text,
+    .prayer-indicator-pill .prayer-pill-countdown {
+        display: none !important;
     }
     .user-profile-widget .user-badge {
         display: none !important;
@@ -1649,8 +1804,40 @@ footer a { color: #38BDF8; text-decoration: none; }
 """
 
 GLOBAL_APP_JS = """
+// ---------------------------------------------------------------------------
+// 1. PWA Standalone Detection & Universal Prompt Hiding
+// ---------------------------------------------------------------------------
+const isAppInstalled =
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.matchMedia('(display-mode: fullscreen)').matches ||
+  (window.navigator.standalone === true) ||
+  localStorage.getItem('vetmind_pwa_installed') === 'true';
+
+function hideAllInstallPrompts() {
+  document.querySelectorAll('.pwa-install-trigger, .btn-install-header, #pwa-install-banner, .pwa-install-banner, #mobile-modal, [data-install-prompt]').forEach(el => {
+    el.style.display = 'none';
+  });
+}
+
+if (isAppInstalled) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hideAllInstallPrompts);
+  } else {
+    hideAllInstallPrompts();
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('vetmind_pwa_installed', 'true');
+  hideAllInstallPrompts();
+});
+
 let deferredPwaPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
+    if (isAppInstalled) {
+        e.preventDefault();
+        return;
+    }
     e.preventDefault();
     deferredPwaPrompt = e;
     console.log('beforeinstallprompt captured');
@@ -1661,10 +1848,15 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function triggerPwaInstall() {
+    if (isAppInstalled) return;
     if (deferredPwaPrompt) {
         deferredPwaPrompt.prompt();
         deferredPwaPrompt.userChoice.then((choiceResult) => {
             console.log('User install choice:', choiceResult.outcome);
+            if (choiceResult.outcome === 'accepted') {
+                localStorage.setItem('vetmind_pwa_installed', 'true');
+                hideAllInstallPrompts();
+            }
             deferredPwaPrompt = null;
         });
     } else {
@@ -1672,6 +1864,59 @@ function triggerPwaInstall() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// 2. High-Performance Dark/Light Mode Theme Architecture
+// ---------------------------------------------------------------------------
+function applyTheme(theme) {
+    const root = document.documentElement;
+    const body = document.body;
+    const isDark = (theme === 'dark');
+    if (isDark) {
+        root.classList.add('dark', 'dark-theme');
+        if (body) body.classList.add('dark', 'dark-theme');
+        root.setAttribute('data-theme', 'dark');
+    } else {
+        root.classList.remove('dark', 'dark-theme');
+        if (body) body.classList.remove('dark', 'dark-theme');
+        root.setAttribute('data-theme', 'light');
+    }
+    try {
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.cookie = "vetmind_theme=" + (isDark ? 'dark' : 'light') + "; path=/; max-age=31536000; SameSite=Lax";
+    } catch(e) {}
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.classList.contains('dark') || 
+                   document.documentElement.classList.contains('dark-theme') ||
+                   document.documentElement.getAttribute('data-theme') === 'dark';
+    applyTheme(isDark ? 'light' : 'dark');
+}
+
+// Immediate theme execution on script load
+(function() {
+    try {
+        let savedTheme = localStorage.getItem('theme');
+        if (!savedTheme) {
+            const match = document.cookie.match(/vetmind_theme=(dark|light)/);
+            if (match) savedTheme = match[1];
+        }
+        if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            savedTheme = 'dark';
+        }
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark', 'dark-theme');
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark', 'dark-theme');
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    } catch(e) {}
+})();
+
+// ---------------------------------------------------------------------------
+// 3. UI Navigation & Drawer Controls
+// ---------------------------------------------------------------------------
 function openMobileDrawer() {
     const d = document.getElementById('mobile-drawer');
     const o = document.getElementById('mobile-drawer-overlay');
@@ -1697,17 +1942,23 @@ function changeLanguage(langCode) {
         window.location.href = "/set-language/" + langCode + "?redirect=" + encodeURIComponent(window.location.pathname);
     }
 }
-function toggleTheme() {
-    document.body.classList.toggle('dark-theme');
-    document.documentElement.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme') || document.documentElement.classList.contains('dark-theme');
-    document.cookie = "vetmind_theme=" + (isDark ? 'dark' : 'light') + "; path=/; max-age=31536000";
-    console.log('Theme toggled, isDark:', isDark);
+function openApiModal() { 
+    const m = document.getElementById('api-modal');
+    if (m) m.style.display = 'flex'; 
 }
-function openApiModal() { document.getElementById('api-modal').style.display = 'flex'; }
-function closeApiModal() { document.getElementById('api-modal').style.display = 'none'; }
-function openMobileModal() { document.getElementById('mobile-modal').style.display = 'flex'; }
-function closeMobileModal() { document.getElementById('mobile-modal').style.display = 'none'; }
+function closeApiModal() { 
+    const m = document.getElementById('api-modal');
+    if (m) m.style.display = 'none'; 
+}
+function openMobileModal() { 
+    if (isAppInstalled) return;
+    const m = document.getElementById('mobile-modal');
+    if (m) m.style.display = 'flex'; 
+}
+function closeMobileModal() { 
+    const m = document.getElementById('mobile-modal');
+    if (m) m.style.display = 'none'; 
+}
 function openSearchModal() { 
     const m = document.getElementById('search-modal');
     if (m) {
@@ -1755,6 +2006,14 @@ function handleSearchKeydown(e) {
     }
 }
 
+// Error Boundary Shield - prevents unhandled exceptions from crashing UI
+window.addEventListener('error', function(e) {
+    console.warn('VetMind UI Protected Error:', e.message);
+});
+window.addEventListener('unhandledrejection', function(e) {
+    console.warn('VetMind Handled Promise Rejection:', e.reason);
+});
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
         navigator.serviceWorker.register('/static/sw.js').catch(function(e) {
@@ -1797,16 +2056,64 @@ async function testAndSaveApiKey() {
         statusDiv.innerHTML = '<div style="background: var(--danger-bg); color: var(--danger); padding: 12px; border-radius: 8px; font-weight: 700;">❌ فشل الاتصال بالسيرفر. يرجى إعادة المحاولة.</div>';
     }
 }
-
-(function() {
-    const cookies = document.cookie.split(';');
-    for(let c of cookies) {
-        if(c.trim().startsWith('vetmind_theme=dark')) {
-            document.documentElement.classList.add('dark-theme');
-        }
-    }
-})();
 """
+
+def render_not_found_page(request: Request, current_user, lang: str) -> str:
+    t = lambda k, d="": get_text(lang, k, d)
+    content = f"""
+    <div style="text-align: center; padding: 40px 16px; max-width: 620px; margin: 0 auto;">
+        <div style="font-size: 4rem; margin-bottom: 12px;">🩺🔍</div>
+        <h1 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 8px;">الصفحة غير موجودة (404)</h1>
+        <p style="color: var(--text-muted); font-size: 1.0rem; margin-bottom: 24px; line-height: 1.6;">
+            عذراً، الصفحة أو المسار المطلوب غير متوفر حالياً أو تم نقله. يمكنك العودة للصفحة الرئيسية أو استخدام البحث السريع.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px;">
+            <a href="/" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700; text-decoration: none;">🏠 العودة للصفحة الرئيسية</a>
+            <button onclick="window.history.back()" class="btn btn-outline" style="padding: 10px 20px; font-weight: 700;">⬅️ الرجوع للخلف</button>
+        </div>
+        <div class="card" style="text-align: right; background: var(--card-bg); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 10px;">روابط سريعة لأهم الأقسام:</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <a href="/chat" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💬</span> الشات الطبي</a>
+                <a href="/community" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">🌐</span> ملتقى VetBook</a>
+                <a href="/pharmacy" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💊</span> الصيدلية</a>
+                <a href="/clinic" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">🏥</span> سجلات العيادة</a>
+            </div>
+        </div>
+    </div>
+    """
+    return get_base_html("404 - الصفحة غير موجودة", content, current_user, lang)
+
+def render_error_page(request: Request, current_user, lang: str, status_code: int, detail: str) -> str:
+    t = lambda k, d="": get_text(lang, k, d)
+    content = f"""
+    <div style="text-align: center; padding: 40px 16px; max-width: 620px; margin: 0 auto;">
+        <div style="font-size: 4rem; margin-bottom: 12px;">🛡️⚠️</div>
+        <h1 style="font-size: 1.8rem; color: var(--danger); margin-bottom: 8px;">تعذر معالجة الطلب ({status_code})</h1>
+        <p style="color: var(--text-muted); font-size: 0.98rem; margin-bottom: 24px; line-height: 1.6;">
+            حدث خطأ أثناء تنفيذ هذا الإجراء. تم حماية الجلسة دون أي فقدان للبيانات. يرجى إعادة المحاولة أو العودة للرئيسية.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="window.location.reload()" class="btn btn-primary" style="padding: 10px 22px; font-weight: 700;">🔄 إعادة المحاولة</button>
+            <a href="/" class="btn btn-outline" style="padding: 10px 22px; font-weight: 700; text-decoration: none;">🏠 الصفحة الرئيسية</a>
+        </div>
+    </div>
+    """
+    return get_base_html(f"خطأ {status_code}", content, current_user, lang)
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    lang = get_user_lang(request)
+    user = get_current_user(request)
+    if exc.status_code == 404:
+        return HTMLResponse(content=render_not_found_page(request, user, lang), status_code=404)
+    return HTMLResponse(content=render_error_page(request, user, lang, exc.status_code, str(exc.detail)), status_code=exc.status_code)
+
+@app.exception_handler(Exception)
+async def custom_general_exception_handler(request: Request, exc: Exception):
+    lang = get_user_lang(request)
+    user = get_current_user(request)
+    return HTMLResponse(content=render_error_page(request, user, lang, 500, "حدث خطأ غير متوقع في الخادم."), status_code=500)
 
 def get_base_html(title: str, body_content: str, current_user, lang: str):
     t = lambda k, d="": get_text(lang, k, d)
@@ -1861,25 +2168,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         d_name = lang_display_names.get(code, code)
         lang_options += f'<option value="{code}" {sel}>{d_name}</option>'
 
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM broadcast_notifications ORDER BY id DESC LIMIT 1")
-    latest_broadcast = c.fetchone()
-    conn.close()
-
-    broadcast_banner = ""
-    if latest_broadcast:
-        badge_style = "background: #fef2f2; border-color: #fca5a5; color: #991b1b;" if latest_broadcast["badge_type"] == "warning" else "background: #ecfdf5; border-color: #6ee7b7; color: #065f46;"
-        broadcast_banner = f"""
-        <div class="broadcast-banner" style="{badge_style}">
-            <div class="broadcast-content">
-                <span class="broadcast-icon">📢</span>
-                <strong>{latest_broadcast['title']}:</strong> {latest_broadcast['message']}
-            </div>
-            <button class="broadcast-close" onclick="this.parentElement.style.display='none'">×</button>
-        </div>
-        """
-
     admin_link = ""
     if current_user and current_user.get("is_admin"):
         admin_link = f'<a href="/admin" class="nav-item nav-admin">⚙️ {t("nav_admin")}</a>'
@@ -1912,7 +2200,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         """
 
     live_mobile_url = get_live_tunnel_url()
-    mobile_admin_item = f'<a href="/admin" class="mobile-menu-item" style="color: #ea580c; font-weight: 700;"><span class="m-icon">⚙️</span><span class="m-label">{t("nav_admin")} (لوحة الإدارة)</span></a>' if current_user and current_user.get("is_admin") else ""
+    mobile_admin_item = f'<a href="/admin" class="mobile-menu-item" style="color: #ea580c; font-weight: 700;"><span class="m-icon">⚙️</span><span class="m-label">{t("nav_admin")} (لوحة الإدارة الشاملة)</span></a>' if current_user and current_user.get("is_admin") else ""
     if current_user:
         mobile_user_item = f"""
         <div style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
@@ -1938,9 +2226,9 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </a>
         """
 
-    # Collapsible YouTube-Style Drawer Navigation
+    # Collapsible Drawer Navigation - Clean without install button
     mobile_drawer_html = f"""
-    <!-- YouTube-Style Navigation Drawer Overlay & Panel -->
+    <!-- Navigation Drawer Overlay & Panel -->
     <div id="mobile-drawer-overlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()"></div>
     <aside id="mobile-drawer" class="mobile-drawer">
         <div class="mobile-drawer-header">
@@ -2031,21 +2319,17 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
 
             <div class="mobile-menu-section-title">🌐 لغة المنصة (Languages)</div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 4px 6px; margin-bottom: 8px;">
-                <a href="/set-language/ar" onclick="changeLanguage('ar'); return false;" class="lang-pill {'active-lang' if lang=='ar' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇸🇦 العربية</a>
-                <a href="/set-language/en" onclick="changeLanguage('en'); return false;" class="lang-pill {'active-lang' if lang=='en' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇬🇧 English</a>
-                <a href="/set-language/fr" onclick="changeLanguage('fr'); return false;" class="lang-pill {'active-lang' if lang=='fr' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇫🇷 Français</a>
-                <a href="/set-language/es" onclick="changeLanguage('es'); return false;" class="lang-pill {'active-lang' if lang=='es' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇪🇸 Español</a>
-                <a href="/set-language/de" onclick="changeLanguage('de'); return false;" class="lang-pill {'active-lang' if lang=='de' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇩🇪 Deutsch</a>
-                <a href="/set-language/it" onclick="changeLanguage('it'); return false;" class="lang-pill {'active-lang' if lang=='it' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇮🇹 Italiano</a>
-                <a href="/set-language/zh" onclick="changeLanguage('zh'); return false;" class="lang-pill {'active-lang' if lang=='zh' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇨🇳 中文</a>
-                <a href="/set-language/ja" onclick="changeLanguage('ja'); return false;" class="lang-pill {'active-lang' if lang=='ja' else ''}" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇯🇵 日本語</a>
+                <a href="/set-language/ar" onclick="changeLanguage('ar'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇸🇦 العربية</a>
+                <a href="/set-language/en" onclick="changeLanguage('en'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇬🇧 English</a>
+                <a href="/set-language/fr" onclick="changeLanguage('fr'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇫🇷 Français</a>
+                <a href="/set-language/es" onclick="changeLanguage('es'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇪🇸 Español</a>
+                <a href="/set-language/de" onclick="changeLanguage('de'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇩🇪 Deutsch</a>
+                <a href="/set-language/it" onclick="changeLanguage('it'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇮🇹 Italiano</a>
+                <a href="/set-language/zh" onclick="changeLanguage('zh'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇨🇳 中文</a>
+                <a href="/set-language/ja" onclick="changeLanguage('ja'); return false;" class="lang-pill" style="text-align: center; text-decoration: none; padding: 6px 4px; font-size: 0.82rem; border-radius: 8px; font-weight: 700;">🇯🇵 日本語</a>
             </div>
 
-            <div class="mobile-menu-section-title">⚙️ تثبيت التطبيق والنظام</div>
-            <button type="button" onclick="openMobileModal(); closeMobileDrawer();" class="mobile-menu-item" style="width: 100%; border: none; background: none; text-align: inherit; cursor: pointer; color: #0284c7; font-weight: 700;">
-                <span class="m-icon">📱</span>
-                <span class="m-label">تحميل وتثبيت التطبيق على الموبايل</span>
-            </button>
+            <div class="mobile-menu-section-title">⚙️ النظام والحساب</div>
             <button type="button" onclick="openApiModal(); closeMobileDrawer();" class="mobile-menu-item" style="width: 100%; border: none; background: none; text-align: inherit; cursor: pointer;">
                 <span class="m-icon">🔑</span>
                 <span class="m-label">{t('nav_api_key')}</span>
@@ -2127,6 +2411,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <link rel="alternate icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v=5">
     <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png?v=5">
     <link rel="apple-touch-icon" href="/static/icon-192.png?v=5">
+
     <style>
 {GLOBAL_PRESTIGE_CSS}
     </style>
@@ -2135,9 +2420,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     </script>
 </head>
 <body>
-    {broadcast_banner}
-
-    <!-- Sticky Glassmorphic Top Bar (YouTube/Facebook Level) -->
+    <!-- Sticky Glassmorphic Top Bar (Clean, Zero Drug Banner at Top) -->
     <header class="prestige-topbar">
         <div class="topbar-container">
             <div class="topbar-left">
@@ -2178,7 +2461,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </div>
 
             <div class="topbar-right">
-                <!-- Islamic Prayer Times Pill -->
+                <!-- Islamic Prayer Times Pill (Adaptive: Full on desktop, 36x36 icon button on mobile) -->
                 <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
                     <span class="prayer-pill-icon">🕌</span>
                     <span class="prayer-pill-text">{prayer_p_text}</span>
@@ -2190,7 +2473,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     🔍
                 </button>
 
-                <!-- Language Selector -->
+                <!-- High-Contrast Language Selector -->
                 <div class="lang-selector-pill">
                     <span style="font-size: 0.85rem;">🌐</span>
                     <select id="lang-quick-select" onchange="changeLanguage(this.value)" aria-label="اختيار اللغة">
@@ -2208,7 +2491,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     🔑
                 </button>
 
-                <!-- Install App (desktop) -->
+                <!-- Install App (desktop only, hidden if already installed) -->
                 <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" title="تحميل وتثبيت التطبيق">
                     📥 <span>تثبيت التطبيق</span>
                 </button>
@@ -2286,18 +2569,18 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </div>
     </div>
 
-    <!-- Mobile Connect & WebAPK Install Modal -->
+    <!-- Mobile Connect Modal -->
     <div id="mobile-modal" class="modal">
         <div class="modal-content" style="max-width: 520px; text-align: center;">
             <button class="modal-close" onclick="closeMobileModal()">✕</button>
             <div style="width: 56px; height: 56px; border-radius: 50%; background: #ecfdf5; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 10px auto; border: 2px solid #a7f3d0;">
                 📱
             </div>
-            <h2 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #047857;">تثبيت واستخدام VetMind AI على الموبايل</h2>
+            <h2 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #047857;">استخدام VetMind AI على الموبايل</h2>
             
             <div style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; text-align: right; font-size: 0.85rem; color: #065f46; line-height: 1.6;">
-                ✅ <strong>رابط التثبيت الآمن المعتمد (HTTPS):</strong><br>
-                هذا الرابط مشفر بشهادة SSL رسمية، ويتيح تثبيت التطبيق بضغطة واحدة ليفتح في نافذة خاصة به مثل <strong>YouTube و Facebook</strong>.
+                ✅ <strong>رابط المنصة المشفر الآمن (HTTPS):</strong><br>
+                يمكنك الدخول مباشرة وحفظ المنصة على هاتفك لتفتح في نافذة كاملة وسلسة مثل <strong>YouTube و Facebook</strong>.
             </div>
 
             <div style="background: white; border: 2px solid #047857; border-radius: 12px; padding: 12px; display: inline-block; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(4,120,87,0.15);">
@@ -2307,21 +2590,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                 <input type="text" readonly value="{live_mobile_url}" id="mobile-url-input" style="flex: 1; font-weight: 700; font-size: 0.88rem; border: none; background: transparent; color: #047857; text-align: center; direction: ltr;">
                 <button type="button" onclick="copyMobileUrl()" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">نسخ الرابط</button>
-            </div>
-
-            <div style="text-align: right; margin-top: 14px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 0.82rem; line-height: 1.7;">
-                <div style="font-weight: 700; color: #0f766e; margin-bottom: 6px;">📲 خطوات التثبيت ليفتح كنافذة مستقلة بدون متصفح (مثل يوتيوب وفيسبوك):</div>
-                <div style="margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
-                    <strong style="color: #0284c7;">🤖 لأجهزة أندرويد (Google Chrome):</strong><br>
-                    1. افتح الرابط في متصفح Chrome على هاتفك.<br>
-                    2. ستظهر لك رسالة تلقائية بالأسفل: <strong>"إضافة VetMind AI إلى الشاشة الرئيسية"</strong> أو اضغط على قائمة الثلاث نقاط (<strong>⋮</strong>) ثم اختر <strong>"تثبيت التطبيق" (Install app)</strong>.<br>
-                    3. سيتم تثبيت أيقونة التطبيق على هاتفك فوراً كنافذة كاملة مستقلة تماماً.
-                </div>
-                <div>
-                    <strong style="color: #ea580c;">🍎 لأجهزة آيفون (Apple Safari):</strong><br>
-                    1. افتح الرابط في متصفح Safari.<br>
-                    2. اضغط على زر المشاركة (المربع بسهم <strong>⎋</strong> أسفل الشاشة) ➔ ثم اختر <strong>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</strong>.
-                </div>
             </div>
         </div>
     </div>
@@ -2335,7 +2603,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
 
     <footer>
         <div style="font-size: 1.05rem; margin-bottom: 6px;">
-            <strong>VetMind AI Enterprise v4.2</strong> - World Standard Veterinary Decision Support Suite
+            <strong>VetMind AI Enterprise v4.3</strong> - World Standard Veterinary Decision Support Suite
         </div>
         <div style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 8px;">
             👨‍⚕️ <strong>{t('developer_label')}</strong> <span style="color: #fde047; font-weight: 800; font-size: 1.02rem;">{t('developer_name')}</span>
@@ -2350,8 +2618,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
 </body>
 </html>"""
 
-
-# ==============================================================================
 # ROUTE: SMART RX PRESCRIPTION & DOSAGE CALCULATOR
 # ==============================================================================
 @app.get("/rx-prescription", response_class=HTMLResponse)
@@ -3406,6 +3672,91 @@ async def process_support_ticket(
 # ==============================================================================
 # ROUTE 6: ADMIN MODERATION & USER REVIEW (Anti-Fraud & Approvals)
 # ==============================================================================
+ADMIN_PAGE_JS = """
+<script>
+function filterUsersTable() {
+    const q = (document.getElementById('user-search-input').value || '').toLowerCase().trim();
+    const statusF = document.getElementById('user-status-filter').value;
+    const roleF = document.getElementById('user-role-filter').value;
+    const rows = document.querySelectorAll('.user-row-item');
+
+    rows.forEach(r => {
+        const searchData = (r.getAttribute('data-search') || '').toLowerCase();
+        const status = r.getAttribute('data-status');
+        const role = r.getAttribute('data-role');
+
+        const matchesQ = !q || searchData.includes(q);
+        const matchesStatus = (statusF === 'all') || (status === statusF);
+        const matchesRole = (roleF === 'all') || (role === roleF);
+
+        if (matchesQ && matchesStatus && matchesRole) {
+            r.style.display = '';
+        } else {
+            r.style.display = 'none';
+        }
+    });
+}
+
+function resetUserFilters() {
+    document.getElementById('user-search-input').value = '';
+    document.getElementById('user-status-filter').value = 'all';
+    document.getElementById('user-role-filter').value = 'all';
+    filterUsersTable();
+}
+
+function openUserDetailsModal(u) {
+    document.getElementById('modal-user-avatar').innerText = u.name ? u.name[0] : 'V';
+    document.getElementById('modal-user-name').innerText = 'د. ' + u.name;
+    document.getElementById('modal-user-id').innerText = 'User ID: #' + u.id + ' | مسجل: ' + u.created_at + ' | آخر ظهور: ' + u.last_active;
+    document.getElementById('modal-user-email').innerText = u.email;
+    document.getElementById('modal-user-phone').innerText = u.phone;
+    document.getElementById('modal-user-clinic').innerText = u.country + ' - ' + u.clinic;
+    document.getElementById('modal-user-syndicate').innerText = u.syndicate;
+    document.getElementById('modal-user-cases-cnt').innerText = u.cases_posts;
+    document.getElementById('modal-user-comments-cnt').innerText = u.comments;
+    document.getElementById('modal-user-chats-cnt').innerText = u.chats;
+
+    const roleBadgeEl = document.getElementById('modal-user-role-badge');
+    if (u.role === 'admin') roleBadgeEl.innerHTML = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">👑 مشرف Admin</span>';
+    else if (u.role === 'verified') roleBadgeEl.innerHTML = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">🩺 طبيب موثق</span>';
+    else roleBadgeEl.innerHTML = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border);">👨‍⚕️ طبيب مسجل</span>';
+
+    const statusBadgeEl = document.getElementById('modal-user-status-badge');
+    if (u.status === 'approved') statusBadgeEl.innerHTML = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">✅ معتمد نشط</span>';
+    else if (u.status === 'suspended') statusBadgeEl.innerHTML = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">🚫 موقوف</span>';
+    else statusBadgeEl.innerHTML = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">⏳ قيد المراجعة</span>';
+
+    const cardPrev = document.getElementById('modal-user-card-preview');
+    if (u.card_img) {
+        cardPrev.innerHTML = '<a href="/uploads/' + encodeURIComponent(u.card_img) + '" target="_blank"><img src="/uploads/' + encodeURIComponent(u.card_img) + '" style="max-height: 220px; max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);"><br><span class="btn btn-outline" style="margin-top: 8px; font-size: 0.8rem;">🔍 فتح الصورة بحجم كامل</span></a>';
+    } else {
+        cardPrev.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">لم يقم الطبيب برفع صورة الكارنيه بعد.</span>';
+    }
+
+    const actionsEl = document.getElementById('modal-user-actions');
+    let btns = '';
+    if (u.status === 'approved') {
+        btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-outline" style="color: #b45309;">⏳ تعليق التوثيق</a>';
+    } else {
+        btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-primary" style="background: #15803d;">✅ توثيق واعتماد الطبيب</a>';
+    }
+    btns += '<a href="/admin/toggle-admin/' + u.id + '" class="btn btn-outline" style="color: #7e22ce;">👑 تغيير صلاحية الإدارة</a>';
+    if (u.status === 'suspended') {
+        btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #16a34a;">🔄 إلغاء الإيقاف وتفعيل</a>';
+    } else {
+        btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #dc2626;">🚫 إيقاف الحساب</a>';
+    }
+    actionsEl.innerHTML = btns;
+
+    document.getElementById('user-details-modal').style.display = 'flex';
+}
+
+function closeUserDetailsModal() {
+    document.getElementById('user-details-modal').style.display = 'none';
+}
+</script>
+"""
+
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request):
     user = get_current_user(request)
@@ -3427,8 +3778,45 @@ async def admin_page(request: Request):
     cfg_resend_api_key = settings_dict.get("resend_api_key", os.environ.get("RESEND_API_KEY", ""))
     cfg_ai_api_key = settings_dict.get("ai_api_key", os.environ.get("GROQ_API_KEY", ""))
 
+    # 1. Total registered doctors
+    c.execute("SELECT COUNT(*) FROM users")
+    total_users_count = c.fetchone()[0]
+
+    # 2. Active users today (last 24h)
+    one_day_ago = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("SELECT COUNT(*) FROM users WHERE last_active_at >= ? OR created_at >= ?", (one_day_ago, one_day_ago))
+    active_today_count = c.fetchone()[0]
+
+    # 3. Verified doctors
+    c.execute("SELECT COUNT(*) FROM users WHERE verification_status = 'approved' OR verified_vet = 1")
+    verified_vets_count = c.fetchone()[0]
+
+    # 4. Total community posts & clinical cases
+    c.execute("SELECT COUNT(*) FROM community_posts")
+    total_posts_count = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM cases")
+    total_cases_count = c.fetchone()[0]
+    total_community_cases_count = total_posts_count + total_cases_count
+
+    # 5. Total AI Consultations
+    c.execute("SELECT COUNT(*) FROM chat_messages WHERE role = 'user'")
+    total_ai_consults_count = c.fetchone()[0]
+
+    # Per-user activity statistics lookup
+    c.execute("SELECT user_id, COUNT(*) as cnt FROM community_posts GROUP BY user_id")
+    user_posts_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+
+    c.execute("SELECT user_id, COUNT(*) as cnt FROM cases GROUP BY user_id")
+    user_cases_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+
+    c.execute("SELECT user_id, COUNT(*) as cnt FROM community_comments GROUP BY user_id")
+    user_comments_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+
+    c.execute("SELECT user_id, COUNT(*) as cnt FROM chat_messages WHERE role = 'user' GROUP BY user_id")
+    user_chats_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+
     c.execute("SELECT * FROM users ORDER BY id DESC")
-    all_users = c.fetchall()
+    all_users = [dict(r) for r in c.fetchall()]
 
     c.execute("SELECT * FROM broadcast_notifications ORDER BY id DESC")
     all_notifs = c.fetchall()
@@ -3444,7 +3832,7 @@ async def admin_page(request: Request):
     subs_rows = ""
     for s_row in all_subs:
         s = dict(s_row)
-        receipt_btn = f'<a href="/uploads/{s['receipt_image']}" target="_blank" class="btn btn-outline" style="font-size: 0.75rem; padding: 2px 8px;">🖼️ عرض الإيصال</a>' if s["receipt_image"] else "<span style='color: var(--danger); font-size: 0.75rem;'>لا يوجد إيصال</span>"
+        receipt_btn = f'<a href="/uploads/{s["receipt_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.75rem; padding: 2px 8px;">🖼️ عرض الإيصال</a>' if s.get("receipt_image") else "<span style='color: var(--danger); font-size: 0.75rem;'>لا يوجد إيصال</span>"
         status_val = s.get("status", "pending")
         if status_val == "approved":
             sub_status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">معتمد ومفعل ✅</span>'
@@ -3467,29 +3855,116 @@ async def admin_page(request: Request):
             </td>
         </tr>
         """
-    
 
+    # Comprehensive Users Rows & Client Modals
     users_rows = ""
     for u in all_users:
-        card_html = f'<a href="/uploads/{u["id_card_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.75rem; padding: 2px 6px;">عرض الكارنيه 🪪</a>' if u["id_card_image"] else "<span style='color: var(--danger); font-size: 0.75rem;'>لم يرفع كارنيه</span>"
-        v_status = u["verification_status"]
-        status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">معتمد ✅</span>' if v_status == "approved" else '<span style="background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">قيد التدقيق ⏳</span>'
-        
-        email_v_badge = "✅ مفعل 2FA" if u["is_email_verified"] else "⏳ غير مفعل"
-        prem_badge = "⭐ VIP" if u["is_premium"] else "عادي"
+        uid = u["id"]
+        p_cnt = user_posts_map.get(uid, 0)
+        cs_cnt = user_cases_map.get(uid, 0)
+        cm_cnt = user_comments_map.get(uid, 0)
+        ch_cnt = user_chats_map.get(uid, 0)
+
+        card_html = f'<a href="/uploads/{u["id_card_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 700;">🪪 عرض الكارنيه</a>' if u.get("id_card_image") else "<span style='color: var(--text-dim); font-size: 0.75rem;'>لم يُرفع</span>"
+
+        v_status = u.get("verification_status", "pending")
+        if v_status == "approved":
+            status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">✅ معتمد نشط</span>'
+            status_tag = "approved"
+        elif v_status == "suspended":
+            status_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">🚫 موقوف</span>'
+            status_tag = "suspended"
+        else:
+            status_badge = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">⏳ قيد المراجعة</span>'
+            status_tag = "pending"
+
+        if u.get("is_admin"):
+            role_badge = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">👑 مشرف Admin</span>'
+            role_tag = "admin"
+        elif u.get("verified_vet") or v_status == "approved":
+            role_badge = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">🩺 طبيب موثق</span>'
+            role_tag = "verified"
+        else:
+            role_badge = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border);">👨‍⚕️ طبيب مسجل</span>'
+            role_tag = "regular"
+
+        initial = u["name"][0] if u.get("name") else "V"
+        avatar_html = f'<div style="width: 34px; height: 34px; border-radius: 50%; background: var(--ai-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0;">{initial}</div>'
+
+        last_active = u.get("last_active_at") or u.get("created_at") or "غير محدد"
+        reg_date = u.get("created_at", "غير مسجل")
+        phone_val = u.get("phone") or "غير مسجل"
+        clinic_val = u.get("clinic_name") or "عيادة خاصة"
+        syndicate_val = u.get("syndicate_id") or "غير مسجل"
+        country_val = u.get("country") or "مصر"
+
+        u_json_safe = json.dumps({
+            "id": uid,
+            "name": u.get("name", ""),
+            "email": u.get("email", ""),
+            "phone": phone_val,
+            "country": country_val,
+            "clinic": clinic_val,
+            "syndicate": syndicate_val,
+            "role": role_tag,
+            "status": status_tag,
+            "created_at": reg_date,
+            "last_active": last_active,
+            "cases_posts": p_cnt + cs_cnt,
+            "comments": cm_cnt,
+            "chats": ch_cnt,
+            "card_img": u.get("id_card_image", "")
+        }).replace('"', '&quot;').replace("'", "&#39;")
+
+        verify_action_btn = f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #15803d;" title="تغيير حالة التوثيق">✅ توثيق</a>' if v_status != "approved" else f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #b45309;" title="إلغاء التوثيق">⏳ تعليق</a>'
+        admin_toggle_btn = f'<a href="/admin/toggle-admin/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #7e22ce;" title="تعديل صلاحية الإدارة">👑 مشرف</a>'
+        suspend_btn = f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #dc2626;" title="إيقاف الحساب">🚫 إيقاف</a>' if v_status != "suspended" else f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #16a34a;" title="تفعيل الحساب">🔄 تفعيل</a>'
 
         users_rows += f"""
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); font-weight: 700;">#{u['id']} د. {u['name']}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{u['email']}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{u['country']}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{u['clinic_name']} (قيد: {u['syndicate_id']})</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{card_html}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.8rem;">{email_v_badge} | {prem_badge}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{status_badge}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap;">
-                <a href="/admin/approve/{u['id']}" class="btn btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">{t('admin_btn_approve_vet')}</a>
-                <a href="/admin/delete-user/{u['id']}" onclick="return confirm('تحذير: هل أنت متأكد من حذف هذا الحساب نهائياً لمنع البيانات العشوائية؟');" class="btn btn-outline" style="color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">{t('admin_btn_reject_delete')}</a>
+        <tr class="user-row-item" data-search="{u.get('name', '')} {u.get('email', '')} {phone_val} {clinic_val} {country_val} {syndicate_val}" data-status="{status_tag}" data-role="{role_tag}">
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {avatar_html}
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">د. {u.get('name', '')}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">ID: #{uid} | {role_badge}</div>
+                    </div>
+                </div>
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border);">
+                <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">{u.get('email', '')}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); direction: ltr; text-align: right;">{phone_val}</div>
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.82rem;">
+                <div style="font-weight: 700; color: var(--primary);">{country_val}</div>
+                <div style="color: var(--text-muted); font-size: 0.78rem;">{clinic_val}</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim);">قيد: {syndicate_val}</div>
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: center;">
+                {card_html}
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: center;">
+                {status_badge}
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.78rem; color: var(--text-muted);">
+                <span title="تاريخ التسجيل">📅 {reg_date[:10]}</span><br>
+                <span title="آخر ظهور" style="color: #10b981; font-weight: 600;">🟢 {last_active[-8:]}</span>
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.78rem;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="حالات ومنشورات">📊 {p_cnt + cs_cnt}</span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="تعليقات">💬 {cm_cnt}</span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="استشارات AI">🤖 {ch_cnt}</span>
+                </div>
+            </td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;">
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <button type="button" onclick='openUserDetailsModal({u_json_safe})' class="btn btn-primary" style="font-size: 0.72rem; padding: 4px 8px;" title="عرض الملف الكامل للمستخدم">🔍 الملف</button>
+                    {verify_action_btn}
+                    {admin_toggle_btn}
+                    {suspend_btn}
+                    <a href="/admin/delete-user/{uid}" onclick="return confirm('تحذير: هل أنت متأكد من حذف هذا المستخدم نهائياً؟');" class="btn btn-outline" style="color: var(--danger); font-size: 0.72rem; padding: 4px 6px;" title="حذف الحساب">🗑️</a>
+                </div>
             </td>
         </tr>
         """
@@ -3527,7 +4002,7 @@ async def admin_page(request: Request):
         saved_alert = """
         <div style="background: #dcfce7; border: 2px solid #22c55e; color: #15803d; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(34,197,94,0.15);">
             <span style="font-size: 1.6rem;">✅</span>
-            <div>تم بنجاح حفظ الإعدادات وتفعيل خدمة البريد الإلكتروني والرسائل في النظام!</div>
+            <div>تم بنجاح حفظ الإعدادات وتحديث بيانات النظام!</div>
         </div>
         """
     test_res = request.query_params.get("test_email")
@@ -3535,7 +4010,7 @@ async def admin_page(request: Request):
         saved_alert += """
         <div style="background: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.15);">
             <span style="font-size: 1.6rem;">🎉</span>
-            <div>تم بنجاح إرسال رسالة تجريبية بكود تفعيل إلى بريدك! يرجى فتح صندوق الوارد (أو مجلد الرسائل غير المرغوب فيها Spam) للتأكد.</div>
+            <div>تم بنجاح إرسال الرسالة التجريبية! يرجى فتح صندوق الوارد للتأكد.</div>
         </div>
         """
     elif test_res == "error":
@@ -3548,30 +4023,103 @@ async def admin_page(request: Request):
         """
 
     body = f"""
-    <div style="margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 1.6rem; color: var(--accent);">⚙️ {t('admin_title')}</h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">{t('admin_subtitle')}</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem; color: var(--primary);">⚙️ لوحة الإدارة والتحكم الشاملة</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">إدارة الأطباء، توثيق الهويات، إحصائيات الاستخدام والإعدادات المركزية</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <a href="/admin/export-users" class="btn btn-primary" style="font-weight: 700; text-decoration: none;">📥 تصدير بيانات الأطباء (Excel / CSV)</a>
+            <a href="/community" class="btn btn-outline" target="_blank" style="font-weight: 700; text-decoration: none;">🌐 مجتمع VetBook</a>
+        </div>
     </div>
 
     {saved_alert}
 
-    <!-- User Moderation & Anti-Fraud Table -->
+    <!-- 1. KPI Analytics Cards -->
+    <div class="grid-4" style="margin-bottom: 24px;">
+        <div class="card" style="border-top: 4px solid var(--primary); padding: 18px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">إجمالي الأطباء المسجلين</span>
+                <span style="font-size: 1.5rem;">🩺</span>
+            </div>
+            <div style="font-size: 2.1rem; font-weight: 800; color: var(--primary); margin: 6px 0;">{total_users_count}</div>
+            <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+ أطباء بيطريون مرخصون</div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #10b981; padding: 18px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">النشطون اليوم (Online)</span>
+                <span style="font-size: 1.5rem;">🟢</span>
+            </div>
+            <div style="font-size: 2.1rem; font-weight: 800; color: #10b981; margin: 6px 0;">{active_today_count}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">تفاعلوا خلال آخر 24 ساعة</div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #0284c7; padding: 18px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">الأطباء الموثقون</span>
+                <span style="font-size: 1.5rem;">✅</span>
+            </div>
+            <div style="font-size: 2.1rem; font-weight: 800; color: #0284c7; margin: 6px 0;">{verified_vets_count}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">تم اعتماد الكارنيه المهني</div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #7c3aed; padding: 18px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">الحالات واستشارات AI</span>
+                <span style="font-size: 1.5rem;">🤖</span>
+            </div>
+            <div style="font-size: 2.1rem; font-weight: 800; color: #7c3aed; margin: 6px 0;">{total_community_cases_count + total_ai_consults_count}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{total_community_cases_count} حالة + {total_ai_consults_count} استشارة AI</div>
+        </div>
+    </div>
+
+    <!-- 2. Comprehensive Users Management Card -->
     <div class="card" style="border-top: 4px solid var(--accent); margin-bottom: 24px;">
-        <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--accent);">👨‍⚕️ {t('admin_moderation_title')}</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">{t('admin_moderation_desc')}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">👨‍⚕️ إدارة وبيانات المستخدمين الشاملة</h2>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">بحث وفلترة فورية، مراجعة الكارنيهات، وتحديث صلاحيات الأطباء والعيادات</div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1 1 240px; min-width: 200px;">
+                <input type="text" id="user-search-input" onkeyup="filterUsersTable()" placeholder="ابحث بالاسم، الإيميل، الهاتف، الدولة، العيادة أو رقم القيد..." style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main);">
+            </div>
+            <div style="min-width: 150px;">
+                <select id="user-status-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
+                    <option value="all">كافة حالات التوثيق</option>
+                    <option value="approved">معتمد نشط ✅</option>
+                    <option value="pending">قيد المراجعة ⏳</option>
+                    <option value="suspended">موقوف 🚫</option>
+                </select>
+            </div>
+            <div style="min-width: 150px;">
+                <select id="user-role-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
+                    <option value="all">كافة الصلاحيات</option>
+                    <option value="admin">مشرف Admin 👑</option>
+                    <option value="verified">طبيب موثق 🩺</option>
+                    <option value="regular">طبيب مسجل 👨‍⚕️</option>
+                </select>
+            </div>
+            <button type="button" onclick="resetUserFilters()" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.82rem;">إعادة ضبط</button>
+        </div>
 
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.88rem;">
+            <table id="users-table" style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.86rem;">
                 <thead>
-                    <tr style="background: var(--bg);">
-                        <th style="padding: 10px;">الطبيب</th>
-                        <th style="padding: 10px;">البريد</th>
-                        <th style="padding: 10px;">الدولة</th>
-                        <th style="padding: 10px;">العيادة والقيد</th>
-                        <th style="padding: 10px;">الكارنيه</th>
-                        <th style="padding: 10px;">المصادقة / الباقة</th>
-                        <th style="padding: 10px;">الحالة</th>
-                        <th style="padding: 10px;">إجراء المدير</th>
+                    <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
+                        <th style="padding: 12px 10px;">الطبيب والصلاحية</th>
+                        <th style="padding: 12px 10px;">بيانات الاتصال</th>
+                        <th style="padding: 12px 10px;">الدولة والعيادة</th>
+                        <th style="padding: 12px 10px; text-align: center;">الكارنيه</th>
+                        <th style="padding: 12px 10px; text-align: center;">الحالة</th>
+                        <th style="padding: 12px 10px;">التسجيل والنشاط</th>
+                        <th style="padding: 12px 10px;">إحصائيات الاستخدام</th>
+                        <th style="padding: 12px 10px; text-align: center;">إجراءات الإدارة</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3581,13 +4129,13 @@ async def admin_page(request: Request):
         </div>
     </div>
 
-    <!-- Community Subscriptions & Payment Proofs Table -->
+    <!-- 3. Community Subscriptions Table -->
     <div class="card" style="border-top: 4px solid #7c3aed; margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <h2 style="margin: 0; font-size: 1.3rem; color: #7c3aed;">💳 اشتراكات مجتمع الأطباء البيطريين وإيصالات السداد</h2>
             <a href="/community" target="_blank" class="btn btn-outline" style="font-size: 0.8rem;">👥 فتح ملتقى الأطباء</a>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">مراجعة إشعارات وإيصالات التحويل البنكي وفودافون كاش وإنستاباي لاعتماد وصول الأطباء لمجتمع النقاشات السريرية.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">مراجعة إشعارات وإيصالات التحويل البنكي وفودافون كاش وإنستاباي.</p>
 
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.88rem;">
@@ -3609,22 +4157,21 @@ async def admin_page(request: Request):
         </div>
     </div>
 
-    <!-- Support Tickets Tab -->
+    <!-- 4. Support Tickets -->
     <div class="card" style="border-top: 4px solid #0284c7; margin-bottom: 24px;">
         <h2 style="margin-top: 0; font-size: 1.3rem; color: #0284c7;">🎧 {t('admin_tab_tickets')}</h2>
         {tickets_rows if tickets_rows else "<p style='color: var(--text-muted);'>لا توجد تذاكر دعم فني واردة حالياً.</p>"}
     </div>
 
-    
-    <!-- System & Integrations Settings Card -->
+    <!-- 5. Settings Card -->
     <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 24px;">
         <h2 style="margin-top: 0; font-size: 1.3rem; color: #10b981;">⚙️ إعدادات البريد والرسائل والذكاء الاصطناعي (Settings)</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-            يمكنك من هنا إدخال بيانات الربط مباشرة وبسهولة تامة ودون الحاجة للدخول إلى Vercel:
+            بيانات الربط المباشر للخوادم ومفاتيح الـ API:
         </p>
 
         <form action="/admin/settings" method="POST">
-            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">✉️ إعدادات إرسال كود التفعيل عبر البريد (Gmail SMTP / Resend)</h3>
+            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">✉️ إعدادات خادم البريد الإلكتروني (Gmail SMTP / Resend)</h3>
             <div class="grid-2" style="margin-bottom: 12px;">
                 <div>
                     <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">خادم البريد (SMTP Host):</label>
@@ -3637,17 +4184,17 @@ async def admin_page(request: Request):
             </div>
             <div class="grid-2" style="margin-bottom: 12px;">
                 <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">بريدك في الجيميل (SMTP User):</label>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">بريد الإرسال (SMTP User):</label>
                     <input type="text" name="smtp_user" value="{cfg_smtp_user}" placeholder="your_clinic@gmail.com" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">كود التطبيق السري (App Password 16 حرفاً):</label>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">كود التطبيق السري (App Password):</label>
                     <input type="password" name="smtp_pass" value="{cfg_smtp_pass}" placeholder="••••••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
                 </div>
             </div>
 
             <div style="margin-bottom: 14px;">
-                <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">أو مفتاح Resend API (بديل مجاني وسريع بضغطة زر):</label>
+                <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">أو مفتاح Resend API:</label>
                 <input type="password" name="resend_api_key" value="{cfg_resend_api_key}" placeholder="re_••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
             </div>
 
@@ -3671,7 +4218,7 @@ async def admin_page(request: Request):
         </form>
     </div>
 
-    <!-- Broadcast Center -->
+    <!-- 6. Broadcast Center -->
     <div class="card" style="border-top: 4px solid var(--primary);">
         <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--primary);">📢 {t('admin_tab_broadcast')}</h2>
         <form action="/admin/broadcast" method="POST">
@@ -3706,65 +4253,163 @@ async def admin_page(request: Request):
             {notifs_rows}
         </div>
     </div>
+
+    <!-- 7. Interactive Full User Details Modal -->
+    <div id="user-details-modal" class="modal">
+        <div class="modal-content" style="max-width: 620px;">
+            <button class="modal-close" onclick="closeUserDetailsModal()">✕</button>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+                <div id="modal-user-avatar" style="width: 52px; height: 52px; border-radius: 50%; background: var(--ai-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; flex-shrink: 0;">V</div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <h2 id="modal-user-name" style="margin: 0; font-size: 1.35rem; color: var(--primary);">د. اسم الطبيب</h2>
+                        <span id="modal-user-role-badge"></span>
+                        <span id="modal-user-status-badge"></span>
+                    </div>
+                    <div id="modal-user-id" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">User ID: #000</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">البريد الإلكتروني:</div>
+                    <div id="modal-user-email" style="font-weight: 700; font-size: 0.88rem; word-break: break-all;">-</div>
+                </div>
+                <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">رقم الهاتف / الواتساب:</div>
+                    <div id="modal-user-phone" style="font-weight: 700; font-size: 0.88rem; direction: ltr; text-align: right;">-</div>
+                </div>
+                <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">الدولة ومقر العمل:</div>
+                    <div id="modal-user-clinic" style="font-weight: 700; font-size: 0.88rem;">-</div>
+                </div>
+                <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">رقم القيد / النقابة:</div>
+                    <div id="modal-user-syndicate" style="font-weight: 700; font-size: 0.88rem;">-</div>
+                </div>
+            </div>
+
+            <!-- Platform Stats -->
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: var(--primary); margin-bottom: 8px;">📊 إحصائيات ونشاط الطبيب في المنصة:</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+                    <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div id="modal-user-cases-cnt" style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">0</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">حالات ومنشورات</div>
+                    </div>
+                    <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div id="modal-user-comments-cnt" style="font-size: 1.3rem; font-weight: 800; color: #0284c7;">0</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">تعليقات وردود</div>
+                    </div>
+                    <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div id="modal-user-chats-cnt" style="font-size: 1.3rem; font-weight: 800; color: #7c3aed;">0</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">استشارات AI</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ID Card preview -->
+            <div id="modal-user-card-wrap" style="margin-bottom: 16px;">
+                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">مستند التوثيق / الكارنيه:</div>
+                <div id="modal-user-card-preview" style="text-align: center; background: var(--bg); padding: 12px; border-radius: 10px; border: 1px dashed var(--border);">
+                    لا يوجد كارنيه مرفوع
+                </div>
+            </div>
+
+            <!-- Action buttons in modal -->
+            <div id="modal-user-actions" style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 14px;">
+            </div>
+        </div>
+    </div>
+
+    {ADMIN_PAGE_JS}
     """
-    return HTMLResponse(content=get_base_html(t("nav_admin"), body, user, lang), media_type="text/html; charset=utf-8")
+    return HTMLResponse(content=get_base_html("لوحة الإدارة والتحكم الشاملة", body, user, lang), media_type="text/html; charset=utf-8")
 
-@app.get("/admin/community/approve/{sub_id}")
-async def admin_approve_community_sub(request: Request, sub_id: int):
+@app.get("/admin/toggle-admin/{user_id}")
+async def toggle_admin(request: Request, user_id: int):
     user = get_current_user(request)
     if not user or not user.get("is_admin"):
         return RedirectResponse("/login", status_code=303)
     conn = get_db()
     c = conn.cursor()
-    c.execute("UPDATE community_subscriptions SET status = 'approved', reviewed_at = ? WHERE id = ?",
-              (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sub_id))
-    conn.commit()
-    conn.close()
-    return RedirectResponse("/admin?saved=1", status_code=303)
-
-@app.get("/admin/community/reject/{sub_id}")
-async def admin_reject_community_sub(request: Request, sub_id: int):
-    user = get_current_user(request)
-    if not user or not user.get("is_admin"):
-        return RedirectResponse("/login", status_code=303)
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("UPDATE community_subscriptions SET status = 'rejected', reviewed_at = ? WHERE id = ?",
-              (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sub_id))
-    conn.commit()
-    conn.close()
-    return RedirectResponse("/admin?saved=1", status_code=303)
-
-@app.get("/admin/community/toggle-user/{user_id}")
-async def admin_toggle_community_user(request: Request, user_id: int):
-    user = get_current_user(request)
-    if not user or not user.get("is_admin"):
-        return RedirectResponse("/login", status_code=303)
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT id, status FROM community_subscriptions WHERE user_id = ? AND status = 'approved' LIMIT 1", (user_id,))
+    c.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,))
     row = c.fetchone()
     if row:
-        c.execute("UPDATE community_subscriptions SET status = 'rejected' WHERE user_id = ?", (user_id,))
-    else:
-        c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-        u = c.fetchone()
-        if u:
-            c.execute("""
-            INSERT INTO community_subscriptions (
-                user_id, doctor_name, doctor_email, doctor_phone, syndicate_id, 
-                clinic_name, country, plan_id, plan_name, amount, payment_method, 
-                transaction_ref, receipt_image, status, created_at, reviewed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'admin_vip', 'اعتماد إداري مباشر (VIP Admin Grant)', 0, 'تفعيل يدوي مباشر من المدير', 'ADMIN-GRANT', 'admin_approved.png', 'approved', ?, ?)
-            """, (
-                user_id, u["name"], u["email"], u.get("phone", ""), u.get("syndicate_id", ""),
-                u.get("clinic_name", ""), u.get("country", "مصر"),
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            ))
-    conn.commit()
+        new_val = 0 if row["is_admin"] else 1
+        c.execute("UPDATE users SET is_admin = ? WHERE id = ?", (new_val, user_id))
+        conn.commit()
     conn.close()
     return RedirectResponse("/admin?saved=1", status_code=303)
+
+@app.get("/admin/toggle-verify/{user_id}")
+async def toggle_verify(request: Request, user_id: int):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/login", status_code=303)
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT verification_status, verified_vet FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    if row:
+        new_status = 'pending' if row["verification_status"] == 'approved' else 'approved'
+        new_vet = 0 if row["verified_vet"] else 1
+        c.execute("UPDATE users SET verification_status = ?, verified_vet = ?, is_email_verified = 1 WHERE id = ?", (new_status, new_vet, user_id))
+        conn.commit()
+    conn.close()
+    return RedirectResponse("/admin?saved=1", status_code=303)
+
+@app.get("/admin/toggle-status/{user_id}")
+async def toggle_user_status(request: Request, user_id: int):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/login", status_code=303)
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT verification_status FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    if row:
+        new_status = 'suspended' if row["verification_status"] != 'suspended' else 'approved'
+        c.execute("UPDATE users SET verification_status = ? WHERE id = ?", (new_status, user_id))
+        conn.commit()
+    conn.close()
+    return RedirectResponse("/admin?saved=1", status_code=303)
+
+@app.get("/admin/export-users")
+async def export_users_csv(request: Request):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/login", status_code=303)
+    import csv
+    import io
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM users ORDER BY id ASC")
+    users = c.fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "الاسم / Name", "البريد / Email", "الهاتف / Phone", "الدولة / Country",
+        "العيادة / Clinic", "رقم القيد / Syndicate ID", "حالة التوثيق / Status",
+        "مشرف / Admin", "طبيب موثق / Verified", "تاريخ التسجيل / Created At", "آخر ظهور / Last Active"
+    ])
+    for row in users:
+        u = dict(row)
+        writer.writerow([
+            u.get("id", ""), u.get("name", ""), u.get("email", ""), u.get("phone", ""), u.get("country", ""),
+            u.get("clinic_name", ""), u.get("syndicate_id", ""), u.get("verification_status", ""),
+            "نعم" if u.get("is_admin") else "لا", "نعم" if u.get("verified_vet") else "لا",
+            u.get("created_at", ""), u.get("last_active_at", "")
+        ])
+    conn.close()
+
+    csv_data = "\ufeff" + output.getvalue()
+    return Response(
+        content=csv_data,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=vetmind_users_export.csv"}
+    )
 
 @app.get("/admin/approve/{user_id}")
 async def approve_user(request: Request, user_id: int):
@@ -3773,7 +4418,7 @@ async def approve_user(request: Request, user_id: int):
         return RedirectResponse("/login", status_code=303)
     conn = get_db()
     c = conn.cursor()
-    c.execute("UPDATE users SET verification_status = 'approved', is_email_verified = 1 WHERE id = ?", (user_id,))
+    c.execute("UPDATE users SET verification_status = 'approved', verified_vet = 1, is_email_verified = 1 WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
     return RedirectResponse("/admin?saved=1", status_code=303)
