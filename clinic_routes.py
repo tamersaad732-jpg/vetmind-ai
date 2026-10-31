@@ -223,48 +223,87 @@ async def prayer_times_page(request: Request, city: str = "القاهرة (مص�
             </form>
         </div>
 
+        <style>
+        .prayer-card {{
+            text-align: center;
+            padding: 20px;
+            border-radius: 14px;
+            transition: var(--transition-smooth);
+        }}
+        .prayer-time-val {{
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 8px 0;
+        }}
+        .prayer-fajr .prayer-time-val {{ color: #0284c7; }}
+        .prayer-sunrise .prayer-time-val {{ color: #d97706; }}
+        .prayer-dhuhr .prayer-time-val {{ color: #059669; }}
+        .prayer-asr .prayer-time-val {{ color: #ea580c; }}
+        .prayer-maghrib .prayer-time-val {{ color: #7c3aed; }}
+        .prayer-isha .prayer-time-val {{ color: #2563eb; }}
+
+        body.dark-theme .prayer-fajr .prayer-time-val, [data-theme="dark"] .prayer-fajr .prayer-time-val {{ color: #38bdf8 !important; }}
+        body.dark-theme .prayer-sunrise .prayer-time-val, [data-theme="dark"] .prayer-sunrise .prayer-time-val {{ color: #fbbf24 !important; }}
+        body.dark-theme .prayer-dhuhr .prayer-time-val, [data-theme="dark"] .prayer-dhuhr .prayer-time-val {{ color: #34d399 !important; }}
+        body.dark-theme .prayer-asr .prayer-time-val, [data-theme="dark"] .prayer-asr .prayer-time-val {{ color: #fb923c !important; }}
+        body.dark-theme .prayer-maghrib .prayer-time-val, [data-theme="dark"] .prayer-maghrib .prayer-time-val {{ color: #c084fc !important; }}
+        body.dark-theme .prayer-isha .prayer-time-val, [data-theme="dark"] .prayer-isha .prayer-time-val {{ color: #60a5fa !important; }}
+
+        body.dark-theme .prayer-card, [data-theme="dark"] .prayer-card {{
+            background-color: #111827 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }}
+        body.dark-theme .prayer-title-lbl, [data-theme="dark"] .prayer-title-lbl {{
+            color: #F8FAFC !important;
+            font-weight: 800 !important;
+        }}
+        body.dark-theme .prayer-sub-lbl, [data-theme="dark"] .prayer-sub-lbl {{
+            color: #94A3B8 !important;
+        }}
+        </style>
+
         <!-- Prayer Times Grid -->
         <div class="grid-3" style="gap: 16px; margin-bottom: 24px;">
             <!-- Fajr -->
-            <div class="card" style="text-align: center; border-top: 4px solid #0284c7; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">صلاة الفجر</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #0369a1; margin: 8px 0;">{res['fajr']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">بداية الإمساك وبكور العمليات</div>
+            <div class="card prayer-card prayer-fajr" style="border-top: 4px solid #0284c7;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">صلاة الفجر</div>
+                <div class="prayer-time-val">{res['fajr']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">بداية الإمساك وبكور العمليات</div>
             </div>
 
             <!-- Sunrise -->
-            <div class="card" style="text-align: center; border-top: 4px solid #f59e0b; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">الشروق</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin: 8px 0;">{res['sunrise']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">شروق الشمس</div>
+            <div class="card prayer-card prayer-sunrise" style="border-top: 4px solid #f59e0b;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">الشروق</div>
+                <div class="prayer-time-val">{res['sunrise']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">شروق الشمس</div>
             </div>
 
             <!-- Dhuhr -->
-            <div class="card" style="text-align: center; border-top: 4px solid #10b981; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">صلاة الظهر</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #047857; margin: 8px 0;">{res['dhuhr']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">استراحة منتصف اليوم</div>
+            <div class="card prayer-card prayer-dhuhr" style="border-top: 4px solid #10b981;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">صلاة الظهر</div>
+                <div class="prayer-time-val">{res['dhuhr']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">استراحة منتصف اليوم</div>
             </div>
 
             <!-- Asr -->
-            <div class="card" style="text-align: center; border-top: 4px solid #ea580c; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">صلاة العصر</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #c2410c; margin: 8px 0;">{res['asr']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">فترة الكشوفات المسائية</div>
+            <div class="card prayer-card prayer-asr" style="border-top: 4px solid #ea580c;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">صلاة العصر</div>
+                <div class="prayer-time-val">{res['asr']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">فترة الكشوفات المسائية</div>
             </div>
 
             <!-- Maghrib -->
-            <div class="card" style="text-align: center; border-top: 4px solid #8b5cf6; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">صلاة المغرب</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #6d28d9; margin: 8px 0;">{res['maghrib']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">غروب الشمس</div>
+            <div class="card prayer-card prayer-maghrib" style="border-top: 4px solid #8b5cf6;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">صلاة المغرب</div>
+                <div class="prayer-time-val">{res['maghrib']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">غروب الشمس</div>
             </div>
 
             <!-- Isha -->
-            <div class="card" style="text-align: center; border-top: 4px solid #1e293b; padding: 20px;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">صلاة العشاء</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin: 8px 0;">{res['isha']}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">ختام العيادة ونوبتجيات الطوارئ</div>
+            <div class="card prayer-card prayer-isha" style="border-top: 4px solid #3b82f6;">
+                <div class="prayer-title-lbl" style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">صلاة العشاء</div>
+                <div class="prayer-time-val">{res['isha']}</div>
+                <div class="prayer-sub-lbl" style="font-size: 0.78rem; color: var(--text-muted);">ختام العيادة ونوبتجيات الطوارئ</div>
             </div>
         </div>
 

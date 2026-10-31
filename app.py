@@ -982,11 +982,12 @@ html.dark-theme .brand-name,
 
 /* Center Smart Search Trigger */
 .topbar-center {
-    flex: 1 1 auto;
-    max-width: 360px;
+    flex: 0 1 280px;
+    max-width: 280px;
     display: flex;
     align-items: center;
     min-width: 0;
+    margin: 0 8px;
 }
 .search-pill-btn {
     width: 100%;
@@ -1027,65 +1028,140 @@ html.dark-theme .brand-name,
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    min-width: 0;
 }
 
-/* Islamic Prayer Indicator Pill (Fluid Desktop -> Compact Mobile Icon Button) */
+/* Dedicated Mobile/Tablet Quick Search Button */
+.topbar-search-icon-mobile {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-main) !important;
+    cursor: pointer !important;
+    transition: var(--transition-smooth) !important;
+}
+.topbar-search-icon-mobile:hover {
+    background: var(--card-bg) !important;
+    border-color: var(--primary-border) !important;
+    color: var(--primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Islamic Prayer Indicator Pill (Fluid Desktop -> Compact Mobile, Always Legible) */
 .prayer-indicator-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-size: 0.78rem;
+    gap: 7px;
+    padding: 6px 13px;
+    font-size: 0.82rem;
     border-radius: var(--radius-pill);
     text-decoration: none;
-    background: var(--emerald-light);
-    border: 1px solid var(--emerald-border);
-    color: var(--emerald-dark);
+    background: #ECFDF5;
+    border: 1.5px solid #6EE7B7;
+    color: #065F46;
     font-weight: 700;
     box-sizing: border-box;
     transition: var(--transition-smooth);
-    overflow: hidden;
     white-space: nowrap;
     flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.12);
 }
 .prayer-indicator-pill:hover {
     background: #D1FAE5;
-    border-color: #6EE7B7;
+    border-color: #34D399;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
-}
-body.dark-theme .prayer-indicator-pill,
-html.dark-theme .prayer-indicator-pill,
-.dark .prayer-indicator-pill,
-[data-theme="dark"] .prayer-indicator-pill {
-    background: rgba(13, 148, 136, 0.15) !important;
-    border-color: rgba(13, 148, 136, 0.35) !important;
-    color: #5EEAD4 !important;
+    box-shadow: 0 3px 10px rgba(16, 185, 129, 0.22);
 }
 .prayer-pill-icon {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
+    line-height: 1;
     flex-shrink: 0;
 }
 .prayer-pill-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #065F46;
     white-space: nowrap;
+    display: inline-block;
+    visibility: visible;
 }
 .prayer-pill-countdown {
-    background: rgba(13, 148, 136, 0.15);
-    color: var(--emerald-dark);
-    padding: 1px 7px;
+    background: #D1FAE5;
+    color: #047857;
+    padding: 2px 7px;
     border-radius: 10px;
     font-size: 0.72rem;
     font-weight: 800;
+    display: inline-block;
     flex-shrink: 0;
 }
-body.dark-theme .prayer-pill-countdown,
-html.dark-theme .prayer-pill-countdown,
-.dark .prayer-pill-countdown,
-[data-theme="dark"] .prayer-pill-countdown {
-    background: rgba(94, 234, 212, 0.2) !important;
-    color: #5EEAD4 !important;
+
+/* High-Contrast Dark Mode for Prayer Pill - AAA Contrast (Bold White on Emerald) */
+body.dark-theme .prayer-indicator-pill,
+html.dark-theme .prayer-indicator-pill,
+body.dark .prayer-indicator-pill,
+html.dark .prayer-indicator-pill,
+.dark .prayer-indicator-pill,
+[data-theme="dark"] .prayer-indicator-pill {
+    background: #064E3B !important;
+    border: 1.5px solid #10B981 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3) !important;
+}
+body.dark-theme .prayer-indicator-pill:hover,
+html.dark-theme .prayer-indicator-pill:hover,
+body.dark .prayer-indicator-pill:hover,
+html.dark .prayer-indicator-pill:hover,
+.dark .prayer-indicator-pill:hover,
+[data-theme="dark"] .prayer-indicator-pill:hover {
+    background: #047857 !important;
+    border-color: #34D399 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45) !important;
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-icon,
+html.dark-theme .prayer-indicator-pill .prayer-pill-icon,
+body.dark .prayer-indicator-pill .prayer-pill-icon,
+html.dark .prayer-indicator-pill .prayer-pill-icon,
+.dark .prayer-indicator-pill .prayer-pill-icon,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-icon {
+    color: #FFFFFF !important;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-text,
+html.dark-theme .prayer-indicator-pill .prayer-pill-text,
+body.dark .prayer-indicator-pill .prayer-pill-text,
+html.dark .prayer-indicator-pill .prayer-pill-text,
+.dark .prayer-indicator-pill .prayer-pill-text,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-text {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
+html.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
+body.dark .prayer-indicator-pill .prayer-pill-countdown,
+html.dark .prayer-indicator-pill .prayer-pill-countdown,
+.dark .prayer-indicator-pill .prayer-pill-countdown,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-countdown {
+    background: #047857 !important;
+    border: 1px solid #10B981 !important;
+    color: #A7F3D0 !important;
+    font-weight: 800 !important;
+    display: inline-block !important;
 }
 
 /* High-Contrast Language Selector */
@@ -1720,7 +1796,7 @@ footer {
 footer a { color: #38BDF8; text-decoration: none; }
 
 /* Responsive Media Queries - Stacking without Collisions */
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
     .topbar-center {
         display: none !important;
     }
@@ -1730,12 +1806,12 @@ footer a { color: #38BDF8; text-decoration: none; }
     .topbar-right .btn-install-header {
         display: none !important;
     }
-}
-
-@media (max-width: 992px) {
     .topbar-search-icon-mobile {
         display: inline-flex !important;
     }
+}
+
+@media (max-width: 992px) {
     .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
     .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
 }
@@ -1760,7 +1836,7 @@ footer a { color: #38BDF8; text-decoration: none; }
         gap: 8px !important;
     }
     .topbar-container {
-        padding: 6px 10px !important;
+        padding: 6px 8px !important;
         gap: 6px !important;
         max-width: 100vw !important;
         overflow-x: hidden !important;
@@ -1769,31 +1845,63 @@ footer a { color: #38BDF8; text-decoration: none; }
         display: none !important;
     }
     .brand-name {
-        font-size: 1.0rem !important;
+        font-size: 0.95rem !important;
     }
-    /* Compact, beautiful 36x36 icon button on mobile that NEVER overflows */
+    .brand-badge {
+        display: none !important;
+    }
+    /* Compact, beautiful, fully-readable prayer pill on mobile */
     .prayer-indicator-pill {
+        width: auto !important;
+        height: 36px !important;
+        padding: 0 10px !important;
+        border-radius: 18px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+        font-size: 0.78rem !important;
+        box-sizing: border-box !important;
+    }
+    .prayer-indicator-pill .prayer-pill-icon {
+        font-size: 0.95rem !important;
+        flex-shrink: 0 !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        display: inline-block !important;
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+        max-width: 110px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .prayer-indicator-pill .prayer-pill-countdown {
+        display: none !important; /* Hide countdown on small mobile to fit without overflowing */
+    }
+    .topbar-search-icon-mobile {
         width: 36px !important;
         height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
         padding: 0 !important;
         border-radius: 10px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         flex-shrink: 0 !important;
-        font-size: 1.05rem !important;
-        background: var(--emerald-light) !important;
-        border: 1px solid var(--emerald-border) !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text,
-    .prayer-indicator-pill .prayer-pill-countdown {
-        display: none !important;
+        margin: 0 !important;
     }
     .user-profile-widget .user-badge {
         display: none !important;
     }
     .user-profile-widget .user-name {
         display: none !important;
+    }
+    .user-profile-widget {
+        gap: 4px !important;
     }
     .topbar-right .lang-selector-pill {
         display: none !important;
@@ -2461,17 +2569,17 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </div>
 
             <div class="topbar-right">
-                <!-- Islamic Prayer Times Pill (Adaptive: Full on desktop, 36x36 icon button on mobile) -->
+                <!-- Search icon on mobile/tablet when search-pill-btn is hidden -->
+                <button type="button" onclick="openSearchModal()" class="icon-action-btn topbar-search-icon-mobile" title="بحث سريع" style="display: none;" aria-label="بحث سريع">
+                    🔍
+                </button>
+
+                <!-- Islamic Prayer Times Pill (Adaptive: Full on desktop, compact legible pill on mobile) -->
                 <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
                     <span class="prayer-pill-icon">🕌</span>
                     <span class="prayer-pill-text">{prayer_p_text}</span>
                     <span class="prayer-pill-countdown">{prayer_c_text}</span>
                 </a>
-
-                <!-- Search icon on mobile/tablet when search-pill-btn is hidden -->
-                <button type="button" onclick="openSearchModal()" class="icon-action-btn topbar-search-icon-mobile" title="بحث سريع" style="display: none;">
-                    🔍
-                </button>
 
                 <!-- High-Contrast Language Selector -->
                 <div class="lang-selector-pill">
