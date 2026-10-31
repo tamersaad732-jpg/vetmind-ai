@@ -2860,6 +2860,16 @@ async def admin_page(request: Request):
 
     conn = get_db()
     c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+    c.execute("SELECT key, value FROM settings")
+    settings_dict = {row["key"]: row["value"] for row in c.fetchall()}
+    cfg_smtp_host = settings_dict.get("smtp_host", os.environ.get("SMTP_HOST", "smtp.gmail.com"))
+    cfg_smtp_port = settings_dict.get("smtp_port", os.environ.get("SMTP_PORT", "587"))
+    cfg_smtp_user = settings_dict.get("smtp_user", os.environ.get("SMTP_USER", ""))
+    cfg_smtp_pass = settings_dict.get("smtp_pass", os.environ.get("SMTP_PASS", ""))
+    cfg_resend_api_key = settings_dict.get("resend_api_key", os.environ.get("RESEND_API_KEY", ""))
+    cfg_ai_api_key = settings_dict.get("ai_api_key", os.environ.get("GROQ_API_KEY", ""))
+
     c.execute("SELECT * FROM users ORDER BY id DESC")
     all_users = c.fetchall()
 
@@ -3019,6 +3029,55 @@ async def admin_page(request: Request):
     <div class="card" style="border-top: 4px solid #0284c7; margin-bottom: 24px;">
         <h2 style="margin-top: 0; font-size: 1.3rem; color: #0284c7;">🎧 {t('admin_tab_tickets')}</h2>
         {tickets_rows if tickets_rows else "<p style='color: var(--text-muted);'>لا توجد تذاكر دعم فني واردة حالياً.</p>"}
+    </div>
+
+    
+    <!-- System & Integrations Settings Card -->
+    <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 24px;">
+        <h2 style="margin-top: 0; font-size: 1.3rem; color: #10b981;">⚙️ إعدادات البريد والرسائل والذكاء الاصطناعي (Settings)</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            يمكنك من هنا إدخال بيانات الربط مباشرة وبسهولة تامة ودون الحاجة للدخول إلى Vercel:
+        </p>
+
+        <form action="/admin/settings" method="POST">
+            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">✉️ إعدادات إرسال كود التفعيل عبر البريد (Gmail SMTP / Resend)</h3>
+            <div class="grid-2" style="margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">خادم البريد (SMTP Host):</label>
+                    <input type="text" name="smtp_host" value="{cfg_smtp_host}" placeholder="smtp.gmail.com" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">المنفذ (Port):</label>
+                    <input type="text" name="smtp_port" value="{cfg_smtp_port}" placeholder="587 أو 465" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+            </div>
+            <div class="grid-2" style="margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">بريدك في الجيميل (SMTP User):</label>
+                    <input type="text" name="smtp_user" value="{cfg_smtp_user}" placeholder="your_clinic@gmail.com" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">كود التطبيق السري (App Password 16 حرفاً):</label>
+                    <input type="password" name="smtp_pass" value="{cfg_smtp_pass}" placeholder="••••••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">أو مفتاح Resend API (بديل مجاني وسريع بضغطة زر):</label>
+                <input type="password" name="resend_api_key" value="{cfg_resend_api_key}" placeholder="re_••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+
+            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">🤖 مفتاح الذكاء الاصطناعي (Groq AI API Key)</h3>
+            <div style="margin-bottom: 16px;">
+                <input type="password" name="ai_api_key" value="{cfg_ai_api_key}" placeholder="gsk_••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-weight: 800;">
+                💾 حفظ الإعدادات وتفعيل الخدمة فوراً
+            </button>
+        </form>
     </div>
 
     <!-- Broadcast Center -->
@@ -5148,3 +5207,35 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 7860))
     uvicorn.run("app:app", host="0.0.0.0", port=port)
+
+
+@app.post("/admin/settings")
+async def save_admin_settings_endpoint(
+    request: Request,
+    smtp_host: str = Form(""),
+    smtp_port: str = Form("587"),
+    smtp_user: str = Form(""),
+    smtp_pass: str = Form(""),
+    resend_api_key: str = Form(""),
+    ai_api_key: str = Form("")
+):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+    pairs = [
+        ("smtp_host", smtp_host.strip()),
+        ("smtp_port", smtp_port.strip()),
+        ("smtp_user", smtp_user.strip()),
+        ("smtp_pass", smtp_pass.strip()),
+        ("resend_api_key", resend_api_key.strip()),
+        ("ai_api_key", ai_api_key.strip())
+    ]
+    for k, v in pairs:
+        c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (k, v))
+    conn.commit()
+    conn.close()
+    return RedirectResponse("/admin", status_code=303)
