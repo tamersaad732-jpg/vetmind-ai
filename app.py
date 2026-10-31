@@ -36,9 +36,25 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 DOCS_DIR = os.path.join(STATIC_DIR, "reference_docs")
 DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
-os.makedirs(DOCS_DIR, exist_ok=True)
+# Vercel Serverless & Read-only Environment Compatibility
+if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
+    tmp_db = "/tmp/vetmind.db"
+    if not os.path.exists(tmp_db) and os.path.exists(DB_PATH):
+        try:
+            import shutil
+            shutil.copy2(DB_PATH, tmp_db)
+        except Exception:
+            pass
+    if os.path.exists(tmp_db):
+        DB_PATH = tmp_db
+    UPLOAD_DIR = "/tmp/uploads"
+
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    os.makedirs(STATIC_DIR, exist_ok=True)
+    os.makedirs(DOCS_DIR, exist_ok=True)
+except Exception:
+    pass
 
 app = FastAPI(title="VetMind AI Enterprise v4.3 - Global Clinical Veterinary Platform")
 app.include_router(clinic_routes.router)
