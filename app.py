@@ -1807,7 +1807,7 @@ footer a { color: #38BDF8; text-decoration: none; }
         display: none !important;
     }
     .topbar-search-icon-mobile {
-        display: inline-flex !important;
+        display: none !important;
     }
 }
 
@@ -2378,6 +2378,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </div>
 
         <div class="mobile-drawer-content">
+            <button type="button" onclick="closeMobileDrawer(); openSearchModal();" class="mobile-menu-item" style="width: 100%; border: 1.5px solid var(--primary-border); background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: right; display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
+                <span class="m-icon">🔍</span>
+                <span class="m-label">بحث شامل وسريع في المنصة (Ctrl+K)</span>
+            </button>
             <div class="mobile-menu-section-title">🏥 العيادة والتشخيص السريري</div>
             <a href="/" class="mobile-menu-item">
                 <span class="m-icon">🏠</span>
@@ -2588,11 +2592,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </div>
 
             <div class="topbar-right">
-                <!-- Search icon on mobile/tablet when search-pill-btn is hidden -->
-                <button type="button" onclick="openSearchModal()" class="icon-action-btn topbar-search-icon-mobile" title="بحث سريع" style="display: none;" aria-label="بحث سريع">
-                    🔍
-                </button>
-
                 <!-- Islamic Prayer Times Pill (Adaptive: Full on desktop, compact legible pill on mobile) -->
                 <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
                     <span class="prayer-pill-icon">🕌</span>
