@@ -627,7 +627,7 @@ def get_live_tunnel_url() -> str:
 GLOBAL_PRESTIGE_CSS = """
 /* ========================================================================== */
 /* VETMIND AI ENTERPRISE - PRESTIGE WORLD-CLASS DESIGN SYSTEM */
-/* UNIVERSAL RESPONSIVE ENGINE (ZERO OVERFLOW & FLUID ARCHITECTURE) */
+/* ADVANCED ZERO-COLLISION & CLEAN TYPOGRAPHY ENGINE */
 /* ========================================================================== */
 
 :root {
@@ -660,8 +660,8 @@ GLOBAL_PRESTIGE_CSS = """
     --border: #E2E8F0;
     --border-glass: rgba(226, 232, 240, 0.85);
     
-    --topbar-bg: rgba(255, 255, 255, 0.94);
-    --bottomnav-bg: rgba(255, 255, 255, 0.95);
+    --topbar-bg: rgba(255, 255, 255, 0.95);
+    --bottomnav-bg: rgba(255, 255, 255, 0.96);
     
     --danger: #DC2626;
     --danger-bg: #FEF2F2;
@@ -678,7 +678,6 @@ GLOBAL_PRESTIGE_CSS = """
     --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
     --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
     --shadow-lg: 0 10px 30px -5px rgba(15, 76, 129, 0.12), 0 4px 10px -2px rgba(15, 76, 129, 0.06);
-    --shadow-glass: 0 8px 32px 0 rgba(15, 76, 129, 0.1);
     
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -686,7 +685,7 @@ GLOBAL_PRESTIGE_CSS = """
     --radius-xl: 22px;
     --radius-pill: 9999px;
     
-    --transition-smooth: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-smooth: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body.dark-theme, html.dark-theme {
@@ -699,8 +698,8 @@ body.dark-theme, html.dark-theme {
     --border: rgba(255, 255, 255, 0.08);
     --border-glass: rgba(255, 255, 255, 0.12);
     
-    --topbar-bg: rgba(17, 24, 39, 0.94);
-    --bottomnav-bg: rgba(17, 24, 39, 0.95);
+    --topbar-bg: rgba(17, 24, 39, 0.95);
+    --bottomnav-bg: rgba(17, 24, 39, 0.96);
     
     --primary: #38BDF8;
     --primary-light: rgba(15, 76, 129, 0.3);
@@ -720,7 +719,7 @@ body.dark-theme, html.dark-theme {
 }
 
 /* ========================================================================== */
-/* 1. UNIVERSAL ZERO-OVERFLOW & TEXT-WRAPPING RULES */
+/* 1. TYPOGRAPHY & ZERO-COLLISION RULES */
 /* ========================================================================== */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -739,42 +738,52 @@ html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
     background-color: var(--bg);
     color: var(--text-main);
-    line-height: 1.55;
+    line-height: 1.75;
+    letter-spacing: normal !important;
 }
 
-/* Ensure all flex and grid children can shrink properly and never force horizontal overflow */
-div, section, article, aside, header, nav, footer, main, form, p, span, h1, h2, h3, h4, h5, h6, a, button, label, input, textarea, select {
-    min-width: 0;
-    max-width: 100%;
+/* Arabic letter-spacing must be strictly 0 / normal everywhere */
+[dir="rtl"], [dir="rtl"] * {
+    letter-spacing: 0 !important;
 }
 
-/* Strict wrapping on all text elements so long Latin medical names or URLs never spill out */
-p, span, h1, h2, h3, h4, h5, h6, strong, b, em, i, a, button, label, td, th, li, blockquote, div {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    hyphens: auto;
+/* Typography Line Heights: Arabic ascenders & descenders need generous vertical space */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .page-title, .section-title {
+    line-height: 1.5 !important;
+    letter-spacing: normal !important;
+    margin-top: 0;
+    margin-bottom: 0.6rem;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+h1, .h1 { font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.15rem) !important; }
+h2, .h2 { font-size: clamp(1.1rem, 1.6vw + 0.4rem, 1.55rem) !important; }
+h3, .h3 { font-size: clamp(1.0rem, 1.1vw + 0.35rem, 1.3rem) !important; }
+
+/* Paragraphs & prose: relaxed leading to prevent line collision */
+p, li, blockquote, .post-text {
+    line-height: 1.75 !important;
+    letter-spacing: normal !important;
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+/* Ensure no word is broken in buttons, badges, navigation items, pills, and chips */
+.btn, .badge, .brand-name, .lang-pill, .prayer-indicator-pill,
+.bnav-label, .m-badge, .search-shortcut-badge, .user-avatar-link,
+.btn-login-pill, .btn-register-pill, .tag, .chip, .m-icon {
+    white-space: nowrap !important;
+    flex-shrink: 0;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    letter-spacing: normal !important;
 }
 
 img, video, iframe, canvas, svg {
     max-width: 100%;
     height: auto;
-}
-
-/* Fluid Typography */
-h1, .h1 {
-    font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.25rem) !important;
-    line-height: 1.25;
-}
-h2, .h2 {
-    font-size: clamp(1.05rem, 1.5vw + 0.4rem, 1.55rem) !important;
-    line-height: 1.3;
-}
-h3, .h3 {
-    font-size: clamp(0.95rem, 1vw + 0.35rem, 1.25rem) !important;
-    line-height: 1.35;
-}
-p, span, button, input, select, textarea, label {
-    font-size: clamp(0.85rem, 0.4vw + 0.75rem, 1.02rem);
 }
 
 /* ========================================================================== */
@@ -786,15 +795,15 @@ p, span, button, input, select, textarea, label {
     align-items: center;
     padding: 10px 18px;
     font-size: 0.88rem;
+    line-height: 1.5;
     border-bottom: 2px solid;
     animation: slideDown 0.35s ease-out;
 }
 .broadcast-content {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
-    min-width: 0;
 }
 .broadcast-close {
     background: none;
@@ -807,7 +816,7 @@ p, span, button, input, select, textarea, label {
 }
 
 /* ========================================================================== */
-/* 3. STICKY GLASSMORPHIC TOP BAR (YOUTUBE / FACEBOOK GRADE) */
+/* 3. STICKY GLASSMORPHIC TOP BAR (ZERO-COLLISION LAYOUT) */
 /* ========================================================================== */
 .prestige-topbar {
     position: sticky;
@@ -826,18 +835,20 @@ p, span, button, input, select, textarea, label {
 .topbar-container {
     max-width: 1360px;
     margin: 0 auto;
-    padding: 10px 16px;
+    padding: 8px 16px;
+    min-height: 60px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
+    flex-wrap: nowrap;
 }
 
 .topbar-left {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 0;
+    flex-shrink: 0;
 }
 
 /* Brand Link */
@@ -848,7 +859,7 @@ p, span, button, input, select, textarea, label {
     text-decoration: none;
     color: var(--text-main);
     user-select: none;
-    min-width: 0;
+    flex-shrink: 0;
 }
 .brand-logo-wrap {
     width: 40px;
@@ -865,16 +876,17 @@ p, span, button, input, select, textarea, label {
 .brand-titles {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    justify-content: center;
+    gap: 2px;
 }
 .brand-name {
     font-size: clamp(1.05rem, 1.2vw + 0.4rem, 1.3rem);
     font-weight: 800;
-    letter-spacing: -0.5px;
     color: var(--primary);
     display: flex;
     align-items: center;
     gap: 6px;
+    line-height: 1.3;
     white-space: nowrap;
 }
 body.dark-theme .brand-name {
@@ -887,15 +899,13 @@ body.dark-theme .brand-name {
     font-weight: 800;
     padding: 2px 7px;
     border-radius: var(--radius-pill);
-    letter-spacing: 0.3px;
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 .brand-tagline {
     font-size: 0.72rem;
     color: var(--text-muted);
+    line-height: 1.2;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* Hamburger button */
@@ -922,10 +932,10 @@ body.dark-theme .brand-name {
     transform: scale(1.04);
 }
 
-/* Center Smart Search Trigger (YouTube/Facebook style) */
+/* Center Smart Search Trigger */
 .topbar-center {
     flex: 1 1 auto;
-    max-width: 420px;
+    max-width: 380px;
     display: flex;
     align-items: center;
     min-width: 0;
@@ -945,6 +955,7 @@ body.dark-theme .brand-name {
     cursor: pointer;
     transition: var(--transition-smooth);
     text-decoration: none;
+    white-space: nowrap;
 }
 .search-pill-btn:hover {
     background: var(--card-bg);
@@ -966,7 +977,7 @@ body.dark-theme .brand-name {
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
 }
 
@@ -1011,7 +1022,6 @@ body.dark-theme .prayer-indicator-pill:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
 }
 .prayer-pill-countdown {
     background: rgba(13, 148, 136, 0.15);
@@ -1108,13 +1118,12 @@ body.dark-theme .prayer-pill-countdown {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    min-width: 0;
 }
 .user-avatar-link {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: var(--radius-pill);
     background: var(--bg);
     border: 1px solid var(--border);
@@ -1123,7 +1132,7 @@ body.dark-theme .prayer-pill-countdown {
     transition: var(--transition-smooth);
     font-weight: 700;
     font-size: 0.82rem;
-    min-width: 0;
+    flex-shrink: 0;
 }
 .user-avatar-link:hover {
     border-color: var(--primary-border);
@@ -1161,6 +1170,7 @@ body.dark-theme .prayer-pill-countdown {
     font-size: 0.82rem;
     text-decoration: none;
     transition: var(--transition-smooth);
+    flex-shrink: 0;
 }
 .btn-login-pill:hover {
     border-color: var(--primary);
@@ -1176,6 +1186,7 @@ body.dark-theme .prayer-pill-countdown {
     text-decoration: none;
     box-shadow: 0 2px 6px rgba(15, 76, 129, 0.2);
     transition: var(--transition-smooth);
+    flex-shrink: 0;
 }
 .btn-register-pill:hover {
     background: var(--primary-dark);
@@ -1205,7 +1216,7 @@ body.dark-theme .prayer-pill-countdown {
     position: fixed;
     top: 0;
     bottom: 0;
-    width: 330px;
+    width: 320px;
     max-width: 86vw;
     background: var(--card-bg);
     color: var(--text-main);
@@ -1233,7 +1244,7 @@ body.dark-theme .prayer-pill-countdown {
 .mobile-drawer-header {
     background: var(--ai-gradient);
     color: white;
-    padding: 18px 18px;
+    padding: 16px 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1255,18 +1266,16 @@ body.dark-theme .prayer-pill-countdown {
 }
 .mobile-drawer-close:hover {
     background: rgba(255, 255, 255, 0.35);
-    transform: rotate(90deg);
 }
 
 .mobile-drawer-content {
     padding: 12px 14px 60px 14px;
 }
 .mobile-menu-section-title {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 800;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
     padding: 14px 8px 6px 8px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 6px;
@@ -1278,12 +1287,14 @@ body.dark-theme .prayer-pill-countdown {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 11px 12px;
+    min-height: 44px;
+    padding: 10px 12px;
     border-radius: var(--radius-md);
     color: var(--text-main);
     text-decoration: none;
     font-size: 0.92rem;
     font-weight: 600;
+    line-height: 1.4;
     transition: var(--transition-smooth);
     margin-bottom: 3px;
 }
@@ -1341,10 +1352,9 @@ body.dark-theme .prayer-pill-countdown {
     border-top: 1px solid var(--border-glass);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)) 4px;
     box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
-    height: calc(62px + env(safe-area-inset-bottom, 0px));
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     width: 100%;
-    max-width: 100vw;
 }
 
 @media (min-width: 861px) {
@@ -1355,7 +1365,7 @@ body.dark-theme .prayer-pill-countdown {
 
 @media (max-width: 860px) {
     body {
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
     }
 }
 
@@ -1365,6 +1375,7 @@ body.dark-theme .prayer-pill-countdown {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 3px;
     text-decoration: none;
     color: var(--text-muted);
     padding: 4px 2px;
@@ -1374,6 +1385,7 @@ body.dark-theme .prayer-pill-countdown {
     border: none;
     cursor: pointer;
     min-width: 0;
+    max-width: 20%;
 }
 .bnav-item:hover, .bnav-item:active {
     color: var(--primary);
@@ -1386,21 +1398,24 @@ body.dark-theme .prayer-pill-countdown {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    margin-bottom: 2px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
     transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .bnav-item.active .bnav-icon {
     transform: scale(1.12);
 }
 .bnav-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 64px !important;
+    letter-spacing: 0 !important;
+    text-align: center;
 }
 .bnav-community {
     color: #0284c7;
@@ -1414,12 +1429,10 @@ body.dark-theme .prayer-pill-countdown {
 /* ========================================================================== */
 .container {
     max-width: 1360px;
-    margin: 20px auto;
-    padding: 0 16px;
+    margin: 0 auto;
+    padding: 20px 16px 40px 16px;
     width: 100%;
     box-sizing: border-box;
-    overflow-x: clip;
-    min-width: 0;
 }
 
 .card {
@@ -1427,10 +1440,10 @@ body.dark-theme .prayer-pill-countdown {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 22px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     box-shadow: var(--shadow-sm);
     transition: var(--transition-smooth);
-    min-width: 0;
+    line-height: 1.7;
 }
 .card:hover {
     box-shadow: var(--shadow-md);
@@ -1438,35 +1451,39 @@ body.dark-theme .prayer-pill-countdown {
 
 .grid-2 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 .grid-3 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
 .grid-4 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
 }
 
 /* Buttons */
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 18px;
     border-radius: var(--radius-md);
     font-weight: 700;
     font-size: 0.88rem;
+    line-height: 1.4;
     text-decoration: none;
     cursor: pointer;
     border: none;
     transition: var(--transition-smooth);
     box-sizing: border-box;
-    white-space: nowrap;
+    white-space: nowrap !important;
+    flex-shrink: 0;
 }
 .btn:hover {
     transform: translateY(-1px);
@@ -1502,7 +1519,7 @@ body.dark-theme .prayer-pill-countdown {
 .modal-content {
     background: var(--card-bg);
     border-radius: var(--radius-xl);
-    max-width: 600px;
+    max-width: 580px;
     width: 100%;
     padding: 26px;
     box-shadow: var(--shadow-lg);
@@ -1511,28 +1528,27 @@ body.dark-theme .prayer-pill-countdown {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+    line-height: 1.7;
 }
 .modal-close {
     position: absolute;
     top: 16px;
-    left: 16px;
-    font-size: 1.5rem;
+    inset-inline-end: 16px;
+    font-size: 1.3rem;
     cursor: pointer;
     border: none;
-    background: none;
+    background: var(--bg);
     color: var(--text-muted);
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     transition: var(--transition-smooth);
 }
-[dir="rtl"] .modal-close { left: 16px; right: auto; }
-[dir="ltr"] .modal-close { right: 16px; left: auto; }
 .modal-close:hover {
-    background: var(--bg);
+    background: var(--danger-bg);
     color: var(--danger);
 }
 
@@ -1546,42 +1562,7 @@ table {
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin-bottom: 12px;
-}
-
-/* Quick App Box */
-.mobile-app-box {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    margin-bottom: 22px;
-    box-shadow: var(--shadow-sm);
-}
-.mobile-app-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 10px;
-    margin-top: 12px;
-}
-.mobile-app-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 12px 8px;
-    text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 6px;
-    transition: var(--transition-smooth);
-    color: var(--text-main);
-}
-.mobile-app-card:hover, .mobile-app-card:active {
-    transform: translateY(-2px);
-    border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
 }
 
 /* Footer */
@@ -1589,35 +1570,47 @@ footer {
     background: #090D16;
     color: #94A3B8;
     text-align: center;
-    padding: 32px 16px;
+    padding: 36px 16px;
     margin-top: 40px;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.8;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 footer a { color: #38BDF8; text-decoration: none; }
 
-/* Responsive Media Queries */
-@media (max-width: 900px) {
+/* Responsive Media Queries - Stacking without Collisions */
+@media (max-width: 1100px) {
     .topbar-center {
         display: none !important;
     }
-    .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    .topbar-desktop-only {
+        display: none !important;
+    }
+    .topbar-right .btn-install-header {
+        display: none !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .topbar-search-icon-mobile {
+        display: inline-flex !important;
+    }
+    .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
     .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
     .container {
-        padding: 0 10px !important;
-        margin: 10px auto !important;
+        padding: 12px 10px 30px 10px !important;
     }
     .card {
-        padding: 16px 12px !important;
-        border-radius: 12px !important;
-        margin-bottom: 14px !important;
+        padding: 16px 14px !important;
+        border-radius: 14px !important;
+        margin-bottom: 16px !important;
     }
     .grid-2, .grid-3, .grid-4 {
         grid-template-columns: 1fr !important;
-        gap: 12px !important;
+        gap: 14px !important;
     }
     .mobile-app-grid {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -1625,6 +1618,7 @@ footer a { color: #38BDF8; text-decoration: none; }
     }
     .topbar-container {
         padding: 8px 10px !important;
+        gap: 8px !important;
     }
     .brand-tagline {
         display: none !important;
@@ -1635,15 +1629,18 @@ footer a { color: #38BDF8; text-decoration: none; }
     .prayer-indicator-pill {
         padding: 4px 8px !important;
         font-size: 0.72rem !important;
-        max-width: 140px !important;
+        max-width: 130px !important;
     }
     .prayer-pill-text {
-        max-width: 75px !important;
+        max-width: 68px !important;
     }
     .user-profile-widget .user-badge {
         display: none !important;
     }
-    .topbar-right .btn-install-header {
+    .user-profile-widget .user-name {
+        display: none !important;
+    }
+    .topbar-right .lang-selector-pill {
         display: none !important;
     }
 }
@@ -1859,14 +1856,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         "ja": "🇯🇵 日本語 (Japanese)"
     }
     lang_options = ""
-    lang_buttons = ""
     for code in SUPPORTED_LANGUAGES:
         sel = "selected" if code == lang else ""
         d_name = lang_display_names.get(code, code)
         lang_options += f'<option value="{code}" {sel}>{d_name}</option>'
-        l_name = TRANSLATIONS_DB.get(code, {}).get("lang_name", code)
-        is_active = "active-lang" if code == lang else ""
-        lang_buttons += f'<a href="/set-language/{code}" onclick="changeLanguage(\'{code}\'); return false;" class="lang-pill {is_active}" style="text-decoration: none; cursor: pointer;">{l_name}</a>'
 
     conn = get_db()
     c = conn.cursor()
@@ -1898,12 +1891,11 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     user_nav = ""
     if current_user:
         v_badge = "✅" if current_user.get("verification_status") == "approved" else "⏳"
-        user_country = current_user.get("country", "مصر")
         initial_letter = current_user['name'][0] if current_user.get('name') else "V"
         user_nav = f"""
         <div class="user-profile-widget">
             {premium_badge}
-            <a href="/profile" class="user-avatar-link" title="الملف الشخصي">
+            <a href="/profile" class="user-avatar-link" title="الملف الشخصي: د. {current_user['name']}">
                 <span class="user-avatar-circle">{initial_letter}</span>
                 <span class="user-name">د. {current_user['name']}</span>
                 <span class="user-badge" style="font-size: 0.72rem; color: var(--text-muted);">{v_badge}</span>
@@ -1977,7 +1969,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <a href="/community" class="mobile-menu-item" style="color: #0284c7; font-weight: 700;">
                 <span class="m-icon">🌐</span>
                 <span class="m-label">VetBook مجتمع الأطباء</span>
-                <span class="m-badge" style="background: #e0f2fe; color: #0369a1;">جديد</span>
+                <span class="m-badge" style="background: #e0f2fe; color: #0369a1;">مجاني</span>
             </a>
             <a href="/clinic" class="mobile-menu-item">
                 <span class="m-icon">🏥</span>
@@ -2193,6 +2185,11 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     <span class="prayer-pill-countdown">{prayer_c_text}</span>
                 </a>
 
+                <!-- Search icon on mobile/tablet when search-pill-btn is hidden -->
+                <button type="button" onclick="openSearchModal()" class="icon-action-btn topbar-search-icon-mobile" title="بحث سريع" style="display: none;">
+                    🔍
+                </button>
+
                 <!-- Language Selector -->
                 <div class="lang-selector-pill">
                     <span style="font-size: 0.85rem;">🌐</span>
@@ -2206,12 +2203,12 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     🌓
                 </button>
 
-                <!-- API Key -->
-                <button type="button" onclick="openApiModal()" class="icon-action-btn" title="{t('nav_api_key', 'مفتاح الـ API')}">
+                <!-- API Key (desktop) -->
+                <button type="button" onclick="openApiModal()" class="icon-action-btn topbar-desktop-only" title="{t('nav_api_key', 'مفتاح الـ API')}">
                     🔑
                 </button>
 
-                <!-- Install App -->
+                <!-- Install App (desktop) -->
                 <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" title="تحميل وتثبيت التطبيق">
                     📥 <span>تثبيت التطبيق</span>
                 </button>
@@ -2228,12 +2225,12 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <!-- Quick Search Modal (Ctrl+K) -->
     <div id="search-modal" class="modal">
         <div class="modal-content" style="max-width: 580px;">
-            <button class="modal-close" onclick="closeSearchModal()">×</button>
+            <button class="modal-close" onclick="closeSearchModal()">✕</button>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
                 <span style="font-size: 1.8rem;">🔍</span>
                 <div>
                     <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary);">البحث السريع الشامل</h2>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">ابحث فورياً في منظومة VetMind AI بالكامل</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">ابحث فورياً في منظومة VetMind AI بالكامل</div>
                 </div>
             </div>
 
@@ -2266,12 +2263,12 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <!-- API Key Modal -->
     <div id="api-modal" class="modal">
         <div class="modal-content">
-            <button class="modal-close" onclick="closeApiModal()">×</button>
+            <button class="modal-close" onclick="closeApiModal()">✕</button>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                 <span style="font-size: 2rem;">🔑</span>
                 <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary);">{t('api_modal_title')}</h2>
             </div>
-            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6;">
                 {t('api_modal_desc')}
             </p>
 
@@ -2292,7 +2289,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <!-- Mobile Connect & WebAPK Install Modal -->
     <div id="mobile-modal" class="modal">
         <div class="modal-content" style="max-width: 520px; text-align: center;">
-            <button class="modal-close" onclick="closeMobileModal()">×</button>
+            <button class="modal-close" onclick="closeMobileModal()">✕</button>
             <div style="width: 56px; height: 56px; border-radius: 50%; background: #ecfdf5; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 10px auto; border: 2px solid #a7f3d0;">
                 📱
             </div>
@@ -2343,10 +2340,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         <div style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 8px;">
             👨‍⚕️ <strong>{t('developer_label')}</strong> <span style="color: #fde047; font-weight: 800; font-size: 1.02rem;">{t('developer_name')}</span>
         </div>
-        <div style="margin-top: 8px; font-size: 0.78rem; color: #94a3b8;">
+        <div style="margin-top: 8px; font-size: 0.82rem; color: #94a3b8; line-height: 1.6;">
             Grounded in Merck Veterinary Manual, WOAH, WSAVA, FAO, Cornell CVM & Official Arab Formularies.
         </div>
-        <div style="margin-top: 4px; font-size: 0.76rem; color: #64748b;">
+        <div style="margin-top: 4px; font-size: 0.80rem; color: #64748b; line-height: 1.6;">
             {t("copyright_footer", "كافة حقوق الملكية الفكرية والبرمجية والتصميم محفوظة © 2026 د. تامر سعد | مخصص حصرياً للأطباء البيطريين المرخصين.")}
         </div>
     </footer>

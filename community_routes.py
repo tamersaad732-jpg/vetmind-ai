@@ -517,8 +517,9 @@ body.dark-theme .case-demographics-grid {
     padding: 10px 16px;
     color: var(--fb-text);
     font-size: 0.9rem;
-    line-height: 1.5;
-    word-break: break-word;
+    line-height: 1.7;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 body.dark-theme .fb-comment-bubble {
     background: #0f172a;
@@ -1141,7 +1142,7 @@ async def community_hub(
                 </div>
                 <div>
                     <div style="font-size: 0.72rem; opacity: 0.9;">{s_name}</div>
-                    <div style="font-size: 0.78rem; font-weight: 800; line-height: 1.2; margin-top: 2px;">{s_title}</div>
+                    <div style="font-size: 0.78rem; font-weight: 800; line-height: 1.4; margin-top: 2px;">{s_title}</div>
                 </div>
             </div>
             """
@@ -1430,8 +1431,8 @@ async def community_hub(
                 </div>
 
                 <!-- Post Title & Content -->
-                <h3 style="margin: 0 0 8px 0; font-size: 1.15rem; color: var(--fb-text); line-height: 1.4; word-break: break-word;">{p['title']}</h3>
-                <div style="font-size: 0.95rem; color: var(--fb-text); line-height: 1.6; word-break: break-word; white-space: pre-line;">{p['content']}</div>
+                <h3 style="margin: 0 0 8px 0; font-size: 1.15rem; color: var(--fb-text); line-height: 1.5; word-break: normal; overflow-wrap: break-word;">{p['title']}</h3>
+                <div style="font-size: 0.95rem; color: var(--fb-text); line-height: 1.75; word-break: normal; overflow-wrap: break-word; white-space: pre-line;">{p['content']}</div>
 
                 {demographics_html}
                 {media_html}
