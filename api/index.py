@@ -24,10 +24,8 @@ class VercelPathMiddleware:
             qs = scope.get("query_string", b"").decode("utf-8")
             params = urllib.parse.parse_qs(qs)
             
-            # 1. Read the explicit original path forwarded from vercel.json
+            # Read original path forwarded from vercel.json
             orig_path = params.get("__orig_path", [None])[0]
-            
-            # 2. Or check Vercel matched-path header
             if not orig_path:
                 headers = dict(scope.get("headers", []))
                 matched = headers.get(b"x-matched-path") or headers.get(b"x-forwarded-uri")
@@ -38,14 +36,8 @@ class VercelPathMiddleware:
                         pass
 
             if orig_path:
-                # Normalize double slashes if any
                 while "//" in orig_path:
                     orig_path = orig_path.replace("//", "/")
-                
-                # Clean __orig_path out of query string
-                new_params = {k: v for k, v in params.items() if k != "__orig_path"}
-                new_qs = urllib.parse.urlencode(new_params, doseq=True)
-                scope["query_string"] = new_qs.encode("utf-8")
                 scope["path"] = orig_path
                 scope["raw_path"] = orig_path.encode("utf-8")
             elif scope.get("path") in ("/api/index.py", "/api/index", "/api"):

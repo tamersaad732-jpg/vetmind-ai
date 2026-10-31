@@ -171,7 +171,9 @@ def get_current_user(request: Request):
 
 @app.middleware("http")
 async def require_auth_middleware(request: Request, call_next):
-    path = request.url.path
+    path = request.query_params.get("__orig_path") or request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
+    if not path or path in ["/api/index.py", "/api/index", "/api"]:
+        path = "/" 
 
     # 1. Allow all static files & media uploads & favicon
     if path.startswith("/static") or path.startswith("/uploads") or path == "/favicon.ico":
