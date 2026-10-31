@@ -197,7 +197,7 @@ async def require_auth_middleware(request: Request, call_next):
         target = path
         if request.url.query:
             target += f"?{request.url.query}"
-        login_url = f"/login?redirect={urllib.parse.quote(target)}" if target != "/" else "/login"
+        login_url = f"/login?redirect={urllib.parse.quote(target)}" if target not in ["/", "/api/index.py", "/api/index"] else "/login"
         return RedirectResponse(login_url, status_code=303)
 
     return await call_next(request)
