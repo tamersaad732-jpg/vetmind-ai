@@ -172,21 +172,14 @@ def get_current_user(request: Request):
 @app.middleware("http")
 async def require_auth_middleware(request: Request, call_next):
     path = request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
-    if not path or path in ["/api/index.py", "/api/index", "/api"]:
-        path = "/" 
+    raw_info = f"{path} {request.url} {request.headers.get('x-now-route-matches', '')} {request.headers.get('x-matched-path', '')}".lower()
 
     # 1. Allow all static files & media uploads & favicon
-    if path.startswith("/static") or path.startswith("/uploads") or path == "/favicon.ico":
+    if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", ".css", ".js", ".png", ".jpg", ".svg", ".json", ".ico"]):
         return await call_next(request)
 
-    # 2. Allow public auth endpoints, language change, api tests
-    public_paths = [
-        "/login",
-        "/register",
-        "/verify-otp",
-        "/set-language",
-    ]
-    if any(path == p or path.startswith(p + "/") for p in public_paths):
+    # 2. Allow public auth endpoints & language switch
+    if any(k in raw_info for k in ["login", "register", "verify-otp", "set-language"]):
         return await call_next(request)
 
     # 3. Check user authentication
