@@ -1,0 +1,41 @@
+# Python virtualenv & caches
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Cloudflare & local daemon
+cloudflared.exe
+tunnel_info.json
+*.log
+daemon.log
+
+# Scratch & OS files
+.DS_Store
+Thumbs.db
+*.tmp
+bin/
+setup_git.py
+check_layout.py
+test_live_html.py
+
+static/reference_docs/*.pdf
+static/reference_docs/*.zip

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجع طب وأمراض الإبل والخيول والمجترات الصحراوية - VetMind AI Library</title>
+    <style>
+        :root {
+            --primary: #16a34a;
+            --text: #0f172a;
+            --muted: #475569;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-print { background: var(--primary); color: #ffffff; }
+        .btn-print:hover { opacity: 0.9; }
+        .btn-back { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .book-header {
+            background: linear-gradient(135deg, #16a34a 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .book-title {
+            margin: 0 0 10px 0;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+        .book-meta {
+            font-size: 0.92rem;
+            opacity: 0.92;
+            margin-bottom: 6px;
+        }
+        .toc-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .toc-title {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .toc-list {
+            margin: 0;
+            padding-right: 25px;
+        }
+        .toc-list li {
+            margin-bottom: 8px;
+        }
+        .toc-list a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+        .chapter-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-right: 5px solid var(--primary);
+        }
+        .chapter-title {
+            margin: 0 0 16px 0;
+            font-size: 1.35rem;
+            color: var(--primary);
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .chapter-body {
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .footer-notice {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        @media print {
+            body { padding: 0; background: #ffffff; }
+            .no-print { display: none !important; }
+            .chapter-card { page-break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Navigation & Print Toolbar -->
+        <div class="no-print">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--primary);">
+                📖 VetMind AI Clinical Library - Official Electronic Monograph
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️ طباعة المرجع / حفظ كـ PDF (Print / Save PDF)
+                </button>
+                <a href="/references" class="btn btn-back">
+                    ⬅️ العودة لقائمة المراجع
+                </a>
+            </div>
+        </div>
+
+        <!-- Book Header -->
+        <header class="book-header">
+            <div class="badge">مرجع عربي معتمد 🇪🇬🇸🇦</div>
+            <h1 class="book-title">مرجع طب وأمراض الإبل والخيول والمجترات الصحراوية</h1>
+            <div class="book-meta"><strong>الجهة المعتمدة:</strong> كلية الطب البيطري - جامعة الملك فيصل (المملكة العربية السعودية)</div>
+            <div class="book-meta"><strong>التوثيق الأكاديمي القياسي:</strong> جامعة الملك فيصل، كلية الطب البيطري، الأحساء (المرجع الإكلينيكي في أمراض الهجن وطب المناطق الجافة 2026)</div>
+            <div class="book-meta"><strong>الفصائل المستهدفة:</strong> الإبل وحيدة السنام (الهجن والجمال)، الخيول العربية، الأغنام النجدية والحري</div>
+            <div class="book-meta"><strong>المشرف والمراجع الطبي:</strong> دكتور تامر سعد (Dr. Tamer Saad)</div>
+            <div style="margin-top: 15px; font-size: 0.88rem; opacity: 0.9; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px;">
+                المرجع الرائد في الشرق الأوسط والخليج العربي المتخصص في طب وجراحة وفيزيولوجيا الإبل وهجن السباقات المتقدمة، أمراض الإجهاد الحراري، السموم الرعوية، وطب التناسل والولادة في الحيوانات الصحراوية.
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-card">
+            <h2 class="toc-title">📋 فهرس الفصول السريرية</h2>
+            <ul class="toc-list">
+                <li><a href="#chapter_1">الباب الأول: داء الهيام (التريبانوسوما) والمثقبيات في الإبل</a></li><li><a href="#chapter_2">الباب الثاني: طب وجراحة هجن السباق وإصابات الجهاز الحركي</a></li>
+            </ul>
+        </nav>
+
+        <!-- Clinical Chapters -->
+        <main>
+            
+        <section id="chapter_1" class="chapter-card">
+            <h3 class="chapter-title">الباب الأول: داء الهيام (التريبانوسوما) والمثقبيات في الإبل</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">داء الهيام (Surra / Trypanosoma evansi):</p><li style="margin-bottom: 6px;">المسبب: طفيلي أولي سوطي (Trypanosoma evansi) ينتقل ميكانيكياً عبر ذباب الخيل (Tabanus) وذباب الإسطبل (Stomoxys).</li><li style="margin-bottom: 6px;">الأعراض السريرية:</li><li style="margin-bottom: 6px;">الشكل الحاد: حمى متقطعة متكررة، خمول، إجهاض مفاجئ، ونفوق خلال أسابيع قليلة.</li><li style="margin-bottom: 6px;">الشكل المزمن (الأكثر شيوعاً): هزال تدريجي مستمر بالرغم من استمرار الشهية، ضمور شديد في السنام حتى يميل أو يسقط، فقر دم وشحوب الأغشية المخاطية، وذمات أوديمية في أسفل البطن والقوائم والجران والصفن، رائحة بول مميزة كريهة ونفاذة، وضعف أداء هجن السباق بشكل ملحوظ.</li><li style="margin-bottom: 6px;">الفحص المخبري والتشخيص:</li><li style="margin-bottom: 6px;">فحص قطرة دم طازجة رطبة تحت الميكروسكوب لمشاهدة الحركة السريعة المميزة للطور السوطي للطفيلي بين كريات الدم.</li><li style="margin-bottom: 6px;">فحص المسحة الدموية المصبوبة بصبغة جيمسا.</li><li style="margin-bottom: 6px;">اختبار ترطيب الطرد المركزي (Woo hematocrit centrifuge technique).</li><li style="margin-bottom: 6px;">فحص الأجسام المضادة بالـ CATT أو الـ Card Agglutination Test.</li><li style="margin-bottom: 6px;">البروتوكول العلاجي المعتمد:</li><li style="margin-bottom: 6px;">ميلارسومين (Melarsomine dihydrochloride / Cymelarsan): العلاج الذهبي النوعي بجرعة 0.25 ملغم/كغم (0.5 مل لكل 100 كغم) عضلياً عميقاً في عضلات الرقبة، يتميز بفاعليته التامة ضد السلالات المقاومة للأدوية القديمة وعدم إحداث سمية عصبية.</li><li style="margin-bottom: 6px;">كوينابيرامين سلفات / كلوريد (Quinapyramine sulphate/chloride): 3-5 ملغم/كغم تحت الجلد بحذر شديد مع تجنب الحقن الوريدي.</li><li style="margin-bottom: 6px;">كبريتات الحديد وفيتامين B12 ومحاليل الدكستروز لعلاج فقر الدم ودعم استعادة طاقة الكبد.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_2" class="chapter-card">
+            <h3 class="chapter-title">الباب الثاني: طب وجراحة هجن السباق وإصابات الجهاز الحركي</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. انحلال العضلات الإجهادي (Exertional Rhabdomyolysis / Tying-up):</h4><li style="margin-bottom: 6px;">يحدث عقب التدريب الشاق أو السباقات بسبب نقص تروية العضلات وتراكم حمض اللاكتيك ونقص فيتامين E والسيلينيوم.</li><li style="margin-bottom: 6px;">الأعراض: تشنج وتصلب عضلات الفخذ والظهر بعد السباق، ألم حاد عند لمس العضلات، تردد في المشي وخطوات قصيرة، سرعة تنفس وعرق بارد، وتبول بول أحمر داكن إلى بني بسبب المايوغلوبين (Myoglobinuria).</li><li style="margin-bottom: 6px;">الإنزيمات المخبرية: ارتفاع هائل في كرياتينين كاينيز (CK > 2,000 U/L) وإنزيم أسبارتات ترانسامينيز (AST > 1,500 U/L).</li><li style="margin-bottom: 6px;">العلاج الفوري:</li><li style="margin-bottom: 6px;">التوقف التام عن الحركة ووضع الحيوان في بيئة هادئة ومظللة.</li><li style="margin-bottom: 6px;">تسريب محاليل رينجر لاكتات وريدياً (20-40 لتر) بجرعات عالية لغسيل الكلى ومنع الانسداد الكلوي بالمايوغلوبين.</li><li style="margin-bottom: 6px;">فلونيكسين ميغلومين: 1.1 ملغم/كغم لتسكين الألم وتقليل الالتهاب العضلي.</li><li style="margin-bottom: 6px;">ديازيبام أو إيسوبرومازين بجرعات خفيفة لتخفيف التشنج العضلي وإزالة القلق.</li><li style="margin-bottom: 6px;">حقن مركب فيتامين هـ + سيلينيوم (Vitamin E + Selenium) 20 مل عضلياً.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. التهاب وتمزق الأوتار في الإبل (SDFT & DDFT Tendonitis):</h4><li style="margin-bottom: 6px;">تشخيص بالموجات فوق الصوتية (Ultrasound) لتحديد درجة التمزق ومساحة النزف داخل غمد الوتر.</li><li style="margin-bottom: 6px;">العلاج: الراحة التامة والتبريد الفوري بالثلج في أول 48 ساعة، يليه العلاج بالبلازما الغنية بالصفائح الدموية (PRP) أو الخلايا الجذعية، ومضادات الالتهاب الموضعية والضمادات الداعمة.</li>
+            </div>
+        </section>
+        
+        </main>
+
+        <!-- Official Footer Notice -->
+        <footer class="footer-notice">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI للذكاء الاصطناعي الطبي البيطري - تحت إشراف د. تامر سعد<br>
+            هذا الدليل الطبي مخصص حصرياً للأطباء البيطريين المرخصين لدعم القرار السريري.
+        </footer>
+    </div>
+</body>
+</html>

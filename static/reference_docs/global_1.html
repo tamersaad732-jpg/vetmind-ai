@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merck Veterinary Manual (MVM) - Comprehensive Multi-Species Clinical Reference - VetMind AI Library</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --text: #0f172a;
+            --muted: #475569;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-print { background: var(--primary); color: #ffffff; }
+        .btn-print:hover { opacity: 0.9; }
+        .btn-back { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .book-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .book-title {
+            margin: 0 0 10px 0;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+        .book-meta {
+            font-size: 0.92rem;
+            opacity: 0.92;
+            margin-bottom: 6px;
+        }
+        .toc-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .toc-title {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .toc-list {
+            margin: 0;
+            padding-right: 25px;
+        }
+        .toc-list li {
+            margin-bottom: 8px;
+        }
+        .toc-list a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+        .chapter-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-right: 5px solid var(--primary);
+        }
+        .chapter-title {
+            margin: 0 0 16px 0;
+            font-size: 1.35rem;
+            color: var(--primary);
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .chapter-body {
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .footer-notice {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        @media print {
+            body { padding: 0; background: #ffffff; }
+            .no-print { display: none !important; }
+            .chapter-card { page-break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Navigation & Print Toolbar -->
+        <div class="no-print">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--primary);">
+                📖 VetMind AI Clinical Library - Official Electronic Monograph
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️ طباعة المرجع / حفظ كـ PDF (Print / Save PDF)
+                </button>
+                <a href="/references" class="btn btn-back">
+                    ⬅️ العودة لقائمة المراجع
+                </a>
+            </div>
+        </div>
+
+        <!-- Book Header -->
+        <header class="book-header">
+            <div class="badge">Global Tier-1 Reference 🌐</div>
+            <h1 class="book-title">Merck Veterinary Manual (MVM) - Comprehensive Multi-Species Clinical Reference</h1>
+            <div class="book-meta"><strong>الجهة المعتمدة:</strong> Merck & Co., Inc., Rahway, NJ, USA</div>
+            <div class="book-meta"><strong>التوثيق الأكاديمي القياسي:</strong> Merck & Co., Inc. (The Merck Veterinary Manual, 11th/12th Clinical Reference Edition)</div>
+            <div class="book-meta"><strong>الفصائل المستهدفة:</strong> Canine, Feline, Equine, Bovine, Ovine, Caprine, Swine, Avian, Exotic Mammals</div>
+            <div class="book-meta"><strong>المشرف والمراجع الطبي:</strong> دكتور تامر سعد (Dr. Tamer Saad)</div>
+            <div style="margin-top: 15px; font-size: 0.88rem; opacity: 0.9; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px;">
+                The worldwide benchmark clinical veterinary reference covering etiology, pathophysiology, diagnostics, and therapeutics across all domestic species and organ systems.
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-card">
+            <h2 class="toc-title">📋 فهرس الفصول السريرية</h2>
+            <ul class="toc-list">
+                <li><a href="#chapter_1">Chapter 1: Multi-System Physical Examination & Clinical Triage Standards</a></li><li><a href="#chapter_2">Chapter 2: Emergency Fluid Resuscitation Therapy</a></li><li><a href="#chapter_3">Chapter 3: Clinical Toxicology & Decontamination Protocols</a></li>
+            </ul>
+        </nav>
+
+        <!-- Clinical Chapters -->
+        <main>
+            
+        <section id="chapter_1" class="chapter-card">
+            <h3 class="chapter-title">Chapter 1: Multi-System Physical Examination & Clinical Triage Standards</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">Systematic Physical Assessment Hierarchy:</p><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. Distance Examination: Mentation, respiratory pattern, posture, gait, body condition score (BCS 1-9).</h4><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. Vital Signs & Telemetry:</h4><li style="margin-bottom: 6px;">Temperature, Pulse, Respiration (TPR) normal baseline:</li><li style="margin-bottom: 6px;">Canine: T 38.3-39.2 C | HR 70-140 bpm | RR 18-34 bpm</li><li style="margin-bottom: 6px;">Feline: T 38.0-39.2 C | HR 140-220 bpm | RR 20-30 bpm</li><li style="margin-bottom: 6px;">Equine: T 37.2-38.3 C | HR 28-44 bpm | RR 8-16 bpm</li><li style="margin-bottom: 6px;">Bovine: T 38.0-39.3 C | HR 48-84 bpm | RR 24-36 bpm</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">3. Mucous Membrane & Perfusion Indicators:</h4><li style="margin-bottom: 6px;">Capillary Refill Time (CRT): Normal < 2.0 seconds. Prolonged (> 2s) indicates peripheral vasoconstriction or hypovolemic shock.</li><li style="margin-bottom: 6px;">Pale mucous membranes indicate severe anemia or hypovolemia.</li><li style="margin-bottom: 6px;">Brick-red / injected membranes indicate endotoxemic septic shock or severe vasodilation.</li><li style="margin-bottom: 6px;">Icteric (yellow) membranes indicate pre-hepatic hemolysis, hepatic insufficiency, or post-hepatic biliary stasis.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_2" class="chapter-card">
+            <h3 class="chapter-title">Chapter 2: Emergency Fluid Resuscitation Therapy</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">Standard Veterinary Fluid Calculations:</p><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. Total Fluid Requirement = Deficit Volume + Daily Maintenance + Ongoing Losses.</h4><li style="margin-bottom: 6px;">Deficit Volume (mL) = Body Weight (kg) x % Dehydration x 10.</li><li style="margin-bottom: 6px;">Maintenance Volumes:</li><li style="margin-bottom: 6px;">Adult Canine: 60 mL/kg/day (or 132 x BW^0.75 mL/day).</li><li style="margin-bottom: 6px;">Adult Feline: 40-50 mL/kg/day.</li><li style="margin-bottom: 6px;">Large Animals (Equine / Bovine): 50-60 mL/kg/day.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. Emergency Shock Dosing (Balanced Isotonic Crystalloids: LRS / Normosol-R):</h4><li style="margin-bottom: 6px;">Canine Shock Dose: 80-90 mL/kg IV (give 25% of total bolus over 15 minutes, then reassess perfusion targets).</li><li style="margin-bottom: 6px;">Feline Shock Dose: 40-60 mL/kg IV (give 10-15 mL/kg aliquots slowly; cats are highly susceptible to volume overload and pulmonary edema).</li><li style="margin-bottom: 6px;">Equine Shock Dose: 60-90 mL/kg IV via dual 10-gauge catheters.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_3" class="chapter-card">
+            <h3 class="chapter-title">Chapter 3: Clinical Toxicology & Decontamination Protocols</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">Acute Ingestion Toxin Management:</p><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. Induction of Emesis:</h4><li style="margin-bottom: 6px;">Canine: Apomorphine hydrochloride at 0.03 mg/kg IV or subconjunctival tablet (0.25 mg dissolved in saline into conjunctival sac; rinse upon emesis). Hydrogen peroxide 3% (1-2 mL/kg PO, max 45 mL).</li><li style="margin-bottom: 6px;">Feline: Dexmedetomidine at 7 mcg/kg IM (reverse with Atipamezole once vomiting occurs). Do not administer Apomorphine to felines (ineffective and causes CNS depression).</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. Gastrointestinal Adsorption:</h4><li style="margin-bottom: 6px;">Activated Charcoal (with or without Sorbitol): 1 to 4 g/kg PO as a 10% slurry. Repeat q4-6h at 0.5 g/kg without cathartic for enterohepatically recirculated toxins.</li>
+            </div>
+        </section>
+        
+        </main>
+
+        <!-- Official Footer Notice -->
+        <footer class="footer-notice">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI للذكاء الاصطناعي الطبي البيطري - تحت إشراف د. تامر سعد<br>
+            هذا الدليل الطبي مخصص حصرياً للأطباء البيطريين المرخصين لدعم القرار السريري.
+        </footer>
+    </div>
+</body>
+</html>

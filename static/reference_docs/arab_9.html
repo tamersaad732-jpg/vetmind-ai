@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدليل المخبري السريري وتفسير تحاليل الدم والباثولوجيا البيطرية - VetMind AI Library</title>
+    <style>
+        :root {
+            --primary: #16a34a;
+            --text: #0f172a;
+            --muted: #475569;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-print { background: var(--primary); color: #ffffff; }
+        .btn-print:hover { opacity: 0.9; }
+        .btn-back { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .book-header {
+            background: linear-gradient(135deg, #16a34a 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .book-title {
+            margin: 0 0 10px 0;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+        .book-meta {
+            font-size: 0.92rem;
+            opacity: 0.92;
+            margin-bottom: 6px;
+        }
+        .toc-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .toc-title {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .toc-list {
+            margin: 0;
+            padding-right: 25px;
+        }
+        .toc-list li {
+            margin-bottom: 8px;
+        }
+        .toc-list a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+        .chapter-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-right: 5px solid var(--primary);
+        }
+        .chapter-title {
+            margin: 0 0 16px 0;
+            font-size: 1.35rem;
+            color: var(--primary);
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .chapter-body {
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .footer-notice {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        @media print {
+            body { padding: 0; background: #ffffff; }
+            .no-print { display: none !important; }
+            .chapter-card { page-break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Navigation & Print Toolbar -->
+        <div class="no-print">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--primary);">
+                📖 VetMind AI Clinical Library - Official Electronic Monograph
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️ طباعة المرجع / حفظ كـ PDF (Print / Save PDF)
+                </button>
+                <a href="/references" class="btn btn-back">
+                    ⬅️ العودة لقائمة المراجع
+                </a>
+            </div>
+        </div>
+
+        <!-- Book Header -->
+        <header class="book-header">
+            <div class="badge">مرجع عربي معتمد 🇪🇬🇸🇦</div>
+            <h1 class="book-title">الدليل المخبري السريري وتفسير تحاليل الدم والباثولوجيا البيطرية</h1>
+            <div class="book-meta"><strong>الجهة المعتمدة:</strong> كلية الطب البيطري - جامعة أسيوط</div>
+            <div class="book-meta"><strong>التوثيق الأكاديمي القياسي:</strong> جامعة أسيوط، كلية الطب البيطري، قسم التشخيص الإكلينيكي والمعملي (دليل قراءة تحاليل CBC وكيمياء الدم البيطرية 2026)</div>
+            <div class="book-meta"><strong>الفصائل المستهدفة:</strong> جميع الحيوانات الحقلية، الخيول، الحيوانات الأليفة، والطيور</div>
+            <div class="book-meta"><strong>المشرف والمراجع الطبي:</strong> دكتور تامر سعد (Dr. Tamer Saad)</div>
+            <div style="margin-top: 15px; font-size: 0.88rem; opacity: 0.9; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px;">
+                الدليل المخبري المرجعي الشامل لتفسير الفحوصات المعملية، القيم المرجعية الطبيعية لصورة الدم الكاملة (CBC) وكيمياء المصل ووظائف الكبد والكلى، تشخيص الحماض والقلواء الأيضي، وتحليل السوائل الحيوية والبول.
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-card">
+            <h2 class="toc-title">📋 فهرس الفصول السريرية</h2>
+            <ul class="toc-list">
+                <li><a href="#chapter_1">الباب الأول: جداول المعدلات المرجعية الطبيعية لصورة الدم (CBC Normal Ranges)</a></li><li><a href="#chapter_2">الباب الثاني: كيمياء الدم ووظائف الكبد والكلى والشوارد</a></li>
+            </ul>
+        </nav>
+
+        <!-- Clinical Chapters -->
+        <main>
+            
+        <section id="chapter_1" class="chapter-card">
+            <h3 class="chapter-title">الباب الأول: جداول المعدلات المرجعية الطبيعية لصورة الدم (CBC Normal Ranges)</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">المعدلات المرجعية الطبيعية في الحيوانات البالغة:</p><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. الأبقار (Bovine):</h4><li style="margin-bottom: 6px;">كريات الدم الحمراء (RBCs): 5.0 - 10.0 x 10^6 / µL</li><li style="margin-bottom: 6px;">الهيموغلوبين (Hb): 8.0 - 15.0 g/dL</li><li style="margin-bottom: 6px;">حجم الخلايا المكدسة (PCV / Hematocrit): 24 - 46 %</li><li style="margin-bottom: 6px;">كريات الدم البيضاء الكلية (WBCs): 4,000 - 12,000 / µL</li><li style="margin-bottom: 6px;">العدلات (Neutrophils): 15 - 45 %</li><li style="margin-bottom: 6px;">اللمفاويات (Lymphocytes): 45 - 75 % (الخلايا اللمفاوية هي السائدة طبيعياً في المجترات)</li><li style="margin-bottom: 6px;">وحيدات النواة (Monocytes): 2 - 7 %</li><li style="margin-bottom: 6px;">الحمضات (Eosinophils): 2 - 20 %</li><li style="margin-bottom: 6px;">الصفائح الدموية (Platelets): 100,000 - 800,000 / µL</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. الخيول (Equine):</h4><li style="margin-bottom: 6px;">RBCs: 6.5 - 12.5 x 10^6 / µL</li><li style="margin-bottom: 6px;">PCV: 32 - 52 %</li><li style="margin-bottom: 6px;">WBCs: 5,500 - 12,500 / µL</li><li style="margin-bottom: 6px;">Neutrophils: 30 - 65 % (العدلات هي السائدة)</li><li style="margin-bottom: 6px;">Lymphocytes: 25 - 60 %</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">3. الكلاب والقطط (Canine & Feline):</h4><li style="margin-bottom: 6px;">Canine RBCs: 5.5 - 8.5 x 10^6 / µL | PCV: 37 - 55 % | WBCs: 6,000 - 17,000 / µL</li><li style="margin-bottom: 6px;">Feline RBCs: 6.0 - 10.0 x 10^6 / µL | PCV: 30 - 45 % | WBCs: 5,500 - 19,500 / µL</li>
+            </div>
+        </section>
+        
+        <section id="chapter_2" class="chapter-card">
+            <h3 class="chapter-title">الباب الثاني: كيمياء الدم ووظائف الكبد والكلى والشوارد</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. كيمياء وظائف الكلى (Renal Function Panel):</h4><li style="margin-bottom: 6px;">نيتروجين يوريا الدم (BUN): المعدل الطبيعي 10-25 ملغم/ديسيلتر. الارتفاع (Azotemia) يدل على تجفاف حاد (Pre-renal)، فشل كلوي (Renal)، أو انسداد المسالك البولية أو تمزق المثانة (Post-renal).</li><li style="margin-bottom: 6px;">الكرياتينين (Serum Creatinine): 1.0 - 2.0 ملغم/ديسيلتر في المجترات والكلاب. مؤشر دقيق للغاية لترشيح الكبيبات الكلوية (GFR).</li><li style="margin-bottom: 6px;">علامة الـ SDMA (Symmetric Dimethylarginine): علامة مبكرة فائقة الحساسية تكشف تدهور الكلى عند فقدان 25-40% من وظيفتها مقارنة بـ 75% للكرياتينين.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. كيمياء وظائف الكبد (Hepatic Panel):</h4><li style="margin-bottom: 6px;">إنزيم AST و GGT: مؤشرات رئيسية في المجترات والخيول لتلف خلايا الكبد وركود القنوات الصفراوية (الديدان الكبدية).</li><li style="margin-bottom: 6px;">إنزيم ALT (Alanine Aminotransferase): خاص وحساس لإصابات خلايا الكبد في الكلاب والقطط.</li>
+            </div>
+        </section>
+        
+        </main>
+
+        <!-- Official Footer Notice -->
+        <footer class="footer-notice">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI للذكاء الاصطناعي الطبي البيطري - تحت إشراف د. تامر سعد<br>
+            هذا الدليل الطبي مخصص حصرياً للأطباء البيطريين المرخصين لدعم القرار السريري.
+        </footer>
+    </div>
+</body>
+</html>

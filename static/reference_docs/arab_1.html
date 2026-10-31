@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المرجع الإكلينيكي الشامل في أمراض الأبقار والمجترات - VetMind AI Library</title>
+    <style>
+        :root {
+            --primary: #16a34a;
+            --text: #0f172a;
+            --muted: #475569;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-print { background: var(--primary); color: #ffffff; }
+        .btn-print:hover { opacity: 0.9; }
+        .btn-back { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .book-header {
+            background: linear-gradient(135deg, #16a34a 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .book-title {
+            margin: 0 0 10px 0;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+        .book-meta {
+            font-size: 0.92rem;
+            opacity: 0.92;
+            margin-bottom: 6px;
+        }
+        .toc-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .toc-title {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .toc-list {
+            margin: 0;
+            padding-right: 25px;
+        }
+        .toc-list li {
+            margin-bottom: 8px;
+        }
+        .toc-list a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+        .chapter-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-right: 5px solid var(--primary);
+        }
+        .chapter-title {
+            margin: 0 0 16px 0;
+            font-size: 1.35rem;
+            color: var(--primary);
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .chapter-body {
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .footer-notice {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        @media print {
+            body { padding: 0; background: #ffffff; }
+            .no-print { display: none !important; }
+            .chapter-card { page-break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Navigation & Print Toolbar -->
+        <div class="no-print">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--primary);">
+                📖 VetMind AI Clinical Library - Official Electronic Monograph
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️ طباعة المرجع / حفظ كـ PDF (Print / Save PDF)
+                </button>
+                <a href="/references" class="btn btn-back">
+                    ⬅️ العودة لقائمة المراجع
+                </a>
+            </div>
+        </div>
+
+        <!-- Book Header -->
+        <header class="book-header">
+            <div class="badge">مرجع عربي معتمد 🇪🇬🇸🇦</div>
+            <h1 class="book-title">المرجع الإكلينيكي الشامل في أمراض الأبقار والمجترات</h1>
+            <div class="book-meta"><strong>الجهة المعتمدة:</strong> الجمعية الطبية البيطرية المصرية بالاشتراك مع كلية الطب البيطري - جامعة القاهرة</div>
+            <div class="book-meta"><strong>التوثيق الأكاديمي القياسي:</strong> الجمعية الطبية البيطرية المصرية، كلية الطب البيطري، جامعة القاهرة (دليل تشخيص وعلاج أمراض المجترات، الطبعة المحدثة 2026)</div>
+            <div class="book-meta"><strong>الفصائل المستهدفة:</strong> الأبقار، الجاموس، الأغنام، الماعز، العجول الرضيعة</div>
+            <div class="book-meta"><strong>المشرف والمراجع الطبي:</strong> دكتور تامر سعد (Dr. Tamer Saad)</div>
+            <div style="margin-top: 15px; font-size: 0.88rem; opacity: 0.9; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px;">
+                المرجع الطبي المعتمد لتشخيص وعلاج والوقاية من أمراض المجترات والأبقار الحلوب والتسمين الشائعة في مصر والشرق الأوسط، بما يشمل الأمراض المعدية الوبائية، أمراض الجهاز الهضمي والكرش، طفيليات الدم، التهابات الضرع، والاضطرابات الأيضية.
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-card">
+            <h2 class="toc-title">📋 فهرس الفصول السريرية</h2>
+            <ul class="toc-list">
+                <li><a href="#chapter_1">الباب الأول: الأمراض الفيروسية والوبائية الحادة في المجترات</a></li><li><a href="#chapter_2">الباب الثاني: طفيليات الدم البقرية وحميات الصيف</a></li><li><a href="#chapter_3">الباب الثالث: اضطرابات الكرش والجهاز الهضمي والتمثيل الغذائي</a></li><li><a href="#chapter_4">الباب الرابع: دليل الجرعات الدوائية وفترات السحب البيطرية</a></li>
+            </ul>
+        </nav>
+
+        <!-- Clinical Chapters -->
+        <main>
+            
+        <section id="chapter_1" class="chapter-card">
+            <h3 class="chapter-title">الباب الأول: الأمراض الفيروسية والوبائية الحادة في المجترات</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. الحمى القلاعية (Foot and Mouth Disease - FMD):</h4><li style="margin-bottom: 6px;">المسبب: فيروس من عائلة Picornaviridae (العترات السائدة محلياً: A, O, SAT2).</li><li style="margin-bottom: 6px;">فترة الحضانة: 2 إلى 8 أيام.</li><li style="margin-bottom: 6px;">الأعراض السريرية: حمى شديدة (40.5 - 41.5 مئوية)، سيلان لعاب رغوي غزير ومستمر، حويصلات وتآكلات مؤلمة في اللسان وبطانة الفم واللثة والوسادة السنية، حويصلات في الشق بين الظلفين وتاج الحافر تؤدي لعرج شديد ورفض الوقوف، انخفاض حاد في إنتاج الحليب بنسبة تصل إلى 80%، إجهاض في الحوامل، ونفوق مفاجئ في العجول بسبب التهاب عضلة القلب (قلب النمر Tiger Heart).</li><li style="margin-bottom: 6px;">التشخيص التفريقي:</li><li style="margin-bottom: 6px;">طاعون المجترات الصغيرة (PPR): تقرحات فمية مع إسهال شديد والتهاب رئوي في الأغنام.</li><li style="margin-bottom: 6px;">التهاب الفم الحويصلي (VS): يصيب الخيول أيضاً بخلاف الحمى القلاعية.</li><li style="margin-bottom: 6px;">التهاب الفم الحبيبي البقري (BVD/MD): تقرحات هضمية ممتدة مع نقص حاد في كريات الدم البيضاء.</li><li style="margin-bottom: 6px;">الفحوصات المخبرية: اختبار RT-PCR على سوائل الحويصلات، فحص ELISA لتحديد العترة بدقة.</li><li style="margin-bottom: 6px;">البروتوكول العلاجي الداعم:</li><li style="margin-bottom: 6px;">خافضات الحرارة ومضادات الالتهاب غير الستيرويدية: فلونيكسين ميغلومين (Flunixin meglumine) بجرعة 2.2 ملغم/كغم وريدياً يومياً لمدة 3 أيام، أو كيتوبروفين 3 ملغم/كغم عضلياً.</li><li style="margin-bottom: 6px;">مضاد حيوي واسع الطيف للوقاية من العدوى البكتيرية الثانوية: أوكسيتيتراسيكلين طويل المفعول (OTC 20%) بجرعة 20 ملغم/كغم عضلياً مرة واحدة تكرر بعد 72 ساعة، أو سيفكوي نوم (Cefquinome) 1 ملغم/كغم عضلياً يومياً لمدة 3-5 أيام.</li><li style="margin-bottom: 6px;">العناية الموضعية بالفم: غسول فموي بمحلول كبريتات النحاس 1% أو حمض البوريك 2% أو صبغة الجليسرين يود.</li><li style="margin-bottom: 6px;">العناية بالأظلاف: مغاطس أظلاف بمحلول كبريتات النحاس 5% أو الفورمالين 3% بعد تنظيف الحوافر بالماء الفاتر.</li><li style="margin-bottom: 6px;">دعم عضلة القلب والطاقة: حقن محاليل الدكستروز 20%، مكملات فيتامين E وسيلينيوم، وفيتامينات B المركبة.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. مرض التهاب الجلد العقدي (Lumpy Skin Disease - LSD):</h4><li style="margin-bottom: 6px;">المسبب: فيروس من جنس Capripoxvirus. ينتقل عبر الحشرات الماصة للدم (الناموس، الذباب، القراد).</li><li style="margin-bottom: 6px;">الأعراض السريرية: حمى مفاجئة (40-41 مئوية)، ظهور عقد جلدية صلبة ومرتفعة (قطر 1-5 سم) تشمل كامل الجسم خاصة الرقبة والضرع والأعضاء التناسلية، وذمات أوديمية تحت الجلد في القوائم واللبب، التهاب ملتحمة العين وسيلان دمعي وأنفي غزير، تضخم ملحوظ في الغدد اللمفاوية السطحية (خاصة قبل الكتف وقبل الفخذ)، وتحول العقد الجلدية إلى جلبات جافة نخرية (Sit-fasts) تترك ندوباً غائرة.</li><li style="margin-bottom: 6px;">البروتوكول العلاجي:</li><li style="margin-bottom: 6px;">مضادات الالتهاب: كيتوبروفين 3 ملغم/كغم أو ميلوكسيكام 0.5 ملغم/كغم تحت الجلد.</li><li style="margin-bottom: 6px;">مضادات الهيستامين: كلورفينيرامين ماليات (Chlorpheniramine) بجرعة 0.5 ملغم/كغم عضلياً لتقليل الحكة والرشح والوذمات.</li><li style="margin-bottom: 6px;">مضادات حيوية مانعة للعدوى الثانوية: بنسلين بروكايين مع دايهيدروستريبتومايسين بجرعة 1 مل/10 كغم عضلياً يومياً لمدة 5 أيام، أو إسبيرامايسين.</li><li style="margin-bottom: 6px;">رش الحيوانات بمضادات الطفيليات الخارجية (دلتا مثرين 5% أو سايبرمثرين) لكسر حلقة انتقال العدوى بالحشرات.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_2" class="chapter-card">
+            <h3 class="chapter-title">الباب الثاني: طفيليات الدم البقرية وحميات الصيف</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. البابيزيا البقرية (Bovine Babesiosis / Redwater):</h4><li style="margin-bottom: 6px;">المسبب: Babesia bovis و Babesia bigemina، ينقلها قراد Rhipicephalus (Boophilus).</li><li style="margin-bottom: 6px;">الأعراض: حمى عالية (41 مئوية)، بيلة هيموغلوبينية (بول مدمم داكن يشبه لون القهوة)، يرقان شديد في الأغشية المخاطية، فقر دم حاد وانخفاض قيمة الهيماتوكريت (PCV < 15%)، سرعة ضربات القلب وضعف عام، وفي البابيزيا بوفيس تظهر أعراض عصبية كالدوران والعمى المؤقت والتشنجات بسبب ترسب كريات الدم المصابة في الشعيرات الدماغية.</li><li style="margin-bottom: 6px;">التشخيص: فحص مسحة دموية رقيقة من الأذن مصبوغة بصبغة جيمسا (ظهور أزواج الكمثرى داخل كريات الدم الحمراء).</li><li style="margin-bottom: 6px;">العلاج النوعي الحاسم:</li><li style="margin-bottom: 6px;">إيميدوكارب ديبروبيونات (Imidocarb dipropionate 12%): جرعة علاجية 1.2 ملغم/كغم (1 مل لكل 100 كغم) تحت الجلد، وتعتبر الجرعة قاتلة للطفيلي ومحمية للحيوان لمدة 4 أسابيع.</li><li style="margin-bottom: 6px;">في حالات الطوارئ: دايمينازين أسيتورات (Diminazene aceturate 7%): 3.5 ملغم/كغم عضلياً عميقاً.</li><li style="margin-bottom: 6px;">العلاج الداعم: نقل دم كامل (5-10 لتر) إذا كان الـ PCV أقل من 12%، حقن فيتامين B12، ومستحضرات الحديد، ومحاليل الفركتوز والأحماض الأمينية.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. الثايليريا المصرية (Theileriosis - Tropical Theileriosis):</h4><li style="margin-bottom: 6px;">المسبب: Theileria annulata، ينقلها قراد Hyalomma.</li><li style="margin-bottom: 6px;">الأعراض: تضخم هائل في الغدد اللمفاوية السطحية (قبل الكتف وقبل الفخذ)، حمى مرتفعة ومستمرة، صعوبة في التنفس مع وذمة رئوية وسعال رطب، نزف نمشي في ملتحمة العين، هزال سريع وإسهال مخاطي مدمم.</li><li style="margin-bottom: 6px;">التشخيص: بزل العقد اللمفاوية المتضخمة وفحص المسحة لصبغة جيمسا (ظهور أجسام كوخ Koch's blue bodies داخل الخلايا اللمفاوية)، ومسحة دم لرؤية الأطوار الخاتمية.</li><li style="margin-bottom: 6px;">العلاج النوعي:</li><li style="margin-bottom: 6px;">بوفاركوان (Buparvaquone 50 mg/ml): 2.5 ملغم/كغم (1 مل لكل 20 كغم) عضلياً في عضلات الرقبة، تكرر جرعة ثانية بعد 48 ساعة في الحالات الشديدة.</li><li style="margin-bottom: 6px;">أوكسيتيتراسيكلين طويل المفعول 20%: 20 ملغم/كغم عضلياً لدعم تثبيط تكاثر الطفيلي.</li><li style="margin-bottom: 6px;">فوروسيميد (Furosemide): 1-2 ملغم/كغم وريدياً في حال وجود وذمة رئوية حادة لتجفيف السوائل من الرئتين.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_3" class="chapter-card">
+            <h3 class="chapter-title">الباب الثالث: اضطرابات الكرش والجهاز الهضمي والتمثيل الغذائي</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. الحماض الكرشي الحاد (Acute Rumen Acidosis / Grain Overload):</h4><li style="margin-bottom: 6px;">المسبب: التهام كميات كبيرة مفاجئة من الحبوب سريعة التخمر (ذرة، شعير، مركزات).</li><li style="margin-bottom: 6px;">الفسيولوجيا المرضية: تخمر سريع لإنتاج حمض اللاكتيك -> انخفاض حموضة الكرش (pH < 5.0) -> موت البكتيريا الهاضمة للألياف وتكاثر بكتيريا Streptococcus bovis -> زيادة الضغط الأسموزي بالكرش وسحب السوائل من الدم -> جفاف حاد، حماض جهازي، والتهاب صفائح الأظلاف (Laminitis).</li><li style="margin-bottom: 6px;">الأعراض: توقف كامل لحركات الكرش، انتفاخ مائي للكرش (صوت قرقرة عند الهز)، خمول تام ورقاد، برودة الأطراف، إسهال مائي حامضي رمادي اللون ذو رائحة نفاذة، وجفاف شديد (تغور العينين، انخفاض مرونة الجلد).</li><li style="margin-bottom: 6px;">بروتوكول العلاج الإسعافي:</li><li style="margin-bottom: 6px;">غسيل كرش فوري (Rumen lavage) أو تفريغ محتويات الكرش جراحياً (Rumenotomy) في الحالات شديدة التسمم.</li><li style="margin-bottom: 6px;">معادلة حموضة الكرش: تجريع أكسيد المغنيسيوم أو هيدروكسيد المغنيسيوم (500-1000 غم) في 10 لتر ماء دافئ، يمنع استخدام بيكربونات الصوديوم فموياً في الحالات المتقدمة لتجنب انطلاق غاز CO2 وتفجير الكرش.</li><li style="margin-bottom: 6px;">تصحيح الحماض الوريدي: تسريب محاليل بيكربونات الصوديوم 1.3% أو 5% متساوية التوتر وريدياً بمعدل 5-10 لتر حسب درجة الجفاف.</li><li style="margin-bottom: 6px;">زراعة عصارة كرش سليمة (Transfaunation): إعطاء 5-10 لتر من عصارة كرش حيوان سليم طازجة لإعادة تنشيط الفلورا الطبيعية.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. حمى الحليب ونقص الكالسيوم الحاد (Milk Fever / Hypocalcemia):</h4><li style="margin-bottom: 6px;">يحدث عادة خلال 24-48 ساعة حول الولادة في الأبقار عالية الإدرار.</li><li style="margin-bottom: 6px;">الأعراض: مرحلة الرقاد الصامت (Sternal recumbency) مع ثني الرقبة نحو الخاصرة على شكل حرف S، انخفاض حرارة الجسم (برودة الأذنين وقاعدة القرون)، جفاف فتحتي الأنف، غياب المنعكس الحدقي، وتوقف التبرز والتبول وركود الأمعاء.</li><li style="margin-bottom: 6px;">العلاج الفوري:</li><li style="margin-bottom: 6px;">حقن 500 مل من محلول كالسيوم بوروجلوكونات 23% - 40% وريدياً ببطء شديد (على مدار 15-20 دقيقة) مع الاستماع المستمر لدقات القلب بسماعة الطبيب (التوقف الفوري عند حدوث بطء أو عدم انتظام ضربات القلب لتجنب الرجفان البطيني القاتل).</li><li style="margin-bottom: 6px;">حقن 250 مل تحت الجلد لضمان إمداد مستمر بالكالسيوم ومنع الانتكاس بعد 12 ساعة.</li><li style="margin-bottom: 6px;">إعطاء بلعات الكالسيوم الفموية بعد استعادة الحيوان لوعيه وقدرته على البلع.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_4" class="chapter-card">
+            <h3 class="chapter-title">الباب الرابع: دليل الجرعات الدوائية وفترات السحب البيطرية</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">جدول الجرعات وفترات السحب المعتمدة في الأبقار والمجترات:</p><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. أوكسيتيتراسيكلين طويل المفعول (Oxytetracycline LA 20%):</h4><li style="margin-bottom: 6px;">الجرعة: 20 ملغم/كغم (1 مل لكل 10 كغم) عضلياً عميقاً.</li><li style="margin-bottom: 6px;">الاستخدام: الالتهابات الرئوية، طفيليات الدم، تعفن الحافر، والتهابات الرحم.</li><li style="margin-bottom: 6px;">فترة سحب اللحم: 28 يوماً.</li><li style="margin-bottom: 6px;">فترة سحب الحليب: 7 أيام (14 حلبة).</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. فلونيكسين ميغلومين (Flunixin Meglumine 50 mg/ml):</h4><li style="margin-bottom: 6px;">الجرعة: 2.2 ملغم/كغم (2 مل لكل 45 كغم) وريدياً ببطء يومياً لمدة 1-3 أيام.</li><li style="margin-bottom: 6px;">الاستخدام: مسكن ألم فائق، مضاد للالتهاب الرئوي، ومضاد للصدمة الإندوتوكسينية في التهاب الضرع الخبيث.</li><li style="margin-bottom: 6px;">فترة سحب اللحم: 4 أيام.</li><li style="margin-bottom: 6px;">فترة سحب الحليب: 36 ساعة (3 حلبات).</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">3. أموكسيسيلين ثلاثي الهيدرات طويل المفعول (Amoxicillin LA 15%):</h4><li style="margin-bottom: 6px;">الجرعة: 15 ملغم/كغم (1 مل لكل 10 كغم) عضلياً، تكرر بعد 48 ساعة.</li><li style="margin-bottom: 6px;">فترة سحب اللحم: 14-21 يوماً.</li><li style="margin-bottom: 6px;">فترة سحب الحليب: 72 ساعة.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">4. إيفرمكتين 1% (Ivermectin 1%):</h4><li style="margin-bottom: 6px;">الجرعة: 0.2 ملغم/كغم (1 مل لكل 50 كغم) تحت الجلد فقط خلف الكتف.</li><li style="margin-bottom: 6px;">الاستخدام: الديدان المعوية، الديدان الرئوية، الجرب، والقراد.</li><li style="margin-bottom: 6px;">فترة سحب اللحم: 35 يوماً.</li><li style="margin-bottom: 6px;">يمنع تماماً في الأبقار الحلوب المنتجة لحليب الاستهلاك البشري.</li><p style="margin-bottom: 8px; line-height: 1.7;">5. سيفكوي نوم (Cefquinome 2.5%):</p><li style="margin-bottom: 6px;">الجرعة: 1 ملغم/كغم (2 مل لكل 50 كغم) عضلياً لمدة 3-5 أيام.</li><li style="margin-bottom: 6px;">فترة سحب اللحم: 5 أيام.</li><li style="margin-bottom: 6px;">فترة سحب الحليب: 24 ساعة فقط.</li>
+            </div>
+        </section>
+        
+        </main>
+
+        <!-- Official Footer Notice -->
+        <footer class="footer-notice">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI للذكاء الاصطناعي الطبي البيطري - تحت إشراف د. تامر سعد<br>
+            هذا الدليل الطبي مخصص حصرياً للأطباء البيطريين المرخصين لدعم القرار السريري.
+        </footer>
+    </div>
+</body>
+</html>

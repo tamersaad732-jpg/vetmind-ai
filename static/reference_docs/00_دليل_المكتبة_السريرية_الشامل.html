@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكتبة المراجع البيطرية المعتمدة - VetMind AI</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --arab: #16a34a;
+            --arab-bg: #f0fdf4;
+            --global: #2563eb;
+            --global-bg: #eff6ff;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 30px 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);
+            margin-bottom: 30px;
+        }
+        .header h1 { margin: 0 0 10px 0; font-size: 1.8rem; }
+        .header p { margin: 0; opacity: 0.9; font-size: 1.05rem; }
+        .dev-badge {
+            display: inline-block;
+            margin-top: 15px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .stat-num { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .stat-lbl { font-size: 0.9rem; color: var(--muted); margin-top: 4px; }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 35px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ref-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+        .ref-card:hover {
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+        .ref-card.arab { border-right: 5px solid var(--arab); }
+        .ref-card.global { border-right: 5px solid var(--global); }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .badge.arab { background: var(--arab-bg); color: #15803d; }
+        .badge.global { background: var(--global-bg); color: #1d4ed8; }
+        .ref-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 6px 0; }
+        .ref-meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
+        .ref-summary { font-size: 0.92rem; color: #334155; margin-bottom: 12px; }
+        .key-points { margin: 0; padding-right: 20px; font-size: 0.85rem; color: #475569; }
+        .key-points li { margin-bottom: 4px; }
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+        .btn-link:hover { background: var(--primary-dark); }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 مكتبة المراجع السريرية البيطرية الشاملة</h1>
+            <p>30 مرجعاً علمياً ودليلاً تشخيصياً معتمداً ومحملاً بالكامل للعمل الميداني دون إنترنت</p>
+            <div class="dev-badge">المطور والمشرف الطبي: دكتور تامر سعد (Dr. Tamer Saad) | VetMind AI Enterprise</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-num">30</div>
+                <div class="stat-lbl">إجمالي المراجع العلمية المعتمدة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: var(--arab);">10</div>
+                <div class="stat-lbl">مراجع ودلائل فارماكولوجية عربية</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: var(--global);">20</div>
+                <div class="stat-lbl">مراجع عالمية دولية معتمدة Tier-1</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" style="color: #8b5cf6;">100%</div>
+                <div class="stat-lbl">جاهزة ومحملة بالكامل بدون إنترنت</div>
+            </div>
+        </div>
+
+        <div class="section-title" style="color: var(--arab);">
+            <span>🇪🇬</span>
+            <span>القسم الأول: المراجع والأدلة البيطرية العربية المعتمدة (10 مراجع)</span>
+        </div>
+
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [1/10]</span>
+            <div class="ref-title">المرجع الإكلينيكي في أمراض الأبقار والمجترات - الجمعية البيطرية المصرية</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> مجلات ودوريات بيطرية عربية | <strong>التوثيق:</strong> الجمعية الطبية البيطرية المصرية، كلية الطب البيطري، جامعة القاهرة (دليل تشخيص الحميات واللقاحات الوبائية)</div>
+            <div class="ref-summary">دليل إكلينيكي وتشخيصي تفصيلي يغطي أمراض الأبقار، الجاموس، والأغنام الشائعة في مصر وحوض النيل مع بروتوكولات الفحص الميداني واللقاحات السيادية المعتمدة.</div>
+            <ul class="key-points">
+                <li>بروتوكول تفريقي بين الحمى القلاعية، التهاب الفم الحويصلي، وطاعون المجترات الصغيرة.</li><li>إرشادات التلقيح الدوري ضد التسمم النزفي والحمى الفحمية والجلد العقدي.</li><li>معايير مكافحة طفيليات الدم (البابيزيا، الثايليريا، الأنابلازما) بالمناطق الحارة.</li>
+            </ul>
+            <a href="https://esvp.journals.ekb.eg/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [2/10]</span>
+            <div class="ref-title">دليل الأوبئة والتحصينات البيطرية - الهيئة العامة للخدمات البيطرية بمصر</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> بروتوكولات حكومية عربية | <strong>التوثيق:</strong> وزارة الزراعة المصرية، قطاع الإرشاد والخدمات البيطرية (بروتوكول الحملة القومية والتحصين السيادي)</div>
+            <div class="ref-summary">المرجع الرسمي التنظيمي للأوبئة والسيطرة الحقلية على الأمراض المشتركة والعابرة للحدود الصادر عن الهيئة العامة للخدمات البيطرية.</div>
+            <ul class="key-points">
+                <li>خطة الاستجابة العاجلة لبؤر إنفلونزا الطيور شديدة الضراوة والجلد العقدي.</li><li>جدول فترات سحب اللقاحات والمضادات الحيوية في مزارع التسمين وإنتاج الألبان.</li><li>نماذج التقصي الوبائي الميداني وإرسال العينات لمعامل بحوث صحة الحيوان بالدقي.</li>
+            </ul>
+            <a href="http://www.govs.gov.eg/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [3/10]</span>
+            <div class="ref-title">المجلة العلمية للطب البيطري - جامعة الملك فيصل (السعودية)</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> جامعات ومراكز أبحاث عربية | <strong>التوثيق:</strong> جامعة الملك فيصل، كلية الطب البيطري (دراسات السموم الفطرية والأمراض السارية في الإبل والضأن)</div>
+            <div class="ref-summary">دراسات طبية وبائية وسريرية متخصصة في طب وأمراض الإبل (الهجن)، الخيول العربية، والمجترات الصحراوية والتغذية والسموم.</div>
+            <ul class="key-points">
+                <li>تشخيص وعلاج داء الهيام (التريبانوسوما) والمثقبيات في الإبل وهجن السباق.</li><li>متلازمة النفوق المفاجئ في صغار النوق (الحيران) والتهاب الأمعاء النخري.</li><li>استخدامات الأدوية البيطرية وتحديات التحمل الكبدي والكلوي في ظروف الإجهاد الحراري.</li>
+            </ul>
+            <a href="https://www.kfu.edu.sa/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [4/10]</span>
+            <div class="ref-title">أطلس الطفيليات البيطرية والأمراض المشتركة - جامعة بغداد</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> أدلة تشخيصية عربية | <strong>التوثيق:</strong> كلية الطب البيطري، جامعة بغداد (فحص عينات البراز والدم واليرقات الحشرية المسببة)</div>
+            <div class="ref-summary">أطلس مصور ميكروسكوبياً لتشخيص الديدان الأسطوانية، الكبدية، الشريطية، وطفيليات الأوالي في الماشية والدواجن.</div>
+            <ul class="key-points">
+                <li>مورفولوجيا بيوض الديدان الكبدية الفاشيولا وديدان المعدة والديدان الرئوية.</li><li>التشخيص المجهري لأطوار الثايليريا أنيولاتا وبابيزيا بوفيس في مسحات الدم الرقيقة.</li><li>إجراءات السيطرة على حشرة القراد والقراد الصلب الناقل للأمراض الوبائية.</li>
+            </ul>
+            <a href="https://covm.uobaghdad.edu.iq/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [5/10]</span>
+            <div class="ref-title">دليل الفارماكولوجيا والعلاج الإكلينيكي البيطري - جامعة دمشق</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> المؤلفات الدوائية المعتمدة | <strong>التوثيق:</strong> كلية الطب البيطري، قسم الأدوية والسموم (جرعات مضادات الالتهاب وفترات الأمان Withdrawal Periods)</div>
+            <div class="ref-summary">مرجع شامل في علم الأدوية السريرية وحركيتها في الثروة الحيوانية والطيور، وحساب الجرعات وتجنب التداخلات الدوائية.</div>
+            <ul class="key-points">
+                <li>جداول الجرعات الدقيقة للمضادات الحيوية (مجموعات البنسلينات، السيفالوسبورين، والماكروليد).</li><li>موانع الاستخدام في إناث الحيوانات الحوامل والمرضعات والحيوانات المصابة بفشل كلوي.</li><li>بروتوكولات علاج التسمم الحشري بالفسفور العضوي والكاربامات ومضادات الترياق (الأتوبين والتوكسوجونين).</li>
+            </ul>
+            <a href="https://damascusuniversity.edu.sy/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [6/10]</span>
+            <div class="ref-title">المجلة الأردنية في العلوم الزراعية والبيطرية (JJAS)</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> دوريات محكمة | <strong>التوثيق:</strong> عمادة البحث العلمي، الجامعة الأردنية (أمراض الجهاز التنفسي واللقاحات الحيوية)</div>
+            <div class="ref-summary">أبحاث تطبيقية محكمة حول التهابات الجهاز التنفسي في الدواجن، والتحصين الوقائي، والطب الوقائي البيطري.</div>
+            <ul class="key-points">
+                <li>برامج السيطرة على فيروس الالتهاب الشعبي المعدي (IB) والميكوبلازما في قطعان اللاحم.</li><li>تطوير استخدام الزيوت الطيارة والأعشاب الطبية كمحفزات مناعة في الدواجن.</li><li>تحديد العترات المتحورة لمرض الجمبورو وطرق التصدي باللقاحات الحية والميتة.</li>
+            </ul>
+            <a href="https://journals.ju.edu.jo/JJAS" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [7/10]</span>
+            <div class="ref-title">دليل أمراض الإبل والهجن السريري - مستشفى دبي للإبل</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> مستشفيات بيطرية تخصصية | <strong>التوثيق:</strong> مستشفى دبي للجمال، القسم السريري والجراحي (أمراض الجهاز الحركي والتمثيل الغذائي)</div>
+            <div class="ref-summary">أحدث الإرشادات السريرية والجراحية لطب الإبل، إصابات الأوتار والمفاصل في هجن السباقات، واضطرابات العضلات.</div>
+            <ul class="key-points">
+                <li>التشخيص بالموجات فوق الصوتية لتمزق الأوتار وإصابات الركبة والرمانة في الإبل.</li><li>علاج اضطرابات الشوارد واعتلال عضلة القلب الناجم عن الإجهاد ونقص فيتامين هـ والسيلينيوم.</li><li>بروتوكولات التخدير العام والوقوف للجراحات الميدانية في الجمال.</li>
+            </ul>
+            <a href="https://dubaicamelhospital.ae/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [8/10]</span>
+            <div class="ref-title">مرجع الطب الباطني والجراحة البيطرية - جامعة الخرطوم</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> أمهات الكتب البيطرية الأكاديمية | <strong>التوثيق:</strong> كلية العلوم البيطرية، جامعة الخرطوم (أمراض المناطق المدارية والأوبئة المتوطنة)</div>
+            <div class="ref-summary">المرجع الأكاديمي الكلاسيكي الأول في أفريقيا والعالم العربي لأمراض المناطق الحارة، التريبانوسوما، والجدري.</div>
+            <ul class="key-points">
+                <li>التشخيص التفريقي بين طاعون الخيل الأفريقي، الحمى النزفية، وحمى الوادي المتصدع.</li><li>تقنيات الجراحة الميدانية للجهاز الهضمي (بضع الكرش Cesarean & Rumenotomy).</li><li>إدارة مزارع الأبقار والضأن النيلي في مواسم الفيضان والأمطار.</li>
+            </ul>
+            <a href="https://uofk.edu.sd/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [9/10]</span>
+            <div class="ref-title">دليل التحاليل المخبرية والأمراض السريرية - جامعة أسيوط</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> الأدلة المخبرية والمعملية | <strong>التوثيق:</strong> كلية الطب البيطري بأسيوط، قسم التشخيص الإكلينيكي والمعملي (تفسير صورة الدم الكاملة ووظائف الأعضاء)</div>
+            <div class="ref-summary">مرجع عملي لتفسير تحاليل الدم الكاملة (CBC)، كيمياء الدم، وظائف الكبد والكلى، وتحليل البول في الحيوانات الحقلية.</div>
+            <ul class="key-points">
+                <li>المعدلات المرجعية الطبيعية لعدد كرات الدم البيضاء والحمراء والصفائح في جميع الحيوانات.</li><li>مؤشرات الالتهاب الحاد وبروتينات الطور الحاد (الفبرينوجين والألبومين/الجلوبيولين).</li><li>طرق التشخيص السريع الميداني للأحماض الكيتونية ونقص الكالسيوم (حمى الحليب).</li>
+            </ul>
+            <a href="http://www.aun.edu.eg/vet/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="ref-card arab">
+            <span class="badge arab">مرجع عربي معتمد [10/10]</span>
+            <div class="ref-title">الدليل العربي للأدوية واللقاحات البيطرية - اتحاد الأطباء البيطريين العرب</div>
+            <div class="ref-meta"><strong>التصنيف:</strong> هيئات ومنظمات بيطرية عربية | <strong>التوثيق:</strong> الأمانة العامة لاتحاد الأطباء البيطريين العرب، القاهرة (قائمة الأدوية المعتمدة عربياً ومكافحة المقاومة الميكروبية)</div>
+            <div class="ref-summary">المرجع الموحد للمصطلحات البيطرية والأدوية المسجلة في وزارات الزراعة وهيئات الدواء بالدول العربية وإرشادات الاستخدام الرشيد.</div>
+            <ul class="key-points">
+                <li>تصنيف المضادات الحيوية وفق خطورة تطور المقاومة البكتيرية (Critically Important Antimicrobials).</li><li>الاشتراطات الموحدة لاستيراد وتداول اللقاحات الحية وسلسلة التبريد (Cold Chain).</li><li>معايير السلامة المهنية للأطباء البيطريين أثناء التعامل مع الأدوية الهرمونية والكيميائية.</li>
+            </ul>
+            <a href="http://arabvetunion.org/" target="_blank" class="btn-link">🌐 زيارة المنصة الرسمية للمرجع</a>
+        </div>
+        
+        <div class="section-title" style="color: var(--global);">
+            <span>🌐</span>
+            <span>القسم الثاني: المراجع والدوريات الدولية المعتمدة عالمياً Tier-1 (20 مرجعاً)</span>
+        </div>
+
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [1/20]</span>
+            <div class="ref-title">Merck Veterinary Manual (MVM)</div>
+            <div class="ref-meta"><strong>Category:</strong> Global Clinical Reference | <strong>Citation:</strong> Merck & Co., Inc., Rahway, NJ, USA (Comprehensive Veterinary Medicine)</div>
+            <div class="ref-summary">The gold standard reference for animal healthcare worldwide, covering diagnosis, pathophysiology, and treatment across all domestic and wild species.</div>
+            <ul class="key-points">
+                <li>Evidence-based disease monographs spanning all major organ systems.</li><li>Standard differential diagnosis trees for companion and production animals.</li><li>Comprehensive toxicological exposure indexes and emergency treatment steps.</li>
+            </ul>
+            <a href="https://www.merckvetmanual.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [2/20]</span>
+            <div class="ref-title">WOAH - World Organisation for Animal Health</div>
+            <div class="ref-meta"><strong>Category:</strong> International Epizootic Guidelines | <strong>Citation:</strong> World Organisation for Animal Health, Paris, France (Terrestrial Animal Health Code)</div>
+            <div class="ref-summary">The international authority on transboundary animal diseases, veterinary epidemiology, biosecurity standards, and disease control.</div>
+            <ul class="key-points">
+                <li>Official reporting protocols for notifiable terrestrial and aquatic diseases.</li><li>Global biosecurity and quarantine protocols for cross-border animal transport.</li><li>Validation standards for diagnostic tests and vaccines in national reference laboratories.</li>
+            </ul>
+            <a href="https://www.woah.org/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [3/20]</span>
+            <div class="ref-title">FAO Animal Health Manuals</div>
+            <div class="ref-meta"><strong>Category:</strong> United Nations Agricultural Library | <strong>Citation:</strong> Food and Agriculture Organization of the United Nations, Rome, Italy (Veterinary Field Manuals)</div>
+            <div class="ref-summary">Practical field guidelines and emergency management manuals for livestock diseases in pastoral and developing farming systems.</div>
+            <ul class="key-points">
+                <li>Emergency prevention systems (EMPRES) for infectious transboundary diseases.</li><li>Community-based animal health services and field epidemiological surveillance.</li><li>Husbandry and production guidelines for disease-resistant native breeds.</li>
+            </ul>
+            <a href="https://www.fao.org/animal-health/en/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [4/20]</span>
+            <div class="ref-title">WSAVA Global Guidelines</div>
+            <div class="ref-meta"><strong>Category:</strong> Companion Animal Practice | <strong>Citation:</strong> World Small Animal Veterinary Association (Small Animal Clinical Practice Guidelines)</div>
+            <div class="ref-summary">Global clinical practice standards for dogs and cats, covering core vaccination, pain management, nutrition, and dental health.</div>
+            <ul class="key-points">
+                <li>Core vs. Non-core vaccination schedules and triennial booster intervals.</li><li>Multimodal pain assessment scales and analgesic protocols (Glasgow Composite Scale).</li><li>Global nutritional assessment protocols and feeding plans for chronic renal and cardiac disease.</li>
+            </ul>
+            <a href="https://wsava.org/global-guidelines/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [5/20]</span>
+            <div class="ref-title">Cornell University College of Veterinary Medicine</div>
+            <div class="ref-meta"><strong>Category:</strong> Academic & Research Institution | <strong>Citation:</strong> Cornell University, Ithaca, NY, USA (Consultant Diagnostic Database & Feline Health Center)</div>
+            <div class="ref-summary">A premier veterinary teaching and diagnostic powerhouse known for its Consultant Diagnostic Database, feline health studies, and clinical pathology.</div>
+            <ul class="key-points">
+                <li>Diagnostic algorithms linking clinical signs directly to differential lists.</li><li>Feline infectious peritonitis (FIP) management guidelines and GS-441524 usage.</li><li>Clinical pathology reference tables and hematologic cytological criteria.</li>
+            </ul>
+            <a href="https://www.vet.cornell.edu/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [6/20]</span>
+            <div class="ref-title">Plumb's Veterinary Drug Handbook</div>
+            <div class="ref-meta"><strong>Category:</strong> Veterinary Pharmacology | <strong>Citation:</strong> Donald C. Plumb, PharmD (Essential Drug Formulations, Dosages & Indications)</div>
+            <div class="ref-summary">The definitive clinical pharmacology handbook providing exact drug dosages, pharmacokinetics, and contraindications for domestic animals.</div>
+            <ul class="key-points">
+                <li>Species-specific therapeutic dosage ranges with pharmacokinetic justifications.</li><li>Comprehensive adverse effect profiles and drug-drug interaction alerts.</li><li>Extralabel drug use guidelines and therapeutic monitoring intervals.</li>
+            </ul>
+            <a href="https://www.plumbs.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [7/20]</span>
+            <div class="ref-title">Blackwell's Five-Minute Veterinary Consult: Canine & Feline</div>
+            <div class="ref-meta"><strong>Category:</strong> Clinical Practice Series | <strong>Citation:</strong> Larry P. Tilley, Francis W.K. Smith Jr. (Fast Clinical Reference)</div>
+            <div class="ref-summary">Rapid clinical consultation guide organized from A to Z, detailing symptoms, pathology, treatment, and client education in a structured 5-minute format.</div>
+            <ul class="key-points">
+                <li>Rapid bedside differential diagnostic pathways.</li><li>Immediate emergency stabilization algorithms.</li><li>Long-term therapeutic management and monitoring parameters.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [8/20]</span>
+            <div class="ref-title">Large Animal Internal Medicine (Bradford P. Smith)</div>
+            <div class="ref-meta"><strong>Category:</strong> Equine & Farm Animal Medicine | <strong>Citation:</strong> Bradford P. Smith, DVM, DACVIM (Equine, Bovine, Ovine & Caprine Internal Medicine)</div>
+            <div class="ref-summary">The definitive clinical textbook on internal diseases of horses, cattle, sheep, and goats organized by clinical presenting problem.</div>
+            <ul class="key-points">
+                <li>Problem-oriented approach to acute abdominal pain (colic) and respiratory failure.</li><li>Fluid and electrolyte therapy calculation formulas for neonates and adults.</li><li>Clinical toxicology of poisonous pasture plants and mycotoxins.</li>
+            </ul>
+            <a href="https://www.elsevier.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [9/20]</span>
+            <div class="ref-title">Ettinger's Textbook of Veterinary Internal Medicine</div>
+            <div class="ref-meta"><strong>Category:</strong> Small Animal Internal Medicine | <strong>Citation:</strong> Stephen J. Ettinger, Edward C. Feldman, Etienne Cote (Expert Consult)</div>
+            <div class="ref-summary">The flagship textbook of small animal medicine covering cardiology, neurology, nephrology, oncology, and endocrinology in dogs and cats.</div>
+            <ul class="key-points">
+                <li>Advanced diagnostic imaging interpretation (Echocardiography, CT, MRI).</li><li>Endocrine disorder workup: Diabetes mellitus, Cushing's and Addison's disease.</li><li>Oncological staging, chemotherapy protocols, and supportive care.</li>
+            </ul>
+            <a href="https://www.elsevier.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [10/20]</span>
+            <div class="ref-title">Veterinary Surgery: Small Animal (Tobias & Johnston)</div>
+            <div class="ref-meta"><strong>Category:</strong> Veterinary Surgery | <strong>Citation:</strong> Karen M. Tobias, Spencer A. Johnston (Soft Tissue & Orthopedic Surgery)</div>
+            <div class="ref-summary">The comprehensive reference on soft tissue, orthopedic, and neurosurgical procedures with step-by-step illustrations.</div>
+            <ul class="key-points">
+                <li>Cranial cruciate ligament rupture stabilization (TPLO, TTA, lateral suture).</li><li>Abdominal soft tissue surgeries: splenectomy, GDV gastropexy, enterotomy.</li><li>Aseptic operative field preparation and surgical antibiotic prophylaxis.</li>
+            </ul>
+            <a href="https://www.elsevier.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [11/20]</span>
+            <div class="ref-title">Adams and Stashak's Lameness in Horses</div>
+            <div class="ref-meta"><strong>Category:</strong> Equine Orthopedics | <strong>Citation:</strong> Gary M. Baxter, VMD, MS, DACVS (Equine Locomotor Pathology & Lameness)</div>
+            <div class="ref-summary">The classic, world-renowned guide to diagnosing and treating orthopedic conditions, lameness, and hoof pathology in sport and working horses.</div>
+            <ul class="key-points">
+                <li>Diagnostic nerve and joint block techniques step-by-step.</li><li>Pathophysiology and rehabilitation of tendonitis and desmitis.</li><li>Corrective farriery and biomechanical shoeing principles.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [12/20]</span>
+            <div class="ref-title">Diseases of Poultry (Y.M. Saif / Swayne)</div>
+            <div class="ref-meta"><strong>Category:</strong> Avian Medicine & Poultry Industry | <strong>Citation:</strong> David E. Swayne (American Association of Avian Pathologists)</div>
+            <div class="ref-summary">The leading global treatise on avian infectious diseases, biosecurity, and flock medicine in broiler, layer, and breeder operations.</div>
+            <ul class="key-points">
+                <li>Differential diagnosis of respiratory diseases (Newcastle, IB, ILT, Coryza).</li><li>Immunopathology of Marek's disease and Infectious Bursal Disease (IBD).</li><li>Nutritional deficiency syndromes and metabolic skeletal disorders.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [13/20]</span>
+            <div class="ref-title">Veterinary Parasitology (Taylor, Coop & Wall)</div>
+            <div class="ref-meta"><strong>Category:</strong> Veterinary Parasitology | <strong>Citation:</strong> M.A. Taylor, R.L. Coop, R.L. Wall (Host-Parasite Biology & Anthelmintics)</div>
+            <div class="ref-summary">Comprehensive taxonomy, lifecycles, clinical manifestations, and control of protozoa, helminths, and arthropods affecting animals.</div>
+            <ul class="key-points">
+                <li>Anthelmintic resistance management and selective targeted treatments (FAMACHA).</li><li>Vector-borne disease transmission cycles (Tick-borne, sandfly, mosquito).</li><li>Diagnostic fecal flotation and sedimentation sensitivity parameters.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [14/20]</span>
+            <div class="ref-title">Kirk's Current Veterinary Therapy</div>
+            <div class="ref-meta"><strong>Category:</strong> Small Animal Therapeutics | <strong>Citation:</strong> John D. Bonagura, David C. Twedt (Current Medical Innovations)</div>
+            <div class="ref-summary">Contemporary, peer-reviewed clinical updates detailing modern diagnostic techniques and therapeutic interventions in canine and feline practice.</div>
+            <ul class="key-points">
+                <li>Novel therapies for immune-mediated hemolytic anemia and thrombocytopenia.</li><li>Modern management of chronic enteropathies and microbiome restorative therapy.</li><li>Cardiovascular drug titration strategies for congestive heart failure.</li>
+            </ul>
+            <a href="https://www.elsevier.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [15/20]</span>
+            <div class="ref-title">Veterinary Ophthalmology (Gelatt)</div>
+            <div class="ref-meta"><strong>Category:</strong> Veterinary Ophthalmology | <strong>Citation:</strong> Kirk N. Gelatt, Caryn E. Plummer (Ocular Diagnostics & Micro-surgery)</div>
+            <div class="ref-summary">The global standard reference on ocular pathology, ophthalmic examination, medical treatments, and ocular surgery across all species.</div>
+            <ul class="key-points">
+                <li>Corneal ulcer classification (superficial, stromal, descemetocele) and therapy.</li><li>Glaucoma emergency reduction protocols and tonometry interpretation.</li><li>Ocular manifestations of systemic diseases (FIP, FeLV, Hypertension).</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [16/20]</span>
+            <div class="ref-title">BSAVA Small Animal Formulary</div>
+            <div class="ref-meta"><strong>Category:</strong> Formulary & Clinical Practice | <strong>Citation:</strong> British Small Animal Veterinary Association (Canine, Feline & Exotic Formularies)</div>
+            <div class="ref-summary">A concise, authoritative prescribing handbook utilized across the UK and Europe for companion animal medicine and exotic pets.</div>
+            <ul class="key-points">
+                <li>Precise drug formulations, dose rates, and authorized routes of administration.</li><li>Responsible use of cascade prescribing and antimicrobial stewardship.</li><li>Dedicated small mammal, reptile, and avian drug dosing schedules.</li>
+            </ul>
+            <a href="https://www.bsava.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [17/20]</span>
+            <div class="ref-title">Veterinary Emergency and Critical Care Manual (Mathews)</div>
+            <div class="ref-meta"><strong>Category:</strong> Emergency & Critical Care | <strong>Citation:</strong> Karol A. Mathews, Melissa Sinclair (Triage, Resuscitation & ICU Protocols)</div>
+            <div class="ref-summary">Step-by-step life support protocols, resuscitation guidelines (RECOVER initiative), and ICU monitoring for critically ill animals.</div>
+            <ul class="key-points">
+                <li>Cardiopulmonary cerebral resuscitation (CPCR) algorithms and drug doses.</li><li>Point-of-care ultrasound (POCUS: TFAST, AFAST) for rapid trauma evaluation.</li><li>Blood transfusion guidelines, cross-matching, and reaction management.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [18/20]</span>
+            <div class="ref-title">Veterinary Hematology and Clinical Chemistry (Thrall)</div>
+            <div class="ref-meta"><strong>Category:</strong> Clinical Pathology | <strong>Citation:</strong> Mary Anna Thrall, Dale C. Baker (Laboratory Diagnostic Interpretation)</div>
+            <div class="ref-summary">In-depth guide to blood cytology, automated cell counters, biochemical profiles, and urinalysis for veterinary diagnosis.</div>
+            <ul class="key-points">
+                <li>Microscopic evaluation of peripheral blood smears and toxic neutrophil changes.</li><li>Serum protein electrophoresis interpretation and polyclonal vs. monoclonal spikes.</li><li>Renal profile evaluation (BUN, Creatinine, SDMA, Urine Specific Gravity).</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [19/20]</span>
+            <div class="ref-title">Arthur's Veterinary Reproduction and Obstetrics</div>
+            <div class="ref-meta"><strong>Category:</strong> Veterinary Theriogenology | <strong>Citation:</strong> David E. Noakes, Timothy J. Parkinson, Gary C.W. England (Theriogenology)</div>
+            <div class="ref-summary">Comprehensive reference on animal reproduction, artificial insemination, pregnancy diagnosis, dystocia management, and herd fertility.</div>
+            <ul class="key-points">
+                <li>Dystocia correction procedures, fetotomy, and obstetrical maneuvers.</li><li>Ultrasonographic monitoring of fetal viability and gestational dating.</li><li>Postpartum uterine involution, metritis protocols, and estrus synchronization.</li>
+            </ul>
+            <a href="https://www.elsevier.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="ref-card global">
+            <span class="badge global">Global Tier-1 Reference [20/20]</span>
+            <div class="ref-title">Veterinary Microbiology (Biberstein & Hirsh)</div>
+            <div class="ref-meta"><strong>Category:</strong> Infectious Microbiology | <strong>Citation:</strong> Dwight C. Hirsh, N. James MacLachlan, Richard L. Walker (Bacterial & Viral Agents)</div>
+            <div class="ref-summary">Classic reference detailing the morphology, cultural characteristics, virulence factors, and antimicrobial susceptibility of animal pathogens.</div>
+            <ul class="key-points">
+                <li>Gram-positive and Gram-negative bacterial identification keys.</li><li>Mechanisms of bacterial pathogenesis and endotoxin release.</li><li>Culture media selection, staining protocols, and Kirby-Bauer susceptibility.</li>
+            </ul>
+            <a href="https://www.wiley.com/" target="_blank" class="btn-link">🌐 Open Official Authority Portal</a>
+        </div>
+        
+        <div class="footer">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI | تطوير وإشراف دكتور تامر سعد (Dr. Tamer Saad)
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "VetMind AI Enterprise",
+  "short_name": "VetMind",
+  "description": "منصة الذكاء الاصطناعي السريري والتشخيص البيطري المعتمد",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "fullscreen",
+    "minimal-ui"
+  ],
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "orientation": "any",
+  "categories": [
+    "medical",
+    "health",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

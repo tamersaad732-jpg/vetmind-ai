@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجع الطب الباطني والجراحة الميدانية في المناطق الحارة والمدارية - VetMind AI Library</title>
+    <style>
+        :root {
+            --primary: #16a34a;
+            --text: #0f172a;
+            --muted: #475569;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-print { background: var(--primary); color: #ffffff; }
+        .btn-print:hover { opacity: 0.9; }
+        .btn-back { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .book-header {
+            background: linear-gradient(135deg, #16a34a 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .book-title {
+            margin: 0 0 10px 0;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+        .book-meta {
+            font-size: 0.92rem;
+            opacity: 0.92;
+            margin-bottom: 6px;
+        }
+        .toc-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .toc-title {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .toc-list {
+            margin: 0;
+            padding-right: 25px;
+        }
+        .toc-list li {
+            margin-bottom: 8px;
+        }
+        .toc-list a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+        .chapter-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-right: 5px solid var(--primary);
+        }
+        .chapter-title {
+            margin: 0 0 16px 0;
+            font-size: 1.35rem;
+            color: var(--primary);
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .chapter-body {
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .footer-notice {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        @media print {
+            body { padding: 0; background: #ffffff; }
+            .no-print { display: none !important; }
+            .chapter-card { page-break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Navigation & Print Toolbar -->
+        <div class="no-print">
+            <div style="font-weight: 700; font-size: 0.92rem; color: var(--primary);">
+                📖 VetMind AI Clinical Library - Official Electronic Monograph
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️ طباعة المرجع / حفظ كـ PDF (Print / Save PDF)
+                </button>
+                <a href="/references" class="btn btn-back">
+                    ⬅️ العودة لقائمة المراجع
+                </a>
+            </div>
+        </div>
+
+        <!-- Book Header -->
+        <header class="book-header">
+            <div class="badge">مرجع عربي معتمد 🇪🇬🇸🇦</div>
+            <h1 class="book-title">مرجع الطب الباطني والجراحة الميدانية في المناطق الحارة والمدارية</h1>
+            <div class="book-meta"><strong>الجهة المعتمدة:</strong> كلية العلوم البيطرية - جامعة الخرطوم (السودان)</div>
+            <div class="book-meta"><strong>التوثيق الأكاديمي القياسي:</strong> جامعة الخرطوم، كلية العلوم البيطرية (طب الحيوانات الحقلية المدارية والجراحة الميدانية 2026)</div>
+            <div class="book-meta"><strong>الفصائل المستهدفة:</strong> الأبقار النيلية والزيبو، الضأن الصحراوي، الماعز، الخيول والجمال المدارية</div>
+            <div class="book-meta"><strong>المشرف والمراجع الطبي:</strong> دكتور تامر سعد (Dr. Tamer Saad)</div>
+            <div style="margin-top: 15px; font-size: 0.88rem; opacity: 0.9; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px;">
+                المرجع الأكاديمي الكلاسيكي الأول لأمراض المناطق المدارية والأوبئة المتوطنة في أفريقيا وحوض النيل، حمى الوادي المتصدع، جراحات بضع الكرش الميدانية والعمليات القيصرية الحقلية تحت التخدير الموضعي.
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-card">
+            <h2 class="toc-title">📋 فهرس الفصول السريرية</h2>
+            <ul class="toc-list">
+                <li><a href="#chapter_1">الباب الأول: حمى الوادي المتصدع وطاعون الخيل الأفريقي</a></li><li><a href="#chapter_2">الباب الثاني: الجراحة الميدانية للكرش وبضع البطن (Rumenotomy)</a></li>
+            </ul>
+        </nav>
+
+        <!-- Clinical Chapters -->
+        <main>
+            
+        <section id="chapter_1" class="chapter-card">
+            <h3 class="chapter-title">الباب الأول: حمى الوادي المتصدع وطاعون الخيل الأفريقي</h3>
+            <div class="chapter-body">
+                <h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">1. حمى الوادي المتصدع (Rift Valley Fever - RVF):</h4><li style="margin-bottom: 6px;">المسبب: فيروس من جنس Phlebovirus (عائلة Phenuiviridae)، ينقله بعوض Aedes و Culex في مواسم الفيضان والأمطار الغزيرة.</li><li style="margin-bottom: 6px;">الأهمية السريرية والوبائية: مرض مشترك خطير يسبب عواصف إجهاض (Abortion storms) في الأغنام والماشية تصل إلى 100% ونفوق الحملان حديثة الولادة بنسبة 90%، ويسبب في الإنسان حمى نزفية واعتلال الشبكية والعمى.</li><li style="margin-bottom: 6px;">الآفات التشريحية المميزة: تنخر كبدي واسع وشديد مع تلون الكبد باللون البني المحمر أو البرتقالي وبقع نخرية بيضاء رمادية، مع نزف معوي شديد.</li><h4 style="margin: 16px 0 6px 0; color: #0f172a; font-size: 1.05rem;">2. طاعون الخيل الأفريقي (African Horse Sickness - AHS):</h4><li style="margin-bottom: 6px;">ينتقل عبر حشرات الهاموش (Culicoides).</li><li style="margin-bottom: 6px;">الشكل الرئوي الحاد (Dunkop): حمى فجائية وسعال واختناق شديد وسيلان رغوي غزير من فتحتي الأنف ونفوق خلال ساعات.</li><li style="margin-bottom: 6px;">الشكل القلبي الحليمي (Dikkop): وذمات مميزة في الحفرة فوق العينين (Supraorbital fossa) والوجه والرقبة مع نزف الملتحمة.</li>
+            </div>
+        </section>
+        
+        <section id="chapter_2" class="chapter-card">
+            <h3 class="chapter-title">الباب الثاني: الجراحة الميدانية للكرش وبضع البطن (Rumenotomy)</h3>
+            <div class="chapter-body">
+                <p style="margin-bottom: 8px; line-height: 1.7;">بضع الكرش الميداني لإزالة الأجسام الغريبة والقطع البلاستيكية (Rumenotomy Protocol):</p><li style="margin-bottom: 6px;">التخدير الموضعي: تخدير فوق الجافية القطني أو حصر الأعصاب المجاورة للفقرات (Paravertebral nerve block T13, L1, L2) باستخدام ليدوكايين 2% (15-20 مل لكل عصب)، أو التخدير الارتشاحي على شكل حرف L مقلوب (Inverted L-block).</li><li style="margin-bottom: 6px;">موضع الشق: الحفرة شبه المنحرفة اليسرى (Left paralumbar fossa) بطول 20-25 سم على بعد 5 سم خلف الضلع الأخير وتحت الزوائد المستعرضة للفقرات القطنية.</li><li style="margin-bottom: 6px;">تثبيت الكرش لمنع التلوث البريتوني: تثبيت جدار الكرش بجلد البطن بواسطة خياطة مستمرة محكمة أو استخدام طوق الكرش الجراحي الميداني (Rumen skin-fixation).</li><li style="margin-bottom: 6px;">إغلاق جدار الكرش: خياطة من طبقتين بنمط لامبرت المقلوب (Lembert) أو كوشينغ (Cushing) غير نافذتين لتجويف الكرش بخيط قابل للامتصاص (Vicryl / PDS No. 2).</li>
+            </div>
+        </section>
+        
+        </main>
+
+        <!-- Official Footer Notice -->
+        <footer class="footer-notice">
+            جميع الحقوق محفوظة &copy; 2026 لمنظومة VetMind AI للذكاء الاصطناعي الطبي البيطري - تحت إشراف د. تامر سعد<br>
+            هذا الدليل الطبي مخصص حصرياً للأطباء البيطريين المرخصين لدعم القرار السريري.
+        </footer>
+    </div>
+</body>
+</html>
