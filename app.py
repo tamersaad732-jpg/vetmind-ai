@@ -1836,32 +1836,36 @@ footer a { color: #38BDF8; text-decoration: none; }
         gap: 8px !important;
     }
     .topbar-container {
-        padding: 6px 8px !important;
-        gap: 6px !important;
+        padding: 4px 6px !important;
+        gap: 4px !important;
         max-width: 100vw !important;
         overflow-x: hidden !important;
+    }
+    .topbar-right {
+        gap: 4px !important;
     }
     .brand-tagline {
         display: none !important;
     }
     .brand-name {
-        font-size: 0.95rem !important;
+        font-size: 0.88rem !important;
     }
     .brand-badge {
         display: none !important;
     }
-    /* Compact, beautiful, fully-readable prayer pill on mobile */
+    /* Compact, beautiful, fully-readable prayer pill on mobile that NEVER overflows */
     .prayer-indicator-pill {
         width: auto !important;
-        height: 36px !important;
-        padding: 0 10px !important;
-        border-radius: 18px !important;
+        height: 34px !important;
+        padding: 0 8px !important;
+        border-radius: 17px !important;
         display: inline-flex !important;
         align-items: center !important;
-        gap: 5px !important;
+        gap: 4px !important;
         flex-shrink: 0 !important;
-        font-size: 0.78rem !important;
+        font-size: 0.72rem !important;
         box-sizing: border-box !important;
+        max-width: 105px !important;
     }
     .prayer-indicator-pill .prayer-pill-icon {
         font-size: 0.95rem !important;
@@ -1869,9 +1873,9 @@ footer a { color: #38BDF8; text-decoration: none; }
     }
     .prayer-indicator-pill .prayer-pill-text {
         display: inline-block !important;
-        font-size: 0.75rem !important;
+        font-size: 0.70rem !important;
         font-weight: 800 !important;
-        max-width: 110px !important;
+        max-width: 76px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -1882,17 +1886,18 @@ footer a { color: #38BDF8; text-decoration: none; }
         display: none !important; /* Hide countdown on small mobile to fit without overflowing */
     }
     .topbar-search-icon-mobile {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
-        max-width: 36px !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
         padding: 0 !important;
-        border-radius: 10px !important;
+        border-radius: 9px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         flex-shrink: 0 !important;
         margin: 0 !important;
+        font-size: 0.95rem !important;
     }
     .user-profile-widget .user-badge {
         display: none !important;
@@ -1900,10 +1905,27 @@ footer a { color: #38BDF8; text-decoration: none; }
     .user-profile-widget .user-name {
         display: none !important;
     }
+    .user-profile-widget span[style*="PREMIUM"] {
+        display: none !important;
+    }
+    .user-profile-widget a[href="/logout"] {
+        display: none !important;
+    }
+    .user-profile-widget .user-avatar-circle {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 0.95rem !important;
+    }
     .user-profile-widget {
-        gap: 4px !important;
+        gap: 2px !important;
     }
     .topbar-right .lang-selector-pill {
+        display: none !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .brand-titles {
         display: none !important;
     }
 }
@@ -2245,14 +2267,17 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         diff_m = np.get('diff_min', 0)
         h = diff_m // 60
         m = diff_m % 60
+        # Short clean name and time for mobile & desktop to prevent horizontal overflow
+        short_pname = clean_pname.replace(" (غداً)", "").replace(" (Tomorrow)", "").strip()
+        short_time = p_time.replace(" ص", "").replace(" م", "").replace(" AM", "").replace(" PM", "").strip()
         if lang == 'ar':
             c_text = f"{h}س {m}د" if h > 0 else f"{m}د"
-            prayer_p_text = f"{clean_pname} {p_time}".strip()
+            prayer_p_text = f"{short_pname} {short_time}".strip()
             prayer_c_text = f"({c_text})"
             prayer_full_tooltip = f"الصلاة القادمة: {raw_name} الساعة {p_time} - {p_res.get('countdown_text', '')}"
         else:
             c_text = f"{h}h {m}m" if h > 0 else f"{m}m"
-            prayer_p_text = f"{clean_pname} {p_time}".strip()
+            prayer_p_text = f"{short_pname} {short_time}".strip()
             prayer_c_text = f"({c_text})"
             prayer_full_tooltip = f"Next Prayer: {raw_name} at {p_time} - {p_res.get('countdown_text', '')}"
     except Exception:
@@ -2486,12 +2511,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </span>
             <span class="bnav-label">{t('nav_clinic', 'العيادة')}</span>
         </a>
-        <button type="button" onclick="openMobileDrawer()" class="bnav-item" aria-label="المزيد">
-            <span class="bnav-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-            </span>
-            <span class="bnav-label">المزيد</span>
-        </button>
     </nav>
     """
 
@@ -2995,10 +3014,10 @@ async def clinic_invoices_page(request: Request):
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM invoices ORDER BY id DESC")
+    c.execute("SELECT * FROM invoices WHERE user_id = ? ORDER BY id DESC", (user_id,))
     invoices = c.fetchall()
 
-    c.execute("SELECT sum(amount), count(*) FROM invoices")
+    c.execute("SELECT sum(amount), count(*) FROM invoices WHERE user_id = ?", (user_id,))
     stat = c.fetchone()
     total_rev = stat[0] or 0.0
     total_inv = stat[1] or 0
@@ -3076,17 +3095,20 @@ async def clinic_invoices_page(request: Request):
 
 @app.post("/clinic/invoices/add")
 async def add_invoice(
+    request: Request,
     client_name: str = Form(...),
     service_name: str = Form(...),
     amount: float = Form(...),
     payment_method: str = Form("نقداً (Cash)")
 ):
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO invoices (user_id, client_name, service_name, amount, status, payment_method, created_at)
-    VALUES (4, ?, ?, ?, 'paid', ?, ?)
-    """, (client_name, service_name, amount, payment_method, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    VALUES (?, ?, ?, ?, 'paid', ?, ?)
+    """, (user_id, client_name, service_name, amount, payment_method, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
     return RedirectResponse("/clinic/invoices", status_code=303)
@@ -3102,7 +3124,7 @@ async def clinic_lab_page(request: Request):
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM lab_tests ORDER BY id DESC")
+    c.execute("SELECT * FROM lab_tests WHERE user_id = ? ORDER BY id DESC", (user_id,))
     tests = c.fetchall()
     conn.close()
 
@@ -3173,17 +3195,20 @@ async def clinic_lab_page(request: Request):
 
 @app.post("/clinic/lab/add")
 async def add_lab_test(
+    request: Request,
     animal_name: str = Form(...),
     test_type: str = Form(...),
     test_date: str = Form(...),
     result_summary: str = Form(...)
 ):
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO lab_tests (user_id, animal_name, test_type, test_date, result_summary, attachment_filename, created_at)
-    VALUES (4, ?, ?, ?, ?, '', ?)
-    """, (animal_name, test_type, test_date, result_summary, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    VALUES (?, ?, ?, ?, ?, '', ?)
+    """, (user_id, animal_name, test_type, test_date, result_summary, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
     return RedirectResponse("/clinic/lab", status_code=303)
@@ -3199,23 +3224,24 @@ async def home_page(request: Request):
     lang = get_user_lang(request)
     t = lambda k, d="": get_text(lang, k, d)
 
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM cases ORDER BY id DESC LIMIT 20")
+    c.execute("SELECT * FROM cases WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
     cases = c.fetchall()
 
-    c.execute("SELECT count(*) FROM cases")
+    c.execute("SELECT count(*) FROM cases WHERE user_id = ?", (user_id,))
     total_cases = c.fetchone()[0]
 
-    c.execute("SELECT count(*) FROM drug_inventory WHERE stock_quantity <= min_threshold")
+    c.execute("SELECT count(*) FROM drug_inventory WHERE user_id = ? AND stock_quantity <= min_threshold", (user_id,))
     low_stock_count = c.fetchone()[0]
 
-    c.execute("SELECT count(*) FROM appointments WHERE status = 'scheduled'")
+    c.execute("SELECT count(*) FROM appointments WHERE user_id = ? AND status = 'scheduled'", (user_id,))
     scheduled_appts = c.fetchone()[0]
 
-    # Active clients in last 3 days
+    # Active clients in last 3 days for this clinic
     three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE performed_at >= ?", (three_days_ago,))
+    c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE user_id = ? AND performed_at >= ?", (user_id, three_days_ago))
     active_clients_3d = c.fetchone()[0]
     conn.close()
 
@@ -5434,19 +5460,36 @@ async def references_page(request: Request, tab: str = "all"):
     return HTMLResponse(content=get_base_html(t("nav_references"), body, user, lang), media_type="text/html; charset=utf-8")
 
 # ==============================================================================
-# ROUTE 11-B: ZIP BUNDLE DOWNLOAD ENDPOINTS
+# ROUTE 11-B: RESILIENT REFERENCE BUNDLE & DOCUMENT DOWNLOAD ENDPOINTS
 # ==============================================================================
+def generate_reference_zip_stream(filter_prefix=None):
+    import zipfile, io
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        if os.path.exists(DOCS_DIR):
+            for fname in os.listdir(DOCS_DIR):
+                if fname.endswith(".html"):
+                    if filter_prefix is None or fname.startswith(filter_prefix):
+                        fpath = os.path.join(DOCS_DIR, fname)
+                        z.write(fpath, arcname=f"VetMind_References/{fname}")
+    buf.seek(0)
+    return buf.getvalue()
+
 @app.get("/references/download/all")
 @app.get("/references/download-all")
 async def download_all_references():
     zip_path = os.path.join(STATIC_DIR, "downloads", "VetMind_Enterprise_30_References_Complete.zip")
-    if not os.path.exists(zip_path):
-        import build_complete_references_archive
-        build_complete_references_archive.generate_enriched_documents()
-    return FileResponse(
-        zip_path,
+    if os.path.exists(zip_path):
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            filename="VetMind_Enterprise_30_References_Complete.zip",
+            headers={"Content-Disposition": 'attachment; filename="VetMind_Enterprise_30_References_Complete.zip"'}
+        )
+    zip_content = generate_reference_zip_stream(None)
+    return Response(
+        content=zip_content,
         media_type="application/zip",
-        filename="VetMind_Enterprise_30_References_Complete.zip",
         headers={"Content-Disposition": 'attachment; filename="VetMind_Enterprise_30_References_Complete.zip"'}
     )
 
@@ -5454,13 +5497,17 @@ async def download_all_references():
 @app.get("/references/download-arab")
 async def download_arab_references():
     zip_path = os.path.join(STATIC_DIR, "downloads", "VetMind_Arab_Formularies_10_References.zip")
-    if not os.path.exists(zip_path):
-        import build_complete_references_archive
-        build_complete_references_archive.generate_enriched_documents()
-    return FileResponse(
-        zip_path,
+    if os.path.exists(zip_path):
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            filename="VetMind_Arab_Formularies_10_References.zip",
+            headers={"Content-Disposition": 'attachment; filename="VetMind_Arab_Formularies_10_References.zip"'}
+        )
+    zip_content = generate_reference_zip_stream("arab_")
+    return Response(
+        content=zip_content,
         media_type="application/zip",
-        filename="VetMind_Arab_Formularies_10_References.zip",
         headers={"Content-Disposition": 'attachment; filename="VetMind_Arab_Formularies_10_References.zip"'}
     )
 
@@ -5468,13 +5515,17 @@ async def download_arab_references():
 @app.get("/references/download-global")
 async def download_global_references():
     zip_path = os.path.join(STATIC_DIR, "downloads", "VetMind_Global_Tier1_20_References.zip")
-    if not os.path.exists(zip_path):
-        import generate_exhaustive_files
-        generate_exhaustive_files.generate_all_exhaustive_materials()
-    return FileResponse(
-        zip_path,
+    if os.path.exists(zip_path):
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            filename="VetMind_Global_Tier1_20_References.zip",
+            headers={"Content-Disposition": 'attachment; filename="VetMind_Global_Tier1_20_References.zip"'}
+        )
+    zip_content = generate_reference_zip_stream("global_")
+    return Response(
+        content=zip_content,
         media_type="application/zip",
-        filename="VetMind_Global_Tier1_20_References.zip",
         headers={"Content-Disposition": 'attachment; filename="VetMind_Global_Tier1_20_References.zip"'}
     )
 
@@ -5482,47 +5533,91 @@ async def download_global_references():
 async def download_single_reference_book(ref_id: str):
     ref_id = ref_id.lower().strip()
     pdf_path = os.path.join(DOCS_DIR, f"{ref_id}.pdf")
-    if not os.path.exists(pdf_path):
-        import build_all_pdf_references
-        build_all_pdf_references.generate_all_30_pdfs()
+    html_path = os.path.join(DOCS_DIR, f"{ref_id}.html")
     
     from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
     if ref_id in ARAB_FULL_BOOKS:
-        filename = f"{ARAB_FULL_BOOKS[ref_id]['filename_ar']}.pdf"
+        base_name = ARAB_FULL_BOOKS[ref_id]['filename_ar']
     elif ref_id in GLOBAL_FULL_BOOKS:
-        filename = f"{GLOBAL_FULL_BOOKS[ref_id]['filename_en']}.pdf"
+        base_name = GLOBAL_FULL_BOOKS[ref_id]['filename_en']
     else:
-        filename = f"{ref_id}.pdf"
+        base_name = f"VetMind_Reference_{ref_id}"
         
-    encoded_filename = urllib.parse.quote(filename)
-    return FileResponse(
-        pdf_path,
-        media_type="application/pdf",
-        filename=filename,
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
-    )
+    if os.path.exists(pdf_path):
+        filename = f"{base_name}.pdf"
+        encoded = urllib.parse.quote(filename)
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
+        )
+    elif os.path.exists(html_path):
+        filename = f"{base_name}.html"
+        encoded = urllib.parse.quote(filename)
+        return FileResponse(
+            html_path,
+            media_type="text/html",
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
+        )
+    else:
+        raise HTTPException(status_code=404, detail="المرجع المطلوب غير متوفر حالياً")
 
 @app.get("/references/pdf/{ref_id}")
 async def view_single_reference_pdf(ref_id: str):
     ref_id = ref_id.lower().strip()
     pdf_path = os.path.join(DOCS_DIR, f"{ref_id}.pdf")
-    if not os.path.exists(pdf_path):
-        import build_all_pdf_references
-        build_all_pdf_references.generate_all_30_pdfs()
+    html_path = os.path.join(DOCS_DIR, f"{ref_id}.html")
     
-    from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
-    if ref_id in ARAB_FULL_BOOKS:
-        filename = f"{ARAB_FULL_BOOKS[ref_id]['filename_ar']}.pdf"
-    elif ref_id in GLOBAL_FULL_BOOKS:
-        filename = f"{GLOBAL_FULL_BOOKS[ref_id]['filename_en']}.pdf"
+    if os.path.exists(pdf_path):
+        return FileResponse(pdf_path, media_type="application/pdf")
+    elif os.path.exists(html_path):
+        return FileResponse(html_path, media_type="text/html; charset=utf-8")
     else:
-        filename = f"{ref_id}.pdf"
+        raise HTTPException(status_code=404, detail="المرجع المطلوب غير متوفر حالياً")
 
-    encoded_filename = urllib.parse.quote(filename)
-    return FileResponse(
-        pdf_path,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}"}
+@app.get("/api/my-database/export")
+async def export_my_private_database(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    user_id = user["id"]
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM cases WHERE user_id = ?", (user_id,))
+    user_cases = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM appointments WHERE user_id = ?", (user_id,))
+    user_appts = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM vaccinations WHERE user_id = ?", (user_id,))
+    user_vacs = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM drug_inventory WHERE user_id = ?", (user_id,))
+    user_inv = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM invoices WHERE user_id = ?", (user_id,))
+    user_invoices = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM clinic_prescriptions WHERE user_id = ?", (user_id,))
+    user_rx = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    export_bundle = {
+        "export_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "doctor_name": user["name"],
+        "doctor_id": user_id,
+        "privacy_status": "100% Isolated & Encrypted",
+        "cases": user_cases,
+        "appointments": user_appts,
+        "vaccinations": user_vacs,
+        "drug_inventory": user_inv,
+        "invoices": user_invoices,
+        "prescriptions": user_rx
+    }
+    json_bytes = json.dumps(export_bundle, ensure_ascii=False, indent=2).encode('utf-8')
+    fname = f"VetMind_Private_Backup_{user_id}_{datetime.now().strftime('%Y%m%d')}.json"
+    encoded_fname = urllib.parse.quote(fname)
+    return Response(
+        content=json_bytes,
+        media_type="application/json; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_fname}"}
     )
 
 @app.get("/clinic", response_class=HTMLResponse)
@@ -5540,13 +5635,13 @@ async def clinic_hub_page(request: Request):
         c.execute("SELECT * FROM clinic_profiles WHERE user_id = 4")
         profile = c.fetchone()
 
-    c.execute("SELECT * FROM drug_inventory ORDER BY id DESC")
+    c.execute("SELECT * FROM drug_inventory WHERE user_id = ? ORDER BY id DESC", (user_id,))
     inventory = c.fetchall()
 
-    c.execute("SELECT * FROM appointments ORDER BY id DESC LIMIT 20")
+    c.execute("SELECT * FROM appointments WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
     appointments = c.fetchall()
 
-    c.execute("SELECT * FROM vaccinations ORDER BY id DESC LIMIT 20")
+    c.execute("SELECT * FROM vaccinations WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
     vaccines = c.fetchall()
     conn.close()
 
@@ -5816,24 +5911,28 @@ async def save_clinic_profile(
 
 @app.post("/clinic/inventory/add")
 async def add_inventory(
+    request: Request,
     drug_name: str = Form(...),
     active_ingredient: str = Form(...),
     quantity: float = Form(...),
     unit: str = Form("عبوة"),
     expiry_date: str = Form(...)
 ):
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO drug_inventory (drug_name, active_ingredient, category, stock_quantity, unit, expiry_date, price, user_id, min_threshold)
-    VALUES (?, ?, 'صيدلية العيادة', ?, ?, ?, 100.0, 4, 5)
-    """, (drug_name, active_ingredient, quantity, unit, expiry_date))
+    VALUES (?, ?, 'صيدلية العيادة', ?, ?, ?, 100.0, ?, 5)
+    """, (drug_name, active_ingredient, quantity, unit, expiry_date, user_id))
     conn.commit()
     conn.close()
     return RedirectResponse("/clinic#inventory", status_code=303)
 
 @app.post("/clinic/appointments/add")
 async def add_appointment(
+    request: Request,
     pet_name: str = Form(...),
     species: str = Form(...),
     owner_name: str = Form(...),
@@ -5842,18 +5941,21 @@ async def add_appointment(
     appointment_time: str = Form("10:00"),
     reason: str = Form(...)
 ):
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO appointments (user_id, pet_name, species, appointment_date, appointment_time, reason, status, owner_name, owner_phone, created_at)
-    VALUES (4, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)
-    """, (pet_name, species, appointment_date, appointment_time, reason, owner_name, owner_phone, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)
+    """, (user_id, pet_name, species, appointment_date, appointment_time, reason, owner_name, owner_phone, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
     return RedirectResponse("/clinic", status_code=303)
 
 @app.post("/clinic/vaccinations/add")
 async def add_vaccination(
+    request: Request,
     animal_name: str = Form(...),
     species: str = Form(...),
     vaccine_name: str = Form(...),
@@ -5861,12 +5963,14 @@ async def add_vaccination(
     next_due_date: str = Form(...),
     notes: str = Form("")
 ):
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO vaccinations (user_id, animal_name, species, vaccine_name, dose_number, administered_date, next_due_date, notes, created_at)
-    VALUES (4, ?, ?, ?, 1, ?, ?, ?, ?)
-    """, (animal_name, species, vaccine_name, administered_date, next_due_date, notes, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)
+    """, (user_id, animal_name, species, vaccine_name, administered_date, next_due_date, notes, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
     return RedirectResponse("/clinic", status_code=303)
