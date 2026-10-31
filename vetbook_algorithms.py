@@ -328,3 +328,21 @@ def get_recommended_groups(conn, user_id: int, limit: int = 4) -> list:
         g["is_member"] = g["id"] in user_groups
 
     return groups[:limit]
+
+
+def get_similar_cases(conn, current_post: dict, limit: int = 3) -> list:
+    """
+    Finds other clinical cases sharing the same species, symptoms, or category.
+    """
+    post_id = current_post.get("id", 0)
+    species = current_post.get("species", "")
+    if not species or species == "all":
+        return []
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, title, species, author_name, created_at, likes_count, comments_count 
+        FROM community_posts 
+        WHERE id != ? AND species = ? 
+        ORDER BY id DESC LIMIT ?
+    """, (post_id, species, limit))
+    return [dict(r) for r in c.fetchall()]
