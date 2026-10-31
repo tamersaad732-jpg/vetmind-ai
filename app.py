@@ -2245,84 +2245,7 @@ async def home_page(request: Request):
         </div>
     </div>
 
-    <!-- Quick Apps Box (صندوق التطبيقات السريعة - للأيقونات تحت بعضها بتنسيق جذاب ومريح للعين) -->
-    <div class="mobile-app-box">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.4rem;">📱</span>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary);">صندوق تطبيقات ومميزات VetMind AI</h3>
-                    <div style="font-size: 0.78rem; color: var(--text-muted);">جميع الأدوات والخدمات السريرية منظمة لسهولة الوصول من الموبايل والكمبيوتر</div>
-                </div>
-            </div>
-            <button type="button" onclick="triggerPwaInstall()" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
-                📥 تحميل التطبيق
-            </button>
-        </div>
 
-        <div class="mobile-app-grid">
-            <a href="/chat" class="mobile-app-card" style="border-top: 3px solid #0f766e;">
-                <span class="mobile-app-card-icon">💬</span>
-                <span class="mobile-app-card-title">{t('nav_chat')}</span>
-                <span class="mobile-app-card-sub">مستشار بيطري ذكي فوري</span>
-            </a>
-            <a href="/community" class="mobile-app-card" style="border-top: 3px solid #0284c7; background: #f0f9ff;">
-                <span class="mobile-app-card-icon">🌐</span>
-                <span class="mobile-app-card-title" style="color: #0284c7;">VetBook الأطباء</span>
-                <span class="mobile-app-card-sub">شبكة التواصل السريري</span>
-            </a>
-            <a href="/clinic" class="mobile-app-card" style="border-top: 3px solid #047857;">
-                <span class="mobile-app-card-icon">🏥</span>
-                <span class="mobile-app-card-title">{t('nav_clinic')}</span>
-                <span class="mobile-app-card-sub">سجل الحالات والمواعيد</span>
-            </a>
-            <a href="/clinic/cases-gallery" class="mobile-app-card" style="border-top: 3px solid #10b981;">
-                <span class="mobile-app-card-icon">🖼️</span>
-                <span class="mobile-app-card-title">معرض الحالات</span>
-                <span class="mobile-app-card-sub">أرشيف صور الفحوصات</span>
-            </a>
-            <a href="/rx-prescription" class="mobile-app-card" style="border-top: 3px solid #6366f1;">
-                <span class="mobile-app-card-icon">📋</span>
-                <span class="mobile-app-card-title">{t('nav_rx')}</span>
-                <span class="mobile-app-card-sub">حساب الجرعات والروشتة</span>
-            </a>
-            <a href="/interactions" class="mobile-app-card" style="border-top: 3px solid #ea580c;">
-                <span class="mobile-app-card-icon">⚠️</span>
-                <span class="mobile-app-card-title">{t('nav_interactions')}</span>
-                <span class="mobile-app-card-sub">كشف التفاعلات السلبية</span>
-            </a>
-            <a href="/pharmacy" class="mobile-app-card" style="border-top: 3px solid #059669;">
-                <span class="mobile-app-card-icon">💊</span>
-                <span class="mobile-app-card-title">{t('nav_pharmacy')}</span>
-                <span class="mobile-app-card-sub">1,005 دواء بالأسماء</span>
-            </a>
-            <a href="/vision-detect" class="mobile-app-card" style="border-top: 3px solid #ec4899;">
-                <span class="mobile-app-card-icon">👁️</span>
-                <span class="mobile-app-card-title">{t('nav_vision_detect')}</span>
-                <span class="mobile-app-card-sub">تحليل الصور بالذكاء الاصطناعي</span>
-            </a>
-            <a href="/tools" class="mobile-app-card" style="border-top: 3px solid #8b5cf6;">
-                <span class="mobile-app-card-icon">🛠️</span>
-                <span class="mobile-app-card-title">الأدوات الإكلينيكية</span>
-                <span class="mobile-app-card-sub">30 أداة وحاسبة متقدمة</span>
-            </a>
-            <a href="/references" class="mobile-app-card" style="border-top: 3px solid #d97706;">
-                <span class="mobile-app-card-icon">📚</span>
-                <span class="mobile-app-card-title">{t('nav_references')}</span>
-                <span class="mobile-app-card-sub">الـ 30 مرجع عربي وعالمي</span>
-            </a>
-            <a href="/clinic/prayer-times" class="mobile-app-card" style="border-top: 3px solid #14b8a6;">
-                <span class="mobile-app-card-icon">🕌</span>
-                <span class="mobile-app-card-title">مواقيت الصلاة</span>
-                <span class="mobile-app-card-sub">مواقيت الصلاة الدقيقة</span>
-            </a>
-            <a href="/premium" class="mobile-app-card" style="border-top: 3px solid #f59e0b; background: #fffbeb;">
-                <span class="mobile-app-card-icon">⭐</span>
-                <span class="mobile-app-card-title" style="color: #b45309;">{t('nav_premium')}</span>
-                <span class="mobile-app-card-sub">ترقية الحساب والمزايا</span>
-            </a>
-        </div>
-    </div>
 
     <!-- Community Banner on Dashboard -->
     <div class="card" style="border-top: 4px solid #0284c7; background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
@@ -3267,7 +3190,7 @@ async def delete_broadcast(request: Request, id: int):
     return RedirectResponse("/admin?saved=1", status_code=303)
 
 # ==============================================================================
-# ROUTE 7: REGISTRATION WITH STRICT 2FA CODE DISPATCH
+# ROUTE 7: REGISTRATION (CLEAN, DIRECT & STANDARD)
 # ==============================================================================
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
@@ -3280,104 +3203,85 @@ async def register_page(request: Request):
     country_opts = "".join([f'<option value="{c}">{c}</option>' for c in ARAB_COUNTRIES])
 
     body = f"""
-    <div style="max-width: 580px; margin: 20px auto;">
-        <div class="card" style="border-top: 6px solid var(--primary);">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 2.8rem;">🩺</div>
-                <h1 style="margin: 6px 0; font-size: 1.5rem; color: var(--primary);">{t('register_title')}</h1>
-                <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">{t('register_subtitle')}</p>
+    <div style="max-width: 540px; margin: 24px auto; padding: 0 12px;">
+        <div class="card" style="border-top: 6px solid var(--primary); padding: 26px;">
+            <div style="text-align: center; margin-bottom: 22px;">
+                <div style="font-size: 2.8rem; margin-bottom: 4px;">🩺</div>
+                <h1 style="margin: 4px 0; font-size: 1.55rem; color: var(--primary);">إنشاء حساب جديد</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">انضم لمنصة VetMind AI السريرية للأطباء وطلاب الطب البيطري</p>
             </div>
 
             <form action="/register" method="POST" enctype="multipart/form-data">
-                <div style="margin-bottom: 14px; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 10px; padding: 12px;">
-                    <label style="display: block; font-weight: 800; margin-bottom: 6px; color: var(--primary);">🌐 {t('register_language_label', 'لغة المنصة المفضلة لك')}</label>
-                    <select name="preferred_lang" style="width: 100%; padding: 10px; border: 1.5px solid var(--primary); border-radius: 8px; font-weight: 700; background: white;">
-                        <option value="ar" {"selected" if lang=="ar" else ""}>🇪🇬 العربية (Arabic - الافتراضية)</option>
-                        <option value="en" {"selected" if lang=="en" else ""}>🇬🇧 English</option>
-                        <option value="fr" {"selected" if lang=="fr" else ""}>🇫🇷 Français</option>
-                        <option value="de" {"selected" if lang=="de" else ""}>🇩🇪 Deutsch</option>
-                        <option value="es" {"selected" if lang=="es" else ""}>🇪🇸 Español</option>
-                        <option value="it" {"selected" if lang=="it" else ""}>🇮🇹 Italiano</option>
-                        <option value="zh" {"selected" if lang=="zh" else ""}>🇨🇳 中文</option>
-                        <option value="ja" {"selected" if lang=="ja" else ""}>🇯🇵 日本語</option>
-                    </select>
+                <input type="hidden" name="preferred_lang" value="{lang}">
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">👨‍⚕️ الاسم بالكامل (دكتور أو طالب):</label>
+                    <input type="text" name="name" required placeholder="مثال: د. أحمد إبراهيم أو محمد علي" style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                 </div>
 
                 <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">🌍 {t('register_country')}</label>
-                    <select name="country" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                        {country_opts}
-                    </select>
+                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">✉️ البريد الإلكتروني:</label>
+                    <input type="email" name="email" required placeholder="doctor@gmail.com" style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                 </div>
 
                 <div class="grid-2" style="margin-bottom: 14px;">
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">👨‍⚕️ {t('register_name')}</label>
-                        <input type="text" name="name" required placeholder="{t('register_name_ph', 'د. أحمد إبراهيم')}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🔒 كلمة المرور:</label>
+                        <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">📱 {t('register_phone')}</label>
-                        <input type="tel" name="phone" required placeholder="+201000000000" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🔒 تأكيد كلمة المرور:</label>
+                        <input type="password" name="confirm_password" required placeholder="••••••••" style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                     </div>
                 </div>
 
                 <div class="grid-2" style="margin-bottom: 14px;">
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🏥 {t('register_clinic')}</label>
-                        <input type="text" name="clinic_name" required placeholder="{t('register_clinic_ph', 'اسم العيادة')}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🌍 الدولة:</label>
+                        <select name="country" required style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
+                            {country_opts}
+                        </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">📜 {t('register_syndicate_id')}</label>
-                        <input type="text" name="syndicate_id" required placeholder="{t('register_syndicate_ph', 'رقم القيد بالنقابة')}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🏥 العيادة أو الكلية / الجامعة (اختياري):</label>
+                        <input type="text" name="clinic_name" placeholder="اسم العيادة أو كلية الطب البيطري" style="width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                     </div>
                 </div>
 
-                <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">✉️ {t('register_email')}</label>
-                    <input type="email" name="email" required placeholder="doctor@gmail.com" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                </div>
-
-                <div class="grid-2" style="margin-bottom: 14px;">
-                    <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🔒 {t('register_password')}</label>
-                        <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">🔒 {t('register_confirm_password')}</label>
-                        <input type="password" name="confirm_password" required placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <div style="margin-bottom: 22px; background: #f0fdf4; border: 1.5px dashed #10b981; border-radius: 10px; padding: 14px;">
+                    <label style="display: block; font-weight: 800; margin-bottom: 6px; color: #065f46; font-size: 0.95rem;">
+                        🪪 صورة كارنيه كلية الطب البيطري (للطلاب) أو كارنيه النقابة / مزاولة المهنة (للأطباء الخريجين):
+                    </label>
+                    <input type="file" name="id_card_image" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #a7f3d0; border-radius: 6px; background: #ffffff;">
+                    <div style="font-size: 0.8rem; color: #047857; margin-top: 6px; line-height: 1.5;">
+                        📌 يرجى رفع صورة واضحة لكارنيه الكلية للطلاب، أو كارنيه نقابة الأطباء البيطريين أو تصريح مزاولة المهنة للأطباء الخريجين لتوثيق الحساب والاعتماد الرسمي.
                     </div>
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">🪪 {t('register_id_card')}</label>
-                    <input type="file" name="id_card_image" accept="image/*" required style="width: 100%; padding: 10px; border: 1px dashed var(--primary); border-radius: 8px; background: var(--primary-light);">
-                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">{t('register_id_card_help')}</div>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem; justify-content: center;">
-                    📝 {t('register_button')}
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.08rem; justify-content: center; font-weight: 800; border-radius: 8px;">
+                    🚀 إنشاء الحساب والدخول للمنصة فوراً
                 </button>
             </form>
 
-            <div style="text-align: center; margin-top: 18px; font-size: 0.88rem;">
-                {t('register_has_account')} <a href="/login" style="color: var(--primary); font-weight: 700;">{t('register_login_link')}</a>
+            <div style="text-align: center; margin-top: 18px; font-size: 0.9rem;">
+                لديك حساب بالفعل؟ <a href="/login" style="color: var(--primary); font-weight: 700; text-decoration: none;">تسجيل الدخول من هنا ⬅️</a>
             </div>
         </div>
     </div>
     """
-    return HTMLResponse(content=get_base_html(t("nav_register"), body, user, lang), media_type="text/html; charset=utf-8")
+    return HTMLResponse(content=get_base_html("إنشاء حساب جديد", body, user, lang), media_type="text/html; charset=utf-8")
 
 @app.post("/register")
 async def process_register(
     request: Request,
-    country: str = Form(...),
     name: str = Form(...),
-    phone: str = Form(...),
-    clinic_name: str = Form(...),
-    syndicate_id: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    country: str = Form("مصر"),
+    clinic_name: str = Form(""),
+    phone: str = Form(""),
+    syndicate_id: str = Form(""),
     preferred_lang: str = Form("ar"),
     id_card_image: UploadFile = File(None)
 ):
@@ -3396,22 +3300,25 @@ async def process_register(
     if id_card_image and id_card_image.filename:
         id_card_filename = f"id_card_{int(datetime.now().timestamp())}_{id_card_image.filename.replace(' ', '_')}"
         save_path = os.path.join(UPLOAD_DIR, id_card_filename)
-        with open(save_path, "wb") as buffer:
-            shutil.copyfileobj(id_card_image.file, buffer)
+        try:
+            with open(save_path, "wb") as buffer:
+                shutil.copyfileobj(id_card_image.file, buffer)
+        except Exception:
+            pass
 
-    otp = str(random.randint(100000, 999999))
     pwd_hash = hash_password(password)
-
+    clean_clinic = clinic_name.strip() if clinic_name else "طبيب / طالب بيطري"
     clean_pref_lang = preferred_lang.strip().lower() if preferred_lang in SUPPORTED_LANGUAGES else "ar"
+
     c.execute("""
     INSERT INTO users (name, email, password_hash, role, created_at, id_card_image, verification_status, is_admin, country, clinic_name, syndicate_id, phone, is_email_verified, otp_code, preferred_lang)
-    VALUES (?, ?, ?, 'vet', ?, ?, 'pending', 0, ?, ?, ?, ?, 1, ?, ?)
-    """, (name.strip(), clean_email, pwd_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), id_card_filename, country, clinic_name, syndicate_id, phone.strip(), otp, clean_pref_lang))
+    VALUES (?, ?, ?, 'vet', ?, ?, 'pending', 0, ?, ?, ?, ?, 1, '', ?)
+    """, (name.strip(), clean_email, pwd_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), id_card_filename, country, clean_clinic, syndicate_id.strip(), phone.strip(), clean_pref_lang))
     new_user_id = c.lastrowid
     conn.commit()
     conn.close()
 
-    # Instant Activation: Login new doctor immediately without OTP block
+    # Instant smooth entry: User is logged in immediately
     resp = RedirectResponse("/", status_code=303)
     token = make_session_token(new_user_id)
     resp.set_cookie(key="vetmind_session", value=token, max_age=31536000, httponly=True)
