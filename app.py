@@ -5116,3 +5116,18 @@ async def update_profile_language(request: Request, preferred_lang: str = Form("
     resp = RedirectResponse("/profile", status_code=303)
     resp.set_cookie(key="vetmind_lang", value=clean_code, max_age=31536000, path="/", samesite="lax")
     return resp
+
+
+# Hugging Face Spaces & Standalone Runner Compatibility
+try:
+    import gradio as gr
+    with gr.Blocks(title="VetMind AI Enterprise") as demo:
+        gr.Markdown("### VetMind AI Enterprise Service Running")
+    app = gr.mount_gradio_app(app, demo, path="/gradio_status")
+except Exception:
+    pass
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
