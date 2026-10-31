@@ -181,6 +181,7 @@ async def require_auth_middleware(request: Request, call_next):
 
     # 2. Allow public auth endpoints, language change, api tests
     public_paths = [
+        "/api/debug-path",
         "/login",
         "/register",
         "/verify-otp",
