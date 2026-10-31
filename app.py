@@ -220,22 +220,8 @@ def get_user_lang(request: Request) -> str:
     return "ar"
 
 def is_user_community_approved(user_dict: dict) -> bool:
-    if not user_dict:
-        return False
-    if user_dict.get("is_admin"):
-        return True
-    user_id = user_dict.get("id")
-    if not user_id:
-        return False
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        c.execute("SELECT id FROM community_subscriptions WHERE user_id = ? AND status = 'approved' LIMIT 1", (user_id,))
-        row = c.fetchone()
-        conn.close()
-        return bool(row)
-    except Exception:
-        return False
+    """100% Free Community: All registered veterinarians have immediate, full access."""
+    return bool(user_dict)
 
 def analyze_image_locally(image_path: str):
     try:
