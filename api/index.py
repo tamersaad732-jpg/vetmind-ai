@@ -1,5 +1,6 @@
 import sys
 import os
+import urllib.parse
 
 # Ensure project root is in sys.path
 cwd = os.getcwd()
@@ -14,22 +15,39 @@ if parent_dir not in sys.path:
 from app import app as fastapi_app
 
 class VercelPathMiddleware:
-    """Restores the original client URL path from Vercel's x-matched-path header"""
+    """Restores the original client URL path from Vercel's rewrite query parameter or headers"""
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
         if scope["type"] in ("http", "websocket"):
-            headers = dict(scope.get("headers", []))
-            matched_path = headers.get(b"x-matched-path") or headers.get(b"x-forwarded-uri")
-            if matched_path:
-                try:
-                    clean_path = matched_path.decode("utf-8").split("?")[0]
-                    if clean_path and not clean_path.startswith("/api/index"):
-                        scope["path"] = clean_path
-                        scope["raw_path"] = clean_path.encode("utf-8")
-                except Exception:
-                    pass
+            qs = scope.get("query_string", b"").decode("utf-8")
+            params = urllib.parse.parse_qs(qs)
+            
+            # 1. Read the explicit original path forwarded from vercel.json
+            orig_path = params.get("__orig_path", [None])[0]
+            
+            # 2. Or check Vercel matched-path header
+            if not orig_path:
+                headers = dict(scope.get("headers", []))
+                matched = headers.get(b"x-matched-path") or headers.get(b"x-forwarded-uri")
+                if matched:
+                    try:
+                        orig_path = matched.decode("utf-8").split("?")[0]
+                    except Exception:
+                        pass
+
+            if orig_path:
+                # Normalize double slashes if any
+                while "//" in orig_path:
+                    orig_path = orig_path.replace("//", "/")
+                
+                # Clean __orig_path out of query string
+                new_params = {k: v for k, v in params.items() if k != "__orig_path"}
+                new_qs = urllib.parse.urlencode(new_params, doseq=True)
+                scope["query_string"] = new_qs.encode("utf-8")
+                scope["path"] = orig_path
+                scope["raw_path"] = orig_path.encode("utf-8")
             elif scope.get("path") in ("/api/index.py", "/api/index", "/api"):
                 scope["path"] = "/"
                 scope["raw_path"] = b"/"
