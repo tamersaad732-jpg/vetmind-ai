@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 
-BASE_DIR = r"C:\Users\tamersaad\Desktop\vetmind-ai"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCS_DIR = os.path.join(BASE_DIR, "static", "reference_docs")
-os.makedirs(DOCS_DIR, exist_ok=True)
+try:
+    os.makedirs(DOCS_DIR, exist_ok=True)
+except Exception:
+    pass
 
 ARAB_REFS = [
     {

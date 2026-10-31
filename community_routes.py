@@ -11,6 +11,9 @@ router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
+if os.environ.get("VERCEL"):
+    DB_PATH = "/tmp/vetmind.db"
+    UPLOAD_DIR = "/tmp/uploads"
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

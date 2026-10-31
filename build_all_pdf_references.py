@@ -24,19 +24,21 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-BASE_DIR = r"C:\Users\tamersaad\Desktop\vetmind-ai"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCS_DIR = os.path.join(BASE_DIR, "static", "reference_docs")
 DOWNLOADS_DIR = os.path.join(BASE_DIR, "static", "downloads")
-DESKTOP_DIR = r"C:\Users\tamersaad\Desktop\مكتبة المراجع البيطرية المعتمدة (VetMind Library)"
-
-os.makedirs(DOCS_DIR, exist_ok=True)
-os.makedirs(DOWNLOADS_DIR, exist_ok=True)
-os.makedirs(DESKTOP_DIR, exist_ok=True)
-
+DESKTOP_DIR = os.path.join(BASE_DIR, "static", "downloads")
 DESKTOP_ARAB_DIR = os.path.join(DESKTOP_DIR, "01_المراجع_العربية_المعتمدة")
 DESKTOP_GLOBAL_DIR = os.path.join(DESKTOP_DIR, "02_المراجع_الدولية_المعتمدة_Tier1")
-os.makedirs(DESKTOP_ARAB_DIR, exist_ok=True)
-os.makedirs(DESKTOP_GLOBAL_DIR, exist_ok=True)
+
+try:
+    os.makedirs(DOCS_DIR, exist_ok=True)
+    os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+    os.makedirs(DESKTOP_DIR, exist_ok=True)
+    os.makedirs(DESKTOP_ARAB_DIR, exist_ok=True)
+    os.makedirs(DESKTOP_GLOBAL_DIR, exist_ok=True)
+except Exception:
+    pass
 
 sys.path.insert(0, BASE_DIR)
 from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
