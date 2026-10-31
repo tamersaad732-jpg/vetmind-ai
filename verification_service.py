@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 VetMind AI - Independent 2FA & Verification Service
-Handles: Cryptographic OTP generation, expiration tracking, Email dispatch (SMTP),
+Handles: Cryptographic OTP generation, expiration tracking, Email dispatch (SMTP & Resend API),
 and SMS text message dispatch (Twilio, Webhook Gateways, and Universal SMS formatting).
 """
 import os
+import json
 import base64
 import secrets
 import smtplib
@@ -130,15 +131,10 @@ def mask_phone_number(phone: str) -> str:
 def send_verification_email(recipient_email: str, code: str, user_name: str = "") -> dict:
     """
     Sends an official HTML verification email.
-    If SMTP credentials are provided in env vars, sends via SMTP;
-    Otherwise safely records the dispatch.
+    Supports:
+    1. Standard SMTP (Gmail, Outlook, Brevo, Custom Domain Mail)
+    2. Resend REST API (via HTTPS POST)
     """
-    smtp_host = os.environ.get("SMTP_HOST", "")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
-    sender_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@vetmind.ai")
-
     subject = f"رمز تفعيل حسابك في VetMind AI: {code}"
     html_body = f"""
     <!DOCTYPE html>
@@ -173,18 +169,50 @@ def send_verification_email(recipient_email: str, code: str, user_name: str = ""
     </html>
     """
 
+    # 1. Resend API check
+    resend_api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    if resend_api_key:
+        try:
+            sender_resend = os.environ.get("SMTP_FROM", "VetMind AI <onboarding@resend.dev>").strip()
+            payload = json.dumps({
+                "from": sender_resend,
+                "to": [recipient_email],
+                "subject": subject,
+                "html": html_body
+            }).encode("utf-8")
+            req = urllib.request.Request("https://api.resend.com/emails", data=payload, method="POST")
+            req.add_header("Authorization", f"Bearer {resend_api_key}")
+            req.add_header("Content-Type", "application/json")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return {"success": True, "channel": "resend_api", "status": "sent"}
+        except Exception as e:
+            pass
+
+    # 2. SMTP (Gmail, Outlook, etc.)
+    smtp_host = os.environ.get("SMTP_HOST", "").strip()
+    smtp_port_raw = os.environ.get("SMTP_PORT", "587").strip()
+    smtp_port = int(smtp_port_raw) if smtp_port_raw.isdigit() else 587
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    sender_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@vetmind.ai").strip()
+
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = sender_email
+            msg["From"] = f"VetMind AI <{sender_email}>" if "<" not in sender_email else sender_email
             msg["To"] = recipient_email
             msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(sender_email, [recipient_email], msg.as_string())
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=12) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(sender_email, [recipient_email], msg.as_string())
+            else:
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(sender_email, [recipient_email], msg.as_string())
             return {"success": True, "channel": "email_smtp", "status": "sent"}
         except Exception as e:
             return {"success": False, "channel": "email_smtp", "status": f"smtp_error: {str(e)}"}
@@ -226,15 +254,13 @@ def send_verification_sms(phone: str, code: str, user_name: str = "", country: s
             req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
             with urllib.request.urlopen(req, timeout=10) as resp:
-                resp_body = resp.read().decode("utf-8")
                 return {
                     "success": True,
                     "channel": "twilio_sms",
                     "status": "sent_via_twilio",
                     "phone": int_phone
                 }
-        except Exception as e:
-            # Fall through to next gateway or log
+        except Exception:
             pass
 
     # 2. Generic SMS Webhook / Provider (e.g., Taqnyat, SMS Misr, Infobip)
@@ -264,10 +290,10 @@ def send_verification_sms(phone: str, code: str, user_name: str = "", country: s
                     "status": "sent_via_gateway",
                     "phone": int_phone
                 }
-        except Exception as e:
+        except Exception:
             pass
 
-    # Default: SMS logged for delivery
+    # Default fallback
     return {
         "success": True,
         "channel": "sms_standard",
