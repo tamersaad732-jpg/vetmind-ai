@@ -2440,14 +2440,15 @@ async def verify_otp_page(request: Request, email: str = "", resent: int = 0, ch
     user_row = c.fetchone()
     conn.close()
 
-    otp_display = user_row["otp_code"] if user_row else "123456"
-    phone_display = user_row["phone"] if user_row and user_row["phone"] else "رقم غير مسجل"
+    from verification_service import mask_phone_number
+    phone_raw = user_row["phone"] if user_row and user_row["phone"] else ""
+    phone_display = mask_phone_number(phone_raw) if phone_raw else "رقم غير مسجل"
 
     resent_alert = ""
     if resent:
         resent_alert = f"""
         <div style="background: #dcfce7; border: 1.5px solid #86efac; color: #166534; padding: 12px; border-radius: 10px; margin-bottom: 16px; font-weight: 700; font-size: 0.9rem;">
-            ✅ تم بنجاح توليد كود جديد وإرساله عبر البريد الإلكتروني ورسالة نصية SMS!
+            ✅ تم بنجاح توليد كود أمان جديد وإرساله في رسالة نصية SMS وعبر البريد الإلكتروني!
         </div>
         """
 
@@ -2462,18 +2463,17 @@ async def verify_otp_page(request: Request, email: str = "", resent: int = 0, ch
 
             {resent_alert}
 
-            <div style="background: #f0fdf4; border: 1.5px solid #86efac; padding: 16px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; color: #166534; text-align: right;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div>✉️ <strong>البريد الإلكتروني (Gmail):</strong> {email}</div>
+            <div style="background: #f0fdf4; border: 1.5px solid #86efac; padding: 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; color: #166534; text-align: right;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div>✉️ <strong>البريد الإلكتروني:</strong> {email}</div>
                     <span style="background: #dcfce7; color: #15803d; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">تم الإرسال</span>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>📱 <strong>الهاتف المسجل (SMS):</strong> {phone_display}</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div>📱 <strong>الهاتف المسجل (SMS):</strong> <span dir="ltr" style="font-family: monospace; font-weight: 700;">{phone_display}</span></div>
                     <span style="background: #dcfce7; color: #15803d; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">تم إرسال SMS</span>
                 </div>
-                <div style="margin-top: 12px; font-size: 0.82rem; color: #15803d; border-top: 1px dashed #86efac; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>🛡️ كود التحقق المستقل النشط:</span>
-                    <strong style="font-size: 1.25rem; color: #047857; letter-spacing: 3px; background: #ffffff; padding: 2px 10px; border-radius: 6px; border: 1px solid #86efac;">{otp_display}</strong>
+                <div style="background: #ffffff; border-radius: 8px; padding: 12px; border: 1px dashed #86efac; font-size: 0.85rem; color: #047857; line-height: 1.6; text-align: center;">
+                    📲 <strong>يرجى مراجعة صندوق الرسائل النصية القصيرة (SMS) في هاتفك أو بريدك الإلكتروني لإدخال الرمز السري المكون من 6 أرقام.</strong>
                 </div>
             </div>
 
@@ -3390,10 +3390,16 @@ async def process_login(request: Request, email: str = Form(...), password: str 
         return HTMLResponse("<script>alert('البريد الإلكتروني أو كلمة المرور غير صحيحة'); window.location.href='/login';</script>")
 
     if not user["is_email_verified"]:
-        otp = str(random.randint(100000, 999999))
-        c.execute("UPDATE users SET otp_code = ? WHERE id = ?", (otp, user["id"]))
-        conn.commit()
+        user_id = user["id"]
+        user_phone = user["phone"] if "phone" in user.keys() else ""
+        user_name = user["name"] if "name" in user.keys() else ""
+        user_country = user["country"] if "country" in user.keys() else "مصر"
         conn.close()
+        try:
+            import verification_service
+            verification_service.dispatch_user_otp(user_id, clean_email, user_phone, user_name, user_country)
+        except Exception:
+            pass
         return RedirectResponse(f"/verify-otp?email={clean_email}", status_code=303)
 
     u_dict = dict(user)
