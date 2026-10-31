@@ -240,7 +240,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
 
     if not user:
         login_prompt = f"""
-        <div class="card" style="max-width: 620px; margin: 40px auto; text-align: center; border-top: 5px solid #0f766e; padding: 40px 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(15,118,110,0.12);">
+        <div class="card" style="max-width: 620px; width: 100%; box-sizing: border-box; margin: 30px auto; text-align: center; border-top: 5px solid #0f766e; padding: clamp(24px, 5vw, 40px) clamp(16px, 4vw, 24px); border-radius: 16px; box-shadow: 0 8px 24px rgba(15,118,110,0.12); word-break: break-word;">
             <div style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 800; margin: 0 auto 16px auto; box-shadow: 0 4px 14px rgba(15,118,110,0.3);">
                 V
             </div>
@@ -330,7 +330,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
             """
 
         body = f"""
-        <div style="max-width: 1100px; margin: 0 auto;">
+        <div style="max-width: 1100px; width: 100%; margin: 0 auto; box-sizing: border-box; overflow-x: hidden; word-break: break-word;">
             {status_banner}
             {pending_box}
 
@@ -378,7 +378,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                     </div>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px;">
                         <strong style="color: #15803d;">⚡ إنستاباي (InstaPay IPA):</strong>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: #166534; margin: 6px 0;">vetmind.admin@instapay</div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #166534; margin: 6px 0; word-break: break-all;">vetmind.admin@instapay</div>
                         <div style="font-size: 0.8rem; color: #15803d;">التحويل اللحظي المباشر عبر تطبيق إنستاباي من كافة البنوك المصرية.</div>
                     </div>
                     <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 14px; border-radius: 10px;">
@@ -661,6 +661,24 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
     </div>
     """
 
+        # Mobile Categories Strip (Horizontal Scroll for Phones & Tablets)
+    mobile_cat_items = ""
+    for cid, cinfo in CATEGORIES.items():
+        is_active = "active-fb-pill" if category == cid else ""
+        mobile_cat_items += f"""
+        <a href="/community?category={cid}&sort={sort}{f"&q={q}" if q else ""}" class="fb-mobile-cat-pill {is_active}">
+            <span>{cinfo['icon']}</span>
+            <span>{cinfo['name']}</span>
+        </a>
+        """
+    mobile_categories_html = f"""
+    <div class="fb-mobile-categories-bar">
+        <div class="fb-mobile-categories-strip">
+            {mobile_cat_items}
+        </div>
+    </div>
+    """
+
     # Stories Strip (Facebook/Instagram Stories with Trending Cases)
     trending_stories_cards = ""
     for tc in trending_cases:
@@ -833,8 +851,8 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                     </div>
                     <div style="flex: 1;">
                         <div class="fb-comment-bubble">
-                            <div style="font-weight: 700; font-size: 0.82rem; color: #0f766e;">د. {rep['author_name']} {rep_badge}</div>
-                            <div style="color: var(--text-main); font-size: 0.85rem; line-height: 1.5; margin-top: 2px; white-space: pre-wrap;">{rep['content']}</div>
+                            <div style="font-weight: 700; font-size: 0.82rem; color: #0f766e; word-break: break-word;">د. {rep['author_name']} {rep_badge}</div>
+                            <div class="fb-comment-content">{rep['content']}</div>
                         </div>
                         <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; margin-right: 10px;">
                             <span>{rep['created_at']}</span>
@@ -850,13 +868,13 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                 </div>
                 <div style="flex: 1;">
                     <div class="fb-comment-bubble">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                            <div style="word-break: break-word;">
                                 <strong style="font-size: 0.88rem; color: #0f766e;">د. {cm['author_name']}</strong> {author_badge}
                                 <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 4px;">({cm.get('author_specialty') or 'طبيب بيطري'})</span>
                             </div>
                         </div>
-                        <div style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; margin-top: 4px; white-space: pre-wrap;">{cm['content']}</div>
+                        <div class="fb-comment-content">{cm['content']}</div>
                     </div>
 
                     <div style="display: flex; gap: 14px; font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; margin-right: 12px;">
@@ -866,7 +884,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                         <span>{cm['created_at']}</span>
                     </div>
 
-                    <div style="margin-right: 20px; border-right: 2px solid var(--border); padding-right: 12px;">
+                    <div class="fb-replies-container">
                         {nested_replies_html}
                     </div>
 
@@ -881,28 +899,28 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
             </div>
             """
 
-        # Media Player / Image Display
+        # Media Player / Image Display (100% Responsive, Zero Card Overflow)
         media_html = ""
         if p.get("video_path"):
             vpath = p["video_path"]
             if vpath.startswith("http://") or vpath.startswith("https://"):
                 media_html = f"""
-                <div style="margin: 12px -16px; background: #000;">
+                <div style="margin: 10px 0; background: #000; border-radius: 10px; overflow: hidden; width: 100%; max-width: 100%;">
                     <iframe src="{vpath}" style="width: 100%; aspect-ratio: 16/9; border: none; display: block;" allowfullscreen></iframe>
                 </div>
                 """
             else:
                 media_html = f"""
-                <div style="margin: 12px -16px; background: #000; text-align: center;">
-                    <video controls playsinline preload="metadata" style="width: 100%; max-height: 540px; display: block; outline: none; background: #0f172a;">
+                <div style="margin: 10px 0; background: #000; border-radius: 10px; overflow: hidden; width: 100%; max-width: 100%; text-align: center;">
+                    <video controls playsinline preload="metadata" style="width: 100%; max-height: 520px; display: block; outline: none; background: #0f172a;">
                         <source src="/uploads/{vpath}">
                     </video>
                 </div>
                 """
         elif p.get("image_path"):
             media_html = f"""
-            <div style="margin: 12px -16px; text-align: center; background: #000; overflow: hidden;">
-                <img src="/uploads/{p['image_path']}" alt="{p['title']}" onclick="openImageModal('/uploads/{p['image_path']}')" style="max-width: 100%; max-height: 550px; display: block; margin: 0 auto; cursor: zoom-in; transition: transform 0.2s;">
+            <div style="margin: 10px 0; text-align: center; background: #000; border-radius: 10px; overflow: hidden; width: 100%; max-width: 100%;">
+                <img src="/uploads/{p['image_path']}" alt="{p['title']}" onclick="openImageModal('/uploads/{p['image_path']}')" style="max-width: 100%; width: 100%; height: auto; max-height: 520px; object-fit: contain; display: block; margin: 0 auto; cursor: zoom-in; transition: transform 0.2s;">
             </div>
             """
 
@@ -951,18 +969,18 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         posts_html += f"""
         <div class="fb-card" id="post-{post_id}" style="{card_border_style}">
             <!-- Facebook Post Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 200px;">
                     <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem; flex-shrink: 0;">
                         {p['author_name'][0] if p['author_name'] else 'V'}
                     </div>
-                    <div>
-                        <div style="font-weight: 700; font-size: 0.98rem; color: var(--text-main); display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                    <div style="min-width: 0; flex: 1 1 auto;">
+                        <div style="font-weight: 700; font-size: clamp(0.9rem, 2.6vw, 1rem); color: var(--text-main); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; word-break: break-word;">
                             <span>د. {p['author_name']}</span>
                             <span style="color: #059669; font-size: 0.85rem;" title="طبيب بيطري معتمد">🩺</span>
                             {algorithmic_badges}
                         </div>
-                        <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+                        <div style="font-size: clamp(0.7rem, 2vw, 0.76rem); color: var(--text-muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
                             <span>{p.get('author_specialty') or 'طب وجراحة الحيوان'}</span> •
                             <span>{p.get('author_country') or 'مصر'}</span> •
                             <span>{p['created_at']}</span> •
@@ -971,34 +989,35 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                     </div>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0;">
                     {admin_boost_btn}
-                    <span style="background: {cat_badge['color']}15; color: {cat_badge['color']}; padding: 3px 10px; border-radius: 12px; font-size: 0.76rem; font-weight: 700;">
+                    <span style="background: {cat_badge['color']}15; color: {cat_badge['color']}; padding: 3px 10px; border-radius: 12px; font-size: clamp(0.7rem, 2vw, 0.76rem); font-weight: 700; white-space: nowrap;">
                         {cat_badge['icon']} {cat_badge['name']}
                     </span>
                     {delete_btn}
                 </div>
             </div>
 
-            <!-- Post Title & Content -->
-            <h3 style="margin: 8px 0 6px 0; font-size: 1.18rem; color: #0f766e; line-height: 1.4;">{p['title']}</h3>
-            <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main); white-space: pre-wrap; margin-bottom: 10px;">
-{p['content']}
-            </div>
+            <!-- Post Title & Content (Word-Break & Overflow Wrap) -->
+            <h3 class="fb-post-title">{p['title']}</h3>
+            <div class="fb-post-content">{p['content']}</div>
 
             {media_html}
 
             <!-- Facebook Reactions & Counters Summary Bar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 2px; font-size: 0.82rem; color: var(--text-muted); border-bottom: 1px solid var(--border); margin-top: 8px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 2px; font-size: clamp(0.72rem, 2.2vw, 0.82rem); color: var(--text-muted); border-bottom: 1px solid var(--border); margin-top: 8px;">
+                <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                     <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #0f766e; color: white; font-size: 0.65rem;">👍</span>
                     <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #dc2626; color: white; font-size: 0.65rem;">❤️</span>
-                    <span style="margin-right: 4px;">{p['likes_count']} تفاعلاً</span>
+                    <span style="margin-right: 4px; font-weight: 700;">{p['likes_count']} تفاعلاً</span>
                 </div>
-                <div style="display: flex; gap: 12px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                     <span>{p['comments_count']} تعليقاً</span>
+                    <span>•</span>
                     <span>{p.get('shares_count', 0)} مشاركة</span>
+                    <span>•</span>
                     <span>{p.get('views_count', 1)} مشاهدة</span>
+                    <span>•</span>
                     <span title="مؤشر الخوارزمية لانتشار الحالة">⚡ انتشار: {v_score}</span>
                 </div>
             </div>
@@ -1033,12 +1052,12 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                 </div>
 
                 <!-- Comment Input Box -->
-                <form action="/community/comment/{post_id}" method="POST" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                <form action="/community/comment/{post_id}" method="POST" style="display: flex; gap: 8px; align-items: center; margin-top: 10px; width: 100%; box-sizing: border-box;">
                     <input type="hidden" name="parent_comment_id" value="0">
                     <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">
                         {user.get('name', 'طبيب')[0]}
                     </div>
-                    <input type="text" id="main-comment-input-{post_id}" name="content" required placeholder="اكتب تعليقاً أو استشارة سريرية د. {user.get('name', '')}..." style="flex: 1; padding: 9px 16px; border: 1px solid var(--border); border-radius: 20px; font-size: 0.88rem; background: var(--bg);">
+                    <input type="text" id="main-comment-input-{post_id}" name="content" required placeholder="اكتب تعليقاً أو استشارة سريرية د. {user.get('name', '')}..." style="flex: 1 1 auto; min-width: 0; padding: 9px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: clamp(0.78rem, 2.4vw, 0.88rem); background: var(--bg); box-sizing: border-box;">
                     <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 20px;">نشر</button>
                 </form>
             </div>
@@ -1053,45 +1072,71 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
     # --------------------------------------------------------------------------
     body = f"""
     <style>
+    /* ==========================================================================
+       VETBOOK UNIVERSAL RESPONSIVE ENGINE (MOBILE, TABLET, LAPTOP & 4K DESKTOP)
+       ========================================================================== */
     .fb-wrapper {{
         background: var(--bg);
-        min-height: 100vh;
-        margin: -24px -16px;
-        padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }}
     .fb-container {{
+        width: 100%;
         max-width: 1360px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: 280px 1fr 330px;
-        gap: 20px;
+        grid-template-columns: 260px minmax(0, 1fr) 300px;
+        gap: 18px;
         align-items: start;
+        box-sizing: border-box;
     }}
     .fb-left-sidebar {{
         position: sticky;
         top: 20px;
+        min-width: 0;
+        box-sizing: border-box;
+    }}
+    .fb-center-feed {{
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }}
     .fb-right-sidebar {{
         position: sticky;
         top: 20px;
+        min-width: 0;
+        box-sizing: border-box;
     }}
     .fb-card {{
         background: var(--card-bg);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         margin-bottom: 16px;
         padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        word-break: break-word;
+        overflow-wrap: anywhere;
     }}
     .fb-nav-link {{
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         padding: 9px 12px;
         border-radius: 10px;
         text-decoration: none;
         color: var(--text-main);
         transition: all 0.2s;
+        min-width: 0;
+        box-sizing: border-box;
     }}
     .fb-nav-link:hover {{
         background: rgba(15,118,110,0.08);
@@ -1102,16 +1147,68 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         color: #ffffff !important;
         font-weight: 700;
     }}
+
+    /* Mobile / Tablet Horizontal Category Scroll Bar */
+    .fb-mobile-categories-bar {{
+        display: none;
+        margin-bottom: 14px;
+        width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+    }}
+    .fb-mobile-categories-strip {{
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 2px 8px 2px;
+        white-space: nowrap;
+        scrollbar-width: none;
+    }}
+    .fb-mobile-categories-strip::-webkit-scrollbar {{
+        display: none;
+    }}
+    .fb-mobile-cat-pill {{
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }}
+    .fb-mobile-cat-pill:hover, .fb-mobile-cat-pill.active-fb-pill {{
+        background: #0f766e;
+        color: #ffffff !important;
+        border-color: #0f766e;
+    }}
+
+    /* Stories & Reels Highlights */
     .fb-stories-strip {{
         display: flex;
-        gap: 12px;
+        gap: 10px;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
         padding-bottom: 8px;
         margin-bottom: 16px;
+        scrollbar-width: none;
+        width: 100%;
+        box-sizing: border-box;
+    }}
+    .fb-stories-strip::-webkit-scrollbar {{
+        display: none;
     }}
     .fb-story-card {{
-        min-width: 110px;
-        height: 145px;
+        min-width: 105px;
+        width: 105px;
+        height: 142px;
         border-radius: 12px;
         display: flex;
         flex-direction: column;
@@ -1123,21 +1220,30 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         transition: transform 0.2s;
         border: 1px solid var(--border);
+        flex-shrink: 0;
+        box-sizing: border-box;
     }}
     .fb-story-card:hover {{
         transform: translateY(-2px);
     }}
+
+    /* Create Post Input */
     .fb-create-post-input {{
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 0;
         text-align: right;
         background: var(--bg);
         border: 1px solid var(--border);
         border-radius: 25px;
-        padding: 10px 18px;
+        padding: 10px 16px;
         color: var(--text-muted);
-        font-size: 0.92rem;
+        font-size: clamp(0.78rem, 2.5vw, 0.92rem);
         cursor: pointer;
         transition: all 0.2s;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }}
     .fb-create-post-input:hover {{
         background: rgba(0,0,0,0.05);
@@ -1146,17 +1252,28 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         background: none;
         border: none;
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         font-weight: 700;
-        font-size: 0.88rem;
-        padding: 6px 12px;
+        font-size: clamp(0.75rem, 2.2vw, 0.88rem);
+        padding: 6px 10px;
         border-radius: 8px;
         transition: background 0.2s;
+        white-space: nowrap;
+        box-sizing: border-box;
     }}
     .fb-quick-action-btn:hover {{
         background: rgba(0,0,0,0.05);
+    }}
+
+    /* Feed Filter Sorting */
+    .fb-sort-strip {{
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        width: 100%;
+        box-sizing: border-box;
     }}
     .fb-sort-pill {{
         background: var(--bg);
@@ -1164,10 +1281,13 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         color: var(--text-muted);
         padding: 5px 12px;
         border-radius: 20px;
-        font-size: 0.78rem;
+        font-size: clamp(0.72rem, 2.2vw, 0.8rem);
         font-weight: 700;
         text-decoration: none;
         transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+        box-sizing: border-box;
     }}
     .fb-sort-pill:hover {{
         background: rgba(15,118,110,0.1);
@@ -1178,92 +1298,150 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
         color: white !important;
         border-color: #0f766e;
     }}
+
+    /* Post Typography & Content */
+    .fb-post-title {{
+        margin: 8px 0 6px 0;
+        font-size: clamp(1.05rem, 3.2vw, 1.22rem);
+        color: #0f766e;
+        line-height: 1.4;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }}
+    .fb-post-content {{
+        font-size: clamp(0.88rem, 2.6vw, 0.98rem);
+        line-height: 1.7;
+        color: var(--text-main);
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        margin-bottom: 10px;
+        max-width: 100%;
+        box-sizing: border-box;
+    }}
+
+    /* Post Actions */
     .fb-post-action-bar {{
         display: flex;
-        justify-content: space-around;
+        justify-content: space-between;
         align-items: center;
         padding: 4px 0;
         border-bottom: 1px solid var(--border);
         margin-bottom: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        gap: 4px;
     }}
     .fb-post-action-btn {{
         width: 100%;
         background: none;
         border: none;
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 8px 10px;
+        gap: 4px;
+        padding: 8px 4px;
         border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.88rem;
+        font-weight: 700;
+        font-size: clamp(0.72rem, 2.3vw, 0.88rem);
         color: var(--text-muted);
         transition: background 0.2s;
+        white-space: nowrap;
+        box-sizing: border-box;
     }}
     .fb-post-action-btn:hover {{
         background: rgba(0,0,0,0.05);
     }}
+
+    /* Comments & Nested Replies */
     .fb-comment-bubble {{
         background: #f0f2f5;
-        border-radius: 18px;
-        padding: 9px 14px;
+        border-radius: 16px;
+        padding: 8px 12px;
         display: inline-block;
         max-width: 100%;
+        box-sizing: border-box;
+        word-break: break-word;
+        overflow-wrap: anywhere;
     }}
     body.dark-theme .fb-comment-bubble {{
-        background: #334155;
+        background: #1e293b;
     }}
+    .fb-comment-content {{
+        color: var(--text-main);
+        font-size: clamp(0.82rem, 2.3vw, 0.88rem);
+        line-height: 1.5;
+        margin-top: 4px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }}
+    .fb-replies-container {{
+        margin-right: 16px;
+        border-right: 2px solid var(--border);
+        padding-right: 10px;
+        box-sizing: border-box;
+    }}
+
+    /* Contact Row */
     .fb-contact-row:hover {{
         background: rgba(0,0,0,0.04);
         cursor: pointer;
     }}
 
+    /* Responsive Breakpoints Across All Devices in the World */
     @media (max-width: 1180px) {{
         .fb-container {{
-            grid-template-columns: 240px 1fr;
+            grid-template-columns: 240px minmax(0, 1fr) !important;
+            gap: 14px;
         }}
         .fb-right-sidebar {{
-            display: none;
+            display: none !important;
         }}
     }}
     @media (max-width: 860px) {{
         .fb-container {{
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 12px;
         }}
         .fb-left-sidebar {{
-            display: none;
+            display: none !important;
+        }}
+        .fb-mobile-categories-bar {{
+            display: block !important;
         }}
     }}
     @media (max-width: 600px) {{
-        .fb-wrapper {{
-            margin: -16px -10px !important;
-            padding: 8px !important;
-        }}
         .fb-card {{
             padding: 12px 10px !important;
-            border-radius: 10px !important;
+            border-radius: 12px !important;
             margin-bottom: 12px !important;
         }}
         .fb-stories-strip {{
-            padding-bottom: 8px !important;
             gap: 8px !important;
         }}
         .fb-story-card {{
-            width: 100px !important;
-            height: 140px !important;
-            flex-shrink: 0 !important;
-        }}
-        .fb-post-action-bar {{
-            gap: 2px !important;
+            min-width: 95px !important;
+            width: 95px !important;
+            height: 135px !important;
+            padding: 8px !important;
         }}
         .fb-post-action-btn {{
-            padding: 6px 4px !important;
-            font-size: 0.78rem !important;
+            padding: 6px 2px !important;
+            font-size: 0.74rem !important;
+            gap: 2px !important;
+        }}
+        .fb-replies-container {{
+            margin-right: 8px !important;
+            padding-right: 6px !important;
+        }}
+        .fb-quick-action-btn {{
+            padding: 5px 6px !important;
+            font-size: 0.76rem !important;
         }}
     }}
-    </style>
+</style>
 
     <div class="fb-wrapper">
         <div class="fb-container">
@@ -1277,11 +1455,14 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                     <form action="/community" method="GET" style="display: flex; gap: 8px;">
                         <input type="hidden" name="category" value="{category}">
                         <input type="hidden" name="sort" value="{sort}">
-                        <input type="text" name="q" value="{q}" placeholder="🔍 ابحث في منشورات فيتبوك، الحالات السريرية، الفيديوهات الجراحية، أو أسماء الزملاء..." style="flex: 1; padding: 10px 18px; border: 1px solid var(--border); border-radius: 25px; font-size: 0.9rem; background: var(--card-bg);">
+                        <input type="text" name="q" value="{q}" placeholder="🔍 ابحث في منشورات فيتبوك، الحالات السريرية، أو أسماء الزملاء..." style="flex: 1 1 auto; min-width: 0; padding: 10px 16px; border: 1px solid var(--border); border-radius: 25px; font-size: clamp(0.8rem, 2.4vw, 0.9rem); background: var(--card-bg); box-sizing: border-box;">
                         <button type="submit" class="btn btn-primary" style="padding: 9px 20px; border-radius: 25px;">بحث</button>
                         {f'<a href="/community?category={category}&sort={sort}" class="btn btn-outline" style="border-radius: 25px;">إلغاء</a>' if q else ''}
                     </form>
                 </div>
+
+                <!-- Mobile Category Switcher -->
+                {mobile_categories_html}
 
                 <!-- Stories & Reels Highlights -->
                 {stories_html}

@@ -932,8 +932,19 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             --warning-bg: #451a03;
             --shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
         }}
-        * {{ box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
-        body {{ margin: 0; background-color: var(--bg); color: var(--text-main); line-height: 1.5; }}
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
+            -webkit-text-size-adjust: 100%;
+        }
         
         .broadcast-banner {{
             display: flex; justify-content: space-between; align-items: center;
@@ -997,7 +1008,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         .btn-download:hover {{ background: #0369a1; }}
         .btn-outline {{ background: transparent; border: 1px solid var(--border); color: var(--text-main); }}
 
-        .container {{ max-width: 1320px; margin: 24px auto; padding: 0 16px; }}
+        .container {{ max-width: 1360px; margin: 20px auto; padding: 0 16px; width: 100%; box-sizing: border-box; overflow-x: clip; }}
         .card {{
             background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 14px; padding: 22px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -1277,11 +1288,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         }}
 
         @media (max-width: 600px) {{
-            .container {{
-                padding: 0 10px !important;
-                margin: 10px auto !important;
-                width: 100% !important;
-            }}
+            .container {{ padding: 0 8px !important; margin: 8px auto !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: clip !important; }}
             .card {{
                 padding: 14px 12px !important;
                 border-radius: 12px !important;
