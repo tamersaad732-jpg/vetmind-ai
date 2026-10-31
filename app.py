@@ -3405,12 +3405,16 @@ async def process_register(
     clean_pref_lang = preferred_lang.strip().lower() if preferred_lang in SUPPORTED_LANGUAGES else "ar"
     c.execute("""
     INSERT INTO users (name, email, password_hash, role, created_at, id_card_image, verification_status, is_admin, country, clinic_name, syndicate_id, phone, is_email_verified, otp_code, preferred_lang)
-    VALUES (?, ?, ?, 'vet', ?, ?, 'pending', 0, ?, ?, ?, ?, 0, ?, ?)
+    VALUES (?, ?, ?, 'vet', ?, ?, 'pending', 0, ?, ?, ?, ?, 1, ?, ?)
     """, (name.strip(), clean_email, pwd_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), id_card_filename, country, clinic_name, syndicate_id, phone.strip(), otp, clean_pref_lang))
+    new_user_id = c.lastrowid
     conn.commit()
     conn.close()
 
-    resp = RedirectResponse(f"/verify-otp?email={clean_email}", status_code=303)
+    # Instant Activation: Login new doctor immediately without OTP block
+    resp = RedirectResponse("/", status_code=303)
+    token = make_session_token(new_user_id)
+    resp.set_cookie(key="vetmind_session", value=token, max_age=31536000, httponly=True)
     resp.set_cookie(key="vetmind_lang", value=clean_pref_lang, max_age=31536000, path="/", samesite="lax")
     return resp
 
@@ -3482,19 +3486,7 @@ async def process_login(request: Request, email: str = Form(...), password: str 
         conn.close()
         return HTMLResponse("<script>alert('البريد الإلكتروني أو كلمة المرور غير صحيحة'); window.location.href='/login';</script>")
 
-    if not user["is_email_verified"]:
-        user_id = user["id"]
-        user_phone = user["phone"] if "phone" in user.keys() else ""
-        user_name = user["name"] if "name" in user.keys() else ""
-        user_country = user["country"] if "country" in user.keys() else "مصر"
-        conn.close()
-        try:
-            import verification_service
-            verification_service.dispatch_user_otp(user_id, clean_email, user_phone, user_name, user_country)
-        except Exception:
-            pass
-        return RedirectResponse(f"/verify-otp?email={clean_email}", status_code=303)
-
+    # Direct login: No OTP block for registered doctors
     u_dict = dict(user)
     u_pref = (u_dict.get("preferred_lang") or "ar").strip().lower()
     user_lang = u_pref if u_pref in SUPPORTED_LANGUAGES else "ar"
