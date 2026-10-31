@@ -218,7 +218,7 @@ def send_verification_email(recipient_email: str, code: str, user_name: str = ""
     smtp_port_raw = get_setting("smtp_port", os.environ.get("SMTP_PORT", "587")).strip()
     smtp_port = int(smtp_port_raw) if smtp_port_raw.isdigit() else 587
     smtp_user = get_setting("smtp_user", os.environ.get("SMTP_USER", "")).strip()
-    smtp_pass = get_setting("smtp_pass", os.environ.get("SMTP_PASS", "")).strip()
+    smtp_pass = get_setting("smtp_pass", os.environ.get("SMTP_PASS", "")).strip().replace(" ", "")
     sender_email = get_setting("smtp_from", os.environ.get("SMTP_FROM", smtp_user or "no-reply@vetmind.ai")).strip()
 
     if smtp_host and smtp_user and smtp_pass:
