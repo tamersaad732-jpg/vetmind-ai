@@ -205,6 +205,15 @@ async def require_auth_middleware(request: Request, call_next):
 
     return await call_next(request)
 
+@app.get("/api/debug-path")
+def debug_path_endpoint(request: Request):
+    return JSONResponse({
+        "url_path": request.url.path,
+        "query": str(request.query_params),
+        "headers": dict(request.headers),
+        "scope_path": request.scope.get("path")
+    })
+
 def get_user_lang(request: Request) -> str:
     # 1. Check query parameter ?lang=... (explicit URL override)
     q_lang = request.query_params.get("lang")
