@@ -1485,27 +1485,8 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <button type="button" onclick="triggerPwaInstall()" class="btn pwa-install-trigger" style="background: #fde047; color: #854d0e; font-weight: 800; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                 📥 <span class="install-btn-text">تحميل التطبيق</span>
             </button>
-            <nav class="desktop-nav">
-                <a href="/" class="nav-item">🏠 {t('nav_home')}</a>
-                <a href="/chat" class="nav-item">💬 {t('nav_chat')}</a>
-                <a href="/community" class="nav-item" style="background: rgba(14, 165, 233, 0.25); border: 1px solid rgba(14, 165, 233, 0.5);">🌐 VetBook الأطباء البيطريين</a>
-                <a href="/clinic" class="nav-item">🏥 {t('nav_clinic')}</a>
-                <a href="/clinic/cases-gallery" class="nav-item">{t("nav_cases_gallery", "🖼️ معرض الصور")}</a>
-                <a href="/rx-prescription" class="nav-item">📋 {t('nav_rx')}</a>
-                <a href="/interactions" class="nav-item">⚠️ {t('nav_interactions')}</a>
-                <a href="/pharmacy" class="nav-item">💊 {t('nav_pharmacy')}</a>
-                <a href="/vision-detect" class="nav-item">👁️ {t('nav_vision_detect')}</a>
-                <a href="/tools" class="nav-item" style="background: rgba(255,255,255,0.15); font-weight: 700;">{t("nav_tools_30", "🛠️ الأدوات الـ 30")}</a>
-                <a href="/clinic/prayer-times" class="nav-item">{t("nav_prayer", "🕌 مواقيت الصلاة")}</a>
-                <a href="/references" class="nav-item">📚 {t('nav_references')}</a>
-                <a href="/about" class="nav-item">ℹ️ {t('nav_about')}</a>
-                <a href="/terms" class="nav-item">📜 {t('nav_terms')}</a>
-                <a href="/time-demand" class="nav-item">📊 {t('nav_time_demand')}</a>
-                <a href="/premium" class="nav-item nav-premium">⭐ {t('nav_premium')}</a>
-                <a href="/support" class="nav-item">🎧 {t('nav_support')}</a>
-                {admin_link}
-            </nav>
-        </div></header>
+        </div>
+    </header>
     {mobile_drawer_html}
 
     <div class="top-toolbar">
@@ -1616,15 +1597,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </div>
         <div style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 8px;">
             👨‍⚕️ <strong>{t('developer_label')}</strong> <span style="color: #fde047; font-weight: 800; font-size: 1.02rem;">{t('developer_name')}</span>
-        </div>
-        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 12px 0; font-size: 0.9rem;">
-            <a href="/about" style="color: #38bdf8; text-decoration: none; font-weight: 700;">ℹ️ {t('nav_about')}</a>
-            <span style="opacity: 0.4;">|</span>
-            <a href="/terms" style="color: #38bdf8; text-decoration: none; font-weight: 700;">📜 {t('nav_terms')}</a>
-            <span style="opacity: 0.4;">|</span>
-            <a href="/pharmacy" style="color: #38bdf8; text-decoration: none; font-weight: 700;">💊 {t('nav_pharmacy')} ({t('pharmacy_drugs_count', '1,005 دواء')})</a>
-            <span style="opacity: 0.4;">|</span>
-            <a href="/support" style="color: #38bdf8; text-decoration: none; font-weight: 700;">🎧 {t('nav_support')}</a>
         </div>
         <div style="margin-top: 8px; font-size: 0.78rem; color: #94a3b8;">
             Grounded in Merck Veterinary Manual, WOAH, WSAVA, FAO, Cornell CVM & Official Arab Formularies.
@@ -2144,50 +2116,6 @@ async def home_page(request: Request):
         </div>
         """
 
-    # Top Featured References Bar (Direct 1-Click Download right at the start)
-    top_refs = get_all_references()[:6]
-    refs_preview_cards = ""
-    for r in top_refs:
-        is_ar = r["id"].startswith("arab_")
-        badge = t("ref_badge_arab", "🇪🇬 مرجع عربي") if is_ar else t("ref_badge_intl", "🌐 مرجع دولي")
-        refs_preview_cards += f"""
-        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <span style="font-size: 0.72rem; background: {'#dcfce7' if is_ar else '#e0f2fe'}; color: {'#166534' if is_ar else '#0369a1'}; padding: 2px 6px; border-radius: 8px; font-weight: 700;">{badge}</span>
-                <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin: 6px 0 4px 0;">{r['name'][:48]}...</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">{r['citation'][:65]}...</div>
-            </div>
-            <div style="margin-top: 10px; display: flex; gap: 6px;">
-                <a href="/references/download/{r['id']}" download class="btn btn-download" style="flex: 1; padding: 6px; font-size: 0.78rem; justify-content: center; font-weight: 700;">
-                    {t('download_single_book_btn', '📥 تحميل المرجع (PDF)')}
-                </a>
-                <a href="/references/pdf/{r['id']}" target="_blank" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.78rem; justify-content: center;">
-                    {t('view_online_pdf_btn', '👁️ عرض')}
-                </a>
-            </div>
-        </div>
-        """
-
-    featured_refs_html = f"""
-    <div class="card" style="border-top: 4px solid #0284c7; background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-            <div>
-                <h3 style="margin: 0; font-size: 1.25rem; color: #0284c7;">📚 {t('references_featured_title')}</h3>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">{t('references_featured_desc')}</div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <a href="/references/download-all" class="btn" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);">
-                    {t('home_refs_zip_btn', '📦 تحميل كافة المراجع الـ 30 (ZIP)')}
-                </a>
-                <a href="/references" class="btn btn-download" style="font-size: 0.85rem;">{t('browse_all_refs_btn', 'استعراض كافة المراجع الـ 30 ⬅️')}</a>
-            </div>
-        </div>
-        <div class="grid-3" style="gap: 12px;">
-            {refs_preview_cards}
-        </div>
-    </div>
-    """
-
     cases_html = ""
     for cs in cases:
         img_badge = f'<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">📷 {t("case_img_badge", "مرفق صورة")}</span>' if cs["image_filename"] else ""
@@ -2226,41 +2154,6 @@ async def home_page(request: Request):
     body = f"""
     {stock_alert_html}
 
-    <!-- PWA Install Hero Banner for browser visitors -->
-    <div id="pwa-install-banner" class="card" style="background: linear-gradient(135deg, #0f766e 0%, #047857 100%); color: white; border: none; padding: 16px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-radius: 14px; box-shadow: 0 4px 15px rgba(15,118,110,0.25);">
-        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
-            <div style="font-size: 2.2rem; background: rgba(255,255,255,0.2); border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">📲</div>
-            <div>
-                <div style="font-weight: 800; font-size: 1.05rem;">تحميل وتثبيت تطبيق VetMind AI على هاتفك أو حاسوبك</div>
-                <div style="font-size: 0.82rem; opacity: 0.9; margin-top: 2px;">يفتح في نافذة مستقلة شاشة كاملة (مثل يوتيوب وفيسبوك) بدون شريط متصفح وبسرعة فائقة.</div>
-            </div>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button type="button" onclick="triggerPwaInstall()" class="btn" style="background: #fde047; color: #854d0e; font-weight: 800; padding: 8px 18px; border-radius: 8px; font-size: 0.88rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: none; cursor: pointer;">
-                📥 تحميل وتثبيت التطبيق الآن
-            </button>
-            <button type="button" onclick="openMobileModal()" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;">
-                📱 فتح باركود الموبايل
-            </button>
-        </div>
-    </div>
-
-
-
-    <!-- Community Banner on Dashboard -->
-    <div class="card" style="border-top: 4px solid #0284c7; background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="font-size: 2.4rem; background: #e0f2fe; padding: 10px 14px; border-radius: 12px;">👥</div>
-            <div>
-                <h3 style="margin: 0 0 4px 0; color: #0369a1; font-size: 1.25rem;">VetBook الأطباء البيطريين</h3>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">شبكة التواصل السريري والمهني التفاعلي للأطباء البيطريين لتبادل الحالات والخبرات الحقلية والمقالات الموثقة.</p>
-            </div>
-        </div>
-        <a href="/community" class="btn" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 10px 20px; font-weight: 700; border-radius: 8px; text-decoration: none;">
-            فتح VetBook الأطباء البيطريين 🌐 ⬅️
-        </a>
-    </div>
-
     <div class="grid-4"  style="margin-bottom: 24px;">
         <div class="card" style="border-top: 4px solid var(--primary); padding: 16px;">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">{t("stat_total_exams", "إجمالي الفحوصات")}</div>
@@ -2283,8 +2176,6 @@ async def home_page(request: Request):
             <div style="font-size: 0.75rem; color: var(--gold); margin-top: 4px;"><a href="/premium" style="color: var(--gold); text-decoration: none; font-weight: 700;">{t('stat_upgrade_plan', 'ترقية وتفعيل المزايا ⭐')}</a></div>
         </div>
     </div>
-
-    {featured_refs_html}
 
     <div class="grid-2">
         <div>
