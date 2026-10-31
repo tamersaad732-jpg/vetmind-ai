@@ -39,15 +39,18 @@ DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
 # Vercel Serverless & Read-only Environment Compatibility
 if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     tmp_db = "/tmp/vetmind.db"
-    if not os.path.exists(tmp_db) and os.path.exists(DB_PATH):
+    if os.path.exists(DB_PATH):
         try:
             import shutil
-            shutil.copy2(DB_PATH, tmp_db)
+            if (not os.path.exists(tmp_db) or 
+                os.path.getmtime(DB_PATH) > os.path.getmtime(tmp_db) or 
+                os.path.getsize(DB_PATH) != os.path.getsize(tmp_db)):
+                shutil.copy2(DB_PATH, tmp_db)
         except Exception:
             pass
     if os.path.exists(tmp_db):
         DB_PATH = tmp_db
-    UPLOAD_DIR = "/tmp/uploads"
+    UPLOAD_DIR = "/tmp/uploads" 
 
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)

@@ -22,9 +22,20 @@ router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
-if os.environ.get("VERCEL"):
-    DB_PATH = "/tmp/vetmind.db"
-    UPLOAD_DIR = "/tmp/uploads"
+if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
+    tmp_db = "/tmp/vetmind.db"
+    if os.path.exists(DB_PATH):
+        try:
+            import shutil
+            if (not os.path.exists(tmp_db) or 
+                os.path.getmtime(DB_PATH) > os.path.getmtime(tmp_db) or 
+                os.path.getsize(DB_PATH) != os.path.getsize(tmp_db)):
+                shutil.copy2(DB_PATH, tmp_db)
+        except Exception:
+            pass
+    if os.path.exists(tmp_db):
+        DB_PATH = tmp_db
+    UPLOAD_DIR = "/tmp/uploads" 
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
