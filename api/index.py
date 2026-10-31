@@ -1,12 +1,9 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+import sys
+import os
 
-app = FastAPI()
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
-@app.get("/")
-def home():
-    return HTMLResponse("<h1>VetMind AI Vercel is Working!</h1><p>System Online</p>")
-
-@app.get("/test")
-def test():
-    return {"status": "ok"}
+from app import app
