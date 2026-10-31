@@ -650,11 +650,27 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         
     try:
         p_res = calculate_prayer_times(user_city, lang=lang)
-        prayer_p_text = f"{p_res['next_prayer']['name']} {p_res['next_prayer']['time']}"
-        prayer_c_text = p_res['countdown_text']
+        np = p_res.get('next_prayer', {})
+        raw_name = np.get('name', 'الفجر')
+        clean_pname = raw_name.replace("صلاة ", "").replace("Prayer ", "").strip()
+        p_time = np.get('time', '')
+        diff_m = np.get('diff_min', 0)
+        h = diff_m // 60
+        m = diff_m % 60
+        if lang == 'ar':
+            c_text = f"{h}س {m}د" if h > 0 else f"{m}د"
+            prayer_p_text = f"{clean_pname} {p_time}".strip()
+            prayer_c_text = f"({c_text})"
+            prayer_full_tooltip = f"الصلاة القادمة: {raw_name} الساعة {p_time} - {p_res.get('countdown_text', '')}"
+        else:
+            c_text = f"{h}h {m}m" if h > 0 else f"{m}m"
+            prayer_p_text = f"{clean_pname} {p_time}".strip()
+            prayer_c_text = f"({c_text})"
+            prayer_full_tooltip = f"Next Prayer: {raw_name} at {p_time} - {p_res.get('countdown_text', '')}"
     except Exception:
-        prayer_p_text = "مواقيت الصلاة"
-        prayer_c_text = "انقر هنا"
+        prayer_p_text = "مواقيت الصلاة" if lang == 'ar' else "Prayer Times"
+        prayer_c_text = ""
+        prayer_full_tooltip = "مواقيت الصلاة الإسلامية المعتمدة بالعيادة" 
 
     lang_display_names = {
         "ar": "🇸🇦 العربية (Arabic)",
@@ -983,8 +999,56 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         .top-toolbar {{
             background: #ffffff; border-bottom: 1px solid var(--border);
             padding: 8px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+            box-sizing: border-box; width: 100%; max-width: 100vw;
         }}
         body.dark-theme .top-toolbar {{ background: #0f172a; }}
+
+        .top-toolbar-left {{
+            display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+            max-width: 100%; box-sizing: border-box; min-width: 0;
+        }}
+        .top-toolbar-actions {{
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            box-sizing: border-box;
+        }}
+
+        .lang-selector-pill {{
+            display: flex; align-items: center; gap: 6px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px;
+            flex-shrink: 0; box-sizing: border-box;
+        }}
+        .lang-selector-pill select {{
+            border: none; background: transparent; font-size: 0.82rem; font-weight: 700;
+            color: var(--text-main); cursor: pointer; outline: none; padding: 3px 2px;
+        }}
+
+        .prayer-indicator-pill {{
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 3px 10px; font-size: 0.78rem; border-radius: 20px;
+            text-decoration: none; background: #ecfdf5; border: 1px solid #a7f3d0;
+            color: #047857; font-weight: 700; max-width: 100%; box-sizing: border-box;
+            transition: all 0.2s ease; overflow: hidden; white-space: nowrap;
+        }}
+        .prayer-indicator-pill:hover {{
+            background: #d1fae5; border-color: #6ee7b7; color: #065f46;
+        }}
+        body.dark-theme .prayer-indicator-pill {{
+            background: #064e3b; border-color: #047857; color: #6ee7b7;
+        }}
+        body.dark-theme .prayer-indicator-pill:hover {{
+            background: #047857; color: #ffffff;
+        }}
+        .prayer-pill-icon {{ flex-shrink: 0; font-size: 0.85rem; }}
+        .prayer-pill-text {{
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+        }}
+        .prayer-pill-countdown {{
+            background: #d1fae5; color: #065f46; padding: 1px 7px;
+            border-radius: 10px; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;
+        }}
+        body.dark-theme .prayer-pill-countdown {{
+            background: #022c22; color: #a7f3d0;
+        }}
 
         .lang-bar {{ display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }}
         .lang-pill {{
@@ -1277,10 +1341,55 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 flex-direction: column !important;
                 align-items: stretch !important;
                 gap: 8px !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
+                box-sizing: border-box !important;
+            }}
+            .top-toolbar-left {{
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 6px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }}
+            .prayer-indicator-pill {{
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                max-width: calc(100% - 130px) !important;
+                padding: 3px 8px !important;
+                font-size: 0.74rem !important;
             }}
             .top-toolbar-actions {{
                 justify-content: space-between !important;
                 width: 100% !important;
+                gap: 6px !important;
+            }}
+        }}
+
+        @media (max-width: 480px) {{
+            .top-toolbar-left {{
+                gap: 4px !important;
+            }}
+            .lang-selector-pill {{
+                padding: 2px 6px !important;
+            }}
+            .lang-selector-pill select {{
+                font-size: 0.75rem !important;
+                max-width: 95px !important;
+            }}
+            .prayer-indicator-pill {{
+                font-size: 0.70rem !important;
+                padding: 2px 6px !important;
+                gap: 4px !important;
+                max-width: calc(100% - 110px) !important;
+            }}
+            .prayer-pill-countdown {{
+                font-size: 0.66rem !important;
+                padding: 1px 4px !important;
             }}
             .user-profile-widget .nav-item {{
                 display: none !important;
@@ -1497,16 +1606,18 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     {mobile_drawer_html}
 
     <div class="top-toolbar">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px;">
+        <div class="top-toolbar-left">
+            <div class="lang-selector-pill">
                 <span style="font-size: 0.9rem;">🌐</span>
-                <select id="lang-quick-select" onchange="changeLanguage(this.value)" style="border: none; background: transparent; font-size: 0.82rem; font-weight: 700; color: var(--text-main); cursor: pointer; outline: none; padding: 3px 2px;">
+                <select id="lang-quick-select" onchange="changeLanguage(this.value)">
                     {lang_options}
                 </select>
             </div>
             <!-- Live Islamic Prayer Indicator Pill -->
-            <a href="/clinic/prayer-times" class="btn btn-outline" style="padding: 2px 10px; font-size: 0.78rem; border-radius: 20px; text-decoration: none; background: #ecfdf5; border-color: #a7f3d0; color: #047857; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
-                🕌 {t("next_prayer_label", "الصلاة")}: {prayer_p_text} ({prayer_c_text})
+            <a href="/clinic/prayer-times" class="prayer-indicator-pill" title="{prayer_full_tooltip}">
+                <span class="prayer-pill-icon">🕌</span>
+                <span class="prayer-pill-text">{prayer_p_text}</span>
+                <span class="prayer-pill-countdown">{prayer_c_text}</span>
             </a>
         </div>
         <div class="top-toolbar-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -1646,7 +1757,7 @@ async def rx_prescription_page(
     clinic_name = clinic["clinic_name"] if clinic else "مركز فيتمايند للاستشارات والطب البيطري المتقدم"
     clinic_phone = clinic["phone"] if clinic else "+201000000000"
     clinic_addr = clinic["address"] if clinic else "القاهرة - مدينة نصر"
-    doctor_name = user["name"] if user else "د. تامر سعد"
+    doctor_name = user["name"] if user else "تامر سعد (Admin)"
     syndicate_id = user.get("syndicate_id", "EXEC-VET-001") if user else "EXEC-VET-001"
 
     # Find selected drug
@@ -5079,7 +5190,7 @@ async def test_admin_email_endpoint(request: Request, test_to: str = Form(...)):
         return RedirectResponse("/login", status_code=303)
 
     import verification_service
-    res = verification_service.send_verification_email(test_to.strip(), "123456", "د. تامر سعد (تجربة إدارية)")
+    res = verification_service.send_verification_email(test_to.strip(), "123456", "تامر سعد (Admin)")
     if res.get("success"):
         return RedirectResponse("/admin?test_email=success", status_code=303)
     else:

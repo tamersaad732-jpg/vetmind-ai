@@ -190,7 +190,7 @@ async def prayer_times_page(request: Request, city: str = "القاهرة (مص�
             </p>
 
             <!-- Next Prayer Alert Pill -->
-            <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); padding: 10px 24px; border-radius: 30px; margin-top: 14px; border: 1px solid #6ee7b7;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); padding: 10px 20px; border-radius: 30px; margin-top: 14px; border: 1px solid #6ee7b7; max-width: 100%; box-sizing: border-box; text-align: center;">
                 <span style="font-size: 1.2rem;">⏱️</span>
                 <span style="font-size: 1.05rem; font-weight: 700;">الصلاة القادمة: {next_p['name']} ({next_p['time']})</span>
                 <span style="background: #fef08a; color: #854d0e; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.85rem;">{res['countdown_text']}</span>

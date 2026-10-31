@@ -269,7 +269,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                 <span style="font-size: 1.6rem;">✅</span>
                 <div>
                     <div>تم استلام إيصال السداد وبيانات الاشتراك في شبكة VetBook الأطباء البيطريين!</div>
-                    <div style="font-size: 0.88rem; font-weight: normal; margin-top: 3px;">الطلب قيد المراجعة الفورية من قبل إدارة المنصة (د. تامر سعد)، وسيتم تفعيل حسابك فور مطابقة التحويل.</div>
+                    <div style="font-size: 0.88rem; font-weight: normal; margin-top: 3px;">الطلب قيد المراجعة الفورية من قبل إدارة المنصة (تامر سعد (Admin))، وسيتم تفعيل حسابك فور مطابقة التحويل.</div>
                 </div>
             </div>
             """
@@ -292,7 +292,7 @@ async def community_hub(request: Request, category: str = "all", q: str = "", so
                     {receipt_preview}
                 </div>
                 <div style="margin-top: 14px; padding: 10px; background: rgba(217, 119, 6, 0.1); border-radius: 8px; font-size: 0.85rem; color: #92400e;">
-                    💡 بياناتك وإيصالك معروضان الآن في لوحة تحكم إدارة المنصة (د. تامر سعد). يتم تفعيل الوصول فور التحقق من العملية.
+                    💡 بياناتك وإيصالك معروضان الآن في لوحة تحكم إدارة المنصة (تامر سعد (Admin)). يتم تفعيل الوصول فور التحقق من العملية.
                 </div>
             </div>
             """
