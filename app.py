@@ -932,8 +932,8 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             --warning-bg: #451a03;
             --shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
         }}
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        html, body {
+        * {{ box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
+        html, body {{
             margin: 0;
             padding: 0;
             background-color: var(--bg);
@@ -944,7 +944,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             max-width: 100vw;
             box-sizing: border-box;
             -webkit-text-size-adjust: 100%;
-        }
+        }}
         
         .broadcast-banner {{
             display: flex; justify-content: space-between; align-items: center;
