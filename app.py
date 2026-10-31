@@ -2965,11 +2965,38 @@ async def admin_page(request: Request):
         </div>
         """
 
+    saved_alert = ""
+    if request.query_params.get("saved"):
+        saved_alert = """
+        <div style="background: #dcfce7; border: 2px solid #22c55e; color: #15803d; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(34,197,94,0.15);">
+            <span style="font-size: 1.6rem;">✅</span>
+            <div>تم بنجاح حفظ الإعدادات وتفعيل خدمة البريد الإلكتروني والرسائل في النظام!</div>
+        </div>
+        """
+    test_res = request.query_params.get("test_email")
+    if test_res == "success":
+        saved_alert += """
+        <div style="background: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.15);">
+            <span style="font-size: 1.6rem;">🎉</span>
+            <div>تم بنجاح إرسال رسالة تجريبية بكود تفعيل إلى بريدك! يرجى فتح صندوق الوارد (أو مجلد الرسائل غير المرغوب فيها Spam) للتأكد.</div>
+        </div>
+        """
+    elif test_res == "error":
+        err_msg = request.query_params.get("msg", "فشل الإرسال")
+        saved_alert += f"""
+        <div style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">⚠️</span>
+            <div>حدث خطأ أثناء محاولة إرسال الرسالة التجريبية: {err_msg}</div>
+        </div>
+        """
+
     body = f"""
     <div style="margin-bottom: 20px;">
         <h1 style="margin: 0; font-size: 1.6rem; color: var(--accent);">⚙️ {t('admin_title')}</h1>
         <p style="color: var(--text-muted); font-size: 0.95rem;">{t('admin_subtitle')}</p>
     </div>
+
+    {saved_alert}
 
     <!-- User Moderation & Anti-Fraud Table -->
     <div class="card" style="border-top: 4px solid var(--accent); margin-bottom: 24px;">
@@ -3078,6 +3105,13 @@ async def admin_page(request: Request):
                 💾 حفظ الإعدادات وتفعيل الخدمة فوراً
             </button>
         </form>
+
+        <!-- Test Email Instant Sender Form -->
+        <form action="/admin/test-email" method="POST" style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-weight: 800; font-size: 0.92rem; color: var(--primary);">🧪 تجربة الإرسال الآن:</span>
+            <input type="email" name="test_to" required placeholder="اكتب بريدك الشخصي هنا لإرسال تجربة" style="flex: 1; min-width: 240px; padding: 9px 12px; border: 1.5px solid var(--primary); border-radius: 6px;">
+            <button type="submit" class="btn btn-accent" style="padding: 9px 18px; font-weight: 800;">📨 إرسال رسالة تجريبية الآن</button>
+        </form>
     </div>
 
     <!-- Broadcast Center -->
@@ -3129,7 +3163,7 @@ async def admin_approve_community_sub(request: Request, sub_id: int):
               (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sub_id))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.get("/admin/community/reject/{sub_id}")
 async def admin_reject_community_sub(request: Request, sub_id: int):
@@ -3142,7 +3176,7 @@ async def admin_reject_community_sub(request: Request, sub_id: int):
               (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sub_id))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.get("/admin/community/toggle-user/{user_id}")
 async def admin_toggle_community_user(request: Request, user_id: int):
@@ -3173,7 +3207,7 @@ async def admin_toggle_community_user(request: Request, user_id: int):
             ))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.get("/admin/approve/{user_id}")
 async def approve_user(request: Request, user_id: int):
@@ -3185,7 +3219,7 @@ async def approve_user(request: Request, user_id: int):
     c.execute("UPDATE users SET verification_status = 'approved', is_email_verified = 1 WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.get("/admin/delete-user/{user_id}")
 async def delete_user(request: Request, user_id: int):
@@ -3197,7 +3231,7 @@ async def delete_user(request: Request, user_id: int):
     c.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.post("/admin/broadcast")
 async def post_broadcast(
@@ -3218,7 +3252,7 @@ async def post_broadcast(
     """, (title, message, target_country, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 @app.post("/admin/broadcast/delete/{id}")
 async def delete_broadcast(request: Request, id: int):
@@ -3230,7 +3264,7 @@ async def delete_broadcast(request: Request, id: int):
     c.execute("DELETE FROM broadcast_notifications WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
 
 # ==============================================================================
 # ROUTE 7: REGISTRATION WITH STRICT 2FA CODE DISPATCH
@@ -5238,4 +5272,21 @@ async def save_admin_settings_endpoint(
         c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (k, v))
     conn.commit()
     conn.close()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?saved=1", status_code=303)
+
+
+@app.post("/admin/test-email")
+async def test_admin_email_endpoint(request: Request, test_to: str = Form(...)):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return RedirectResponse("/login", status_code=303)
+
+    import verification_service
+    res = verification_service.send_verification_email(test_to.strip(), "123456", "د. تامر سعد (تجربة إدارية)")
+    if res.get("success"):
+        return RedirectResponse("/admin?test_email=success", status_code=303)
+    else:
+        import urllib.parse
+        err_text = res.get("status", "فشل غير معروف")
+        err_encoded = urllib.parse.quote(err_text)
+        return RedirectResponse(f"/admin?test_email=error&msg={err_encoded}", status_code=303)

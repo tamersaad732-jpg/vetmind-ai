@@ -3,6 +3,7 @@
 VetMind AI - Independent 2FA & Verification Service
 Handles: Cryptographic OTP generation, expiration tracking, Email dispatch (SMTP & Resend API),
 and SMS text message dispatch (Twilio, Webhook Gateways, and Universal SMS formatting).
+Supports settings from DB and Environment Variables.
 """
 import os
 import json
@@ -34,6 +35,22 @@ def get_db_connection():
     conn = sqlite3.connect(target)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def get_setting(key: str, default: str = "") -> str:
+    """Retrieves a configuration setting from SQLite DB or Environment Variables."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+        c.execute("SELECT value FROM settings WHERE key = ?", (key.lower(),))
+        row = c.fetchone()
+        conn.close()
+        if row and row["value"] and row["value"].strip():
+            return row["value"].strip()
+    except Exception:
+        pass
+    return os.environ.get(key.upper(), os.environ.get(key.lower(), default)).strip()
 
 
 def init_verification_table():
@@ -170,10 +187,10 @@ def send_verification_email(recipient_email: str, code: str, user_name: str = ""
     """
 
     # 1. Resend API check
-    resend_api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    resend_api_key = get_setting("resend_api_key", os.environ.get("RESEND_API_KEY", "")).strip()
     if resend_api_key:
         try:
-            sender_resend = os.environ.get("SMTP_FROM", "VetMind AI <onboarding@resend.dev>").strip()
+            sender_resend = get_setting("smtp_from", os.environ.get("SMTP_FROM", "VetMind AI <onboarding@resend.dev>")).strip()
             payload = json.dumps({
                 "from": sender_resend,
                 "to": [recipient_email],
@@ -185,16 +202,24 @@ def send_verification_email(recipient_email: str, code: str, user_name: str = ""
             req.add_header("Content-Type", "application/json")
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return {"success": True, "channel": "resend_api", "status": "sent"}
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            try:
+                parsed = json.loads(err_body)
+                msg = parsed.get("message", err_body)
+            except Exception:
+                msg = err_body
+            return {"success": False, "channel": "resend_api", "status": f"خطأ Resend ({he.code}): {msg}"}
         except Exception as e:
-            pass
+            return {"success": False, "channel": "resend_api", "status": f"خطأ اتصال Resend: {str(e)}"}
 
     # 2. SMTP (Gmail, Outlook, etc.)
-    smtp_host = os.environ.get("SMTP_HOST", "").strip()
-    smtp_port_raw = os.environ.get("SMTP_PORT", "587").strip()
+    smtp_host = get_setting("smtp_host", os.environ.get("SMTP_HOST", "")).strip()
+    smtp_port_raw = get_setting("smtp_port", os.environ.get("SMTP_PORT", "587")).strip()
     smtp_port = int(smtp_port_raw) if smtp_port_raw.isdigit() else 587
-    smtp_user = os.environ.get("SMTP_USER", "").strip()
-    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
-    sender_email = os.environ.get("SMTP_FROM", smtp_user or "no-reply@vetmind.ai").strip()
+    smtp_user = get_setting("smtp_user", os.environ.get("SMTP_USER", "")).strip()
+    smtp_pass = get_setting("smtp_pass", os.environ.get("SMTP_PASS", "")).strip()
+    sender_email = get_setting("smtp_from", os.environ.get("SMTP_FROM", smtp_user or "no-reply@vetmind.ai")).strip()
 
     if smtp_host and smtp_user and smtp_pass:
         try:
@@ -234,9 +259,9 @@ def send_verification_sms(phone: str, code: str, user_name: str = "", country: s
     sms_text = f"كود تفعيل حسابك في منصة VetMind AI هو: {code}. صالح لمدة 10 دقائق. يرجى عدم مشاركة الكود."
 
     # 1. Twilio REST API Integration
-    twilio_sid = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
-    twilio_token = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
-    twilio_from = os.environ.get("TWILIO_PHONE_NUMBER", "").strip()
+    twilio_sid = get_setting("twilio_sid", os.environ.get("TWILIO_ACCOUNT_SID", "")).strip()
+    twilio_token = get_setting("twilio_token", os.environ.get("TWILIO_AUTH_TOKEN", "")).strip()
+    twilio_from = get_setting("twilio_from", os.environ.get("TWILIO_PHONE_NUMBER", "")).strip()
 
     if twilio_sid and twilio_token and twilio_from:
         try:
@@ -264,11 +289,11 @@ def send_verification_sms(phone: str, code: str, user_name: str = "", country: s
             pass
 
     # 2. Generic SMS Webhook / Provider (e.g., Taqnyat, SMS Misr, Infobip)
-    sms_webhook = os.environ.get("SMS_GATEWAY_URL", "").strip()
+    sms_webhook = get_setting("sms_gateway_url", os.environ.get("SMS_GATEWAY_URL", "")).strip()
     if sms_webhook:
         try:
-            api_key = os.environ.get("SMS_API_KEY", "").strip()
-            sender_id = os.environ.get("SMS_SENDER_ID", "VetMindAI").strip()
+            api_key = get_setting("sms_api_key", os.environ.get("SMS_API_KEY", "")).strip()
+            sender_id = get_setting("sms_sender_id", os.environ.get("SMS_SENDER_ID", "VetMindAI")).strip()
             params = {
                 "to": int_phone,
                 "phone": int_phone,
