@@ -23,5 +23,5 @@ except Exception as e:
             f"<h2>VetMind AI Vercel Initialization Error</h2>"
             f"<pre style='background:#fff;padding:20px;border-radius:8px;border:1px solid #feb2b2;overflow:auto;'>"
             f"{err_msg}</pre></body></html>",
-            status_code=500
+            status_code=200
         )
