@@ -1,3 +1,2 @@
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.CurrentDirectory = "C:\Users\tamersaad\Desktop\vetmind-ai"
-WshShell.Run """C:\Users\tamersaad\Desktop\vetmind-ai\venv\Scripts\pythonw.exe"" ""C:\Users\tamersaad\Desktop\vetmind-ai\silent_daemon.py""", 0, False
+' VetMind AI - Local Background Script Retired
+' VetMind AI is permanently hosted on Vercel: https://vetmind-ai.vercel.app/
