@@ -627,6 +627,7 @@ body.dark-theme, html.dark-theme, [data-theme="dark"] {
 
 *, *::before, *::after {
     box-sizing: border-box;
+    max-width: 100%;
 }
 
 body {
@@ -637,10 +638,10 @@ body {
     background-color: var(--fb-bg);
     min-height: 100vh;
     padding-bottom: 90px;
-    max-width: 100vw;
-    width: 100%;
-    overflow-x: hidden;
-    box-sizing: border-box;
+    max-width: 100vw !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
 }
 
 /* Sub-Navigation Strip (Facebook-Style Tabs with Real Badges) */
@@ -654,10 +655,12 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    overflow-x: auto;
+    overflow-x: auto !important;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
 }
 .vetbook-subnav-strip::-webkit-scrollbar { display: none; }
 
@@ -706,10 +709,12 @@ body {
     color: var(--fb-text);
     outline: none;
     transition: all 0.2s ease;
-    width: 220px;
+    width: clamp(140px, 28vw, 220px);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .vetbook-search-input:focus {
-    width: 280px;
+    width: clamp(160px, 36vw, 280px);
     border-color: var(--fb-primary);
     background: var(--fb-card);
     box-shadow: 0 0 0 3px rgba(15,118,110,0.15);
@@ -764,6 +769,10 @@ body {
     font-weight: 800;
     font-size: 0.86rem;
     margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 .urgent-badge {
     background: #dc2626;
@@ -899,13 +908,13 @@ body {
 
 /* Post Actions Bar */
 .fb-action-btn {
-    flex: 1;
+    flex: 1 1 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    font-size: 0.88rem;
+    gap: 5px;
+    padding: 8px 6px;
+    font-size: clamp(0.74rem, 2.3vw, 0.88rem);
     font-weight: 700;
     border-radius: 8px;
     border: none;
@@ -913,6 +922,10 @@ body {
     cursor: pointer;
     color: var(--fb-text-muted);
     transition: all 0.15s ease;
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
 }
 .fb-action-btn:hover {
     background: rgba(15, 118, 110, 0.08);
@@ -976,7 +989,7 @@ body {
 /* Friends Grid */
 .friend-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
     gap: 14px;
 }
 .friend-card {
@@ -1013,7 +1026,7 @@ body {
 /* Pages & Groups Cards */
 .page-card-grid, .group-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
     gap: 16px;
 }
 .page-card, .group-card {
@@ -1167,6 +1180,82 @@ body {
     font-weight: 700;
     cursor: pointer;
     font-size: 0.82rem;
+}
+
+/* Responsive adjustments for VetBook on all viewports */
+@media (max-width: 768px) {
+    .fb-main-container {
+        padding: 0 8px;
+        margin: 10px auto;
+        gap: 12px;
+    }
+    .fb-card {
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    .fb-action-btn {
+        padding: 6px 3px !important;
+        font-size: 0.74rem !important;
+        gap: 3px !important;
+    }
+    .nested-reply-box {
+        margin-right: 14px !important;
+        padding-right: 8px !important;
+    }
+    .profile-header-avatar {
+        width: 84px !important;
+        height: 84px !important;
+        font-size: 1.8rem !important;
+        margin-top: -42px !important;
+    }
+    .fb-profile-header-body {
+        padding: 0 14px 16px 14px !important;
+    }
+}
+@media (max-width: 480px) {
+    .vetbook-subnav-strip {
+        padding: 6px 8px !important;
+        gap: 6px !important;
+    }
+    .vetbook-nav-pill {
+        padding: 6px 10px !important;
+        font-size: 0.80rem !important;
+    }
+    .fb-action-btn {
+        padding: 5px 2px !important;
+        font-size: 0.70rem !important;
+        gap: 2px !important;
+    }
+    .fb-action-btn span:last-child {
+        font-size: 0.69rem !important;
+    }
+    .case-demographics-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .profile-header-avatar-row {
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    .profile-header-avatar {
+        margin: -40px auto 10px auto !important;
+    }
+}
+@media (max-width: 360px) {
+    .fb-action-btn {
+        padding: 4px 1px !important;
+        font-size: 0.65rem !important;
+        gap: 1px !important;
+    }
+    .fb-action-btn span:last-child {
+        font-size: 0.64rem !important;
+    }
+    .profile-header-avatar {
+        width: 64px !important;
+        height: 64px !important;
+        font-size: 1.4rem !important;
+        margin-top: -32px !important;
+    }
 }
 </style>
 """
@@ -1953,7 +2042,7 @@ async def community_hub(
             <div class="page-card">
                 {cov}
                 <div style="padding: 0 16px 16px 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px;">
                         {av}
                         <button type="button" onclick="togglePageFollow({pg['id']}, this)" class="btn" style="border-radius: 20px; font-weight: 700; font-size: 0.8rem; padding: 6px 14px; border: none; cursor: pointer; {fol_style}">{fol_text}</button>
                     </div>
@@ -1965,7 +2054,7 @@ async def community_hub(
                         <div style="font-size: 0.78rem; color: var(--fb-primary); font-weight: 700; margin-top: 2px;">{pg.get('city') or 'مصر'} • <span id="page-followers-{pg['id']}">{pg.get('followers_count', 0)} متابع</span></div>
                         <p style="font-size: 0.85rem; color: var(--fb-text-muted); margin: 8px 0 12px 0; line-height: 1.5; height: 42px; overflow: hidden;">{pg.get('description','')[:120]}</p>
                     </div>
-                    <div style="border-top: 1px solid var(--fb-border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                    <div style="border-top: 1px solid var(--fb-border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; flex-wrap: wrap; gap: 6px;">
                         <a href="/community?page_id={pg['id']}" style="color: #0f766e; text-decoration: none; font-weight: 700;">عرض منشورات الصفحة ←</a>
                         <span style="color: var(--fb-text-muted);">📞 {pg.get('phone') or 'غير مدرج'}</span>
                     </div>
@@ -1990,7 +2079,7 @@ async def community_hub(
         <!-- Create Page Modal -->
         <div id="create-page-modal" class="fb-modal-overlay">
             <div class="fb-modal-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                     <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🏢 إنشاء صفحة بيطرية جديدة</h2>
                     <button type="button" onclick="closeModal('create-page-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
                 </div>
@@ -2098,7 +2187,7 @@ async def community_hub(
         <!-- Create Group Modal -->
         <div id="create-group-modal" class="fb-modal-overlay">
             <div class="fb-modal-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                     <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🐾 إنشاء مجموعة بيطرية تخصصية</h2>
                     <button type="button" onclick="closeModal('create-group-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
                 </div>
@@ -2154,7 +2243,7 @@ async def community_hub(
 
             events_cards_html += f"""
             <div class="fb-card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                <div style="flex: 1; min-width: 280px;">
+                <div style="flex: 1 1 240px; min-width: 0;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                         <span style="font-size: 1.5rem;">🎓</span>
                         <h3 style="margin: 0; color: #0f766e; font-size: 1.15rem;">{ev['title']}</h3>
@@ -2186,7 +2275,7 @@ async def community_hub(
         <!-- Create Event Modal -->
         <div id="create-event-modal" class="fb-modal-overlay">
             <div class="fb-modal-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                     <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🎓 إضافة فعالية أو مؤتمر بيطري</h2>
                     <button type="button" onclick="closeModal('create-event-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
                 </div>
@@ -2256,7 +2345,7 @@ async def community_hub(
         tab_body = f"""
         <div style="max-width: 760px; margin: 20px auto; padding: 0 14px;">
             <div class="fb-card">
-                <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
+                <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <h1 style="margin: 0; font-size: 1.3rem; color: var(--fb-text);">🔔 الإشعارات والتنبيهات السريرية</h1>
                     <button type="button" onclick="markAllNotificationsRead()" class="btn-fb-outline" style="font-size: 0.8rem; padding: 6px 12px;">✔️ تعليم الكل كمقروء</button>
                 </div>
@@ -2317,7 +2406,7 @@ async def community_hub(
             for doc in matching_doctors:
                 av = f'<img src="/uploads/{doc["avatar_image"]}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">' if doc.get("avatar_image") else f'<div style="width: 50px; height: 50px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">{doc["name"][0]}</div>'
                 doctors_res_html += f"""
-                <div class="fb-card" style="padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+                <div class="fb-card" style="padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         {av}
                         <div>
@@ -2337,12 +2426,12 @@ async def community_hub(
                 urg = '<span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;">🚨 عاجلة</span>' if pst.get("is_urgent") else ""
                 posts_res_html += f"""
                 <div class="fb-card" style="padding: 16px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                         <a href="/community#post-{pst['id']}" style="font-weight: 800; font-size: 1.05rem; color: var(--fb-text); text-decoration: none;">{pst['title']}</a>
                         {urg}
                     </div>
                     <p style="font-size: 0.88rem; color: var(--fb-text-muted); margin: 0 0 8px 0; line-height: 1.5;">{pst['content'][:180]}...</p>
-                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); display: flex; justify-content: space-between;">
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                         <span>د. {pst.get('author_name','طبيب')} • 🐾 {pst.get('species','')} • 🕒 {pst.get('created_at','')[:16]}</span>
                         <a href="/community#post-{pst['id']}" style="color: #0f766e; font-weight: 700; text-decoration: none;">فتح الحالة والمناقشة ←</a>
                     </div>
@@ -2599,9 +2688,9 @@ async def community_hub(
                     opts_html += f"""
                     <div onclick="votePoll({post_id}, {opt['id']})" style="margin-bottom: 8px; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; position: relative; overflow: hidden;">
                         <div style="position: absolute; top:0; right:0; bottom:0; width: {pct}%; background: rgba(15,118,110,0.15);"></div>
-                        <div style="position: relative; display: flex; justify-content: space-between; font-weight: 700; font-size: 0.86rem; color: var(--fb-text);">
-                            <span>{opt['text']}</span>
-                            <span>{pct}% ({opt.get('votes', 0)})</span>
+                        <div style="position: relative; display: flex; justify-content: space-between; font-weight: 700; font-size: 0.86rem; color: var(--fb-text); flex-wrap: wrap; gap: 4px;">
+                            <span style="flex: 1 1 auto; min-width: 0; word-break: break-word;">{opt['text']}</span>
+                            <span style="flex-shrink: 0;">{pct}% ({opt.get('votes', 0)})</span>
                         </div>
                     </div>
                     """
@@ -2679,7 +2768,7 @@ async def community_hub(
                 </div>
                 <div style="flex: 1;">
                     <div class="{bubble_class}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
                             <a href="/community/profile/{cm['user_id']}" style="font-weight: 800; color: #0f766e; text-decoration: none; font-size: 0.88rem;">د. {cm['author_name']}</a>
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 {author_badge}
@@ -2690,7 +2779,7 @@ async def community_hub(
                         <div style="font-size: 0.88rem; line-height: 1.6;">{cm['content']}</div>
                     </div>
 
-                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px; display: flex; gap: 12px; align-items: center;">
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <span>{cm['created_at'][:16]}</span>
                         <button type="button" onclick="toggleReplyBox({cm_id})" style="background: none; border: none; color: #0f766e; font-weight: 700; cursor: pointer; font-size: 0.75rem;">💬 رد</button>
                         {mark_best_btn}
@@ -2731,8 +2820,8 @@ async def community_hub(
             {urgent_banner}
 
             <!-- Header Row -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px;">
-                <div style="display: flex; gap: 12px; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; align-items: center; flex: 1 1 200px; min-width: 0;">
                     <a href="/community/profile/{p['user_id']}" style="text-decoration: none;">
                         <div style="width: 44px; height: 44px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800;">
                             {p['author_name'][0]}
@@ -2752,7 +2841,7 @@ async def community_hub(
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     {edit_action_btn}
                     {delete_action_btn}
                     {report_action_btn}
@@ -2770,7 +2859,7 @@ async def community_hub(
             {poll_html}
 
             <!-- Post Counters -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1px solid var(--fb-border); border-bottom: 1px solid var(--fb-border); font-size: 0.78rem; color: var(--fb-text-muted); margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1px solid var(--fb-border); border-bottom: 1px solid var(--fb-border); font-size: 0.78rem; color: var(--fb-text-muted); margin-top: 12px; flex-wrap: wrap; gap: 6px;">
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <span>👍 ❤️ 💡</span>
                     <span id="likes-count-{post_id}">{p.get('likes_count', 0)}</span>
@@ -2782,7 +2871,7 @@ async def community_hub(
             </div>
 
             <!-- Post Action Buttons (STRICT ZERO AI, NO MESSENGER) -->
-            <div style="display: flex; position: relative; margin-top: 6px; border-bottom: 1px solid var(--fb-border); padding-bottom: 6px;">
+            <div style="display: flex; position: relative; margin-top: 6px; border-bottom: 1px solid var(--fb-border); padding-bottom: 6px; width: 100%; box-sizing: border-box;">
                 <!-- Reactions Popup Box -->
                 <div class="reactions-popup-box" id="reactions-popup-{post_id}" onmouseleave="hideReactionsPopup({post_id})">
                     <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'like')" title="إعجاب">👍</button>
@@ -2824,16 +2913,16 @@ async def community_hub(
                 {comments_html}
 
                 <!-- Add Comment Form -->
-                <form action="/community/comment/{post_id}" method="POST" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-                    <input type="text" name="content" id="comment-input-{post_id}" required placeholder="اكتب تشخيصك التفريقي أو رأيك السريري..." style="flex: 1; padding: 10px 14px; border: 1px solid var(--fb-border); border-radius: 20px; font-size: 0.88rem; background: var(--fb-bg); color: var(--fb-text);">
-                    <button type="submit" class="btn-fb-primary" style="border-radius: 20px; padding: 8px 16px;">إرسال</button>
+                <form action="/community/comment/{post_id}" method="POST" style="display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                    <input type="text" name="content" id="comment-input-{post_id}" required placeholder="اكتب تشخيصك التفريقي أو رأيك السريري..." style="flex: 1 1 180px; min-width: 0; padding: 10px 14px; border: 1px solid var(--fb-border); border-radius: 20px; font-size: 0.88rem; background: var(--fb-bg); color: var(--fb-text);">
+                    <button type="submit" class="btn-fb-primary" style="border-radius: 20px; padding: 8px 16px; flex-shrink: 0;">إرسال</button>
                 </form>
             </div>
 
             <!-- Edit Post Modal -->
             <div id="edit-post-modal-{post_id}" class="fb-modal-overlay">
                 <div class="fb-modal-box">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                         <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">✏️ تعديل الحالة السريرية</h2>
                         <button type="button" onclick="closeModal('edit-post-modal-{post_id}')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
                     </div>
@@ -2896,8 +2985,8 @@ async def community_hub(
     conn.close()
 
     urgent_sidebar_html = "".join([f'<a href="/community#post-{uc["id"]}" style="display: block; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; text-decoration: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 0.82rem; font-weight: 700; line-height: 1.4;">🚨 {uc["title"][:50]}...</a>' for uc in urgent_cases]) if urgent_cases else "<div style='font-size: 0.78rem; color: var(--fb-text-muted);'>لا توجد حالات طارئة حالياً.</div>"
-    groups_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem;"><a href="/community?group_id={sg["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🐾 {sg["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sg["members_count"]} عضواً</span></div>' for sg in sidebar_groups])
-    pages_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem;"><a href="/community?page_id={sp["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🏥 {sp["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sp["followers_count"]} متابع</span></div>' for sp in sidebar_pages])
+    groups_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; flex-wrap: wrap; gap: 4px;"><a href="/community?group_id={sg["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🐾 {sg["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sg["members_count"]} عضواً</span></div>' for sg in sidebar_groups])
+    pages_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; flex-wrap: wrap; gap: 4px;"><a href="/community?page_id={sp["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🏥 {sp["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sp["followers_count"]} متابع</span></div>' for sp in sidebar_pages])
 
     feed_layout = f"""
     <div class="fb-main-container">
@@ -2929,10 +3018,10 @@ async def community_hub(
             <!-- Facebook-Style Quick Composer Box -->
             <div class="fb-card" style="padding: 14px; margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; flex-shrink: 0;">
                         {user.get('name','ط')[0] if user else 'ط'}
                     </div>
-                    <div onclick="openModal('composer-modal')" style="flex: 1; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 24px; padding: 10px 16px; color: var(--fb-text-muted); cursor: pointer; font-size: 0.92rem;">
+                    <div onclick="openModal('composer-modal')" style="flex: 1; min-width: 0; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 24px; padding: 10px 16px; color: var(--fb-text-muted); cursor: pointer; font-size: 0.92rem; word-break: break-word;">
                         ما هي الحالة السريرية أو الاستشارة التي تريد طرحها اليوم يا دكتور؟
                     </div>
                 </div>
@@ -2982,7 +3071,7 @@ async def community_hub(
     <!-- Create Post Modal (Full Feature Composer) -->
     <div id="composer-modal" class="fb-modal-overlay">
         <div class="fb-modal-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🩺 نشر استشارة / حالة سريرية جديدة</h2>
                 <button type="button" onclick="closeModal('composer-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
             </div>
@@ -3083,7 +3172,7 @@ async def community_hub(
     <!-- Create Story Modal -->
     <div id="create-story-modal" class="fb-modal-overlay">
         <div class="fb-modal-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">📸 نشر قصة سريرية سريعة (Story)</h2>
                 <button type="button" onclick="closeModal('create-story-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
             </div>
@@ -3104,7 +3193,7 @@ async def community_hub(
     <!-- Content Reporting Modal -->
     <div id="report-modal" class="fb-modal-overlay">
         <div class="fb-modal-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 1.25rem; color: #dc2626;">🚩 إبلاغ عن محتوى أو مخالفة مهنية</h2>
                 <button type="button" onclick="closeModal('report-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
             </div>
@@ -4255,7 +4344,7 @@ async def community_doctor_profile(request: Request, user_id: int):
     <!-- Edit Profile Modal -->
     <div id="edit-profile-modal" class="fb-modal-overlay">
         <div class="fb-modal-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">✏️ تعديل الملف الشخصي والمعلومات المهنية</h2>
                 <button type="button" onclick="closeModal('edit-profile-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
             </div>

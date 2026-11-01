@@ -810,9 +810,21 @@ html, body {
     letter-spacing: normal !important;
 }
 
+/* Universal Container & Box-Sizing Safety */
+*, *::before, *::after {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
 /* Arabic letter-spacing must be strictly 0 / normal everywhere */
 [dir="rtl"], [dir="rtl"] * {
     letter-spacing: 0 !important;
+}
+
+/* Universal Text Wrap & Overflow Containment: Zero Text Out of Bounds */
+p, span, div, a, h1, h2, h3, h4, h5, h6, label, td, th, li, strong, b, em, blockquote, .post-text {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
 }
 
 /* Typography Line Heights: Arabic ascenders & descenders need generous vertical space */
@@ -821,8 +833,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .page-title, .section-title {
     letter-spacing: normal !important;
     margin-top: 0;
     margin-bottom: 0.6rem;
-    overflow-wrap: break-word;
-    word-break: normal;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
 }
 h1, .h1 { font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.15rem) !important; }
 h2, .h2 { font-size: clamp(1.1rem, 1.6vw + 0.4rem, 1.55rem) !important; }
@@ -834,18 +846,15 @@ p, li, blockquote, .post-text {
     letter-spacing: normal !important;
     margin-top: 0;
     margin-bottom: 0.8rem;
-    overflow-wrap: break-word;
-    word-break: normal;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
 }
 
-/* Ensure no word is broken in buttons, badges, navigation items, pills, and chips */
-.btn, .badge, .brand-name, .lang-pill, .prayer-indicator-pill,
+/* Desktop default for badges and pills (fluid & break-safe) */
+.brand-name, .lang-pill, .prayer-indicator-pill,
 .bnav-label, .m-badge, .search-shortcut-badge, .user-avatar-link,
 .btn-login-pill, .btn-register-pill, .tag, .chip, .m-icon {
-    white-space: nowrap !important;
     flex-shrink: 0;
-    word-break: normal !important;
-    overflow-wrap: normal !important;
     letter-spacing: normal !important;
 }
 
@@ -1470,6 +1479,8 @@ body.dark .lang-pill.active-lang,
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     border-bottom: 2px solid rgba(255, 255, 255, 0.15);
 }
 .mobile-drawer-close {
@@ -1709,8 +1720,7 @@ body.dark .lang-pill.active-lang,
     border: none;
     transition: var(--transition-smooth);
     box-sizing: border-box;
-    white-space: nowrap !important;
-    flex-shrink: 0;
+    max-width: 100%;
 }
 .btn:hover {
     transform: translateY(-1px);
@@ -2000,11 +2010,16 @@ footer a { color: #38BDF8; text-decoration: none; }
         padding: 10px 8px 30px 8px !important;
         max-width: 100vw !important;
         overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     .card {
         padding: 14px 12px !important;
         border-radius: 14px !important;
         margin-bottom: 14px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
     .grid-2, .grid-3, .grid-4 {
         grid-template-columns: 1fr !important;
@@ -2014,6 +2029,12 @@ footer a { color: #38BDF8; text-decoration: none; }
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
     }
+    .btn, .badge, .btn-fb-primary, .btn-fb-outline, .btn-fb-danger {
+        white-space: normal !important;
+        max-width: 100% !important;
+        word-break: break-word !important;
+        text-align: center !important;
+    }
 }
 
 /* Narrow Mobile Screens (<= 420px) - Hide brand title to prioritize icons */
@@ -2022,22 +2043,35 @@ footer a { color: #38BDF8; text-decoration: none; }
         display: none !important;
     }
     .topbar-container {
-        padding: 4px 5px !important;
-        gap: 3px !important;
+        padding: 4px 6px !important;
+        gap: 4px !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
     }
     .topbar-left {
         gap: 4px !important;
+        min-width: 0 !important;
     }
     .topbar-right {
-        gap: 3px !important;
+        gap: 4px !important;
+        min-width: 0 !important;
     }
     .prayer-indicator-pill {
         max-width: 78px !important;
-        padding: 0 4px !important;
+        padding: 2px 4px !important;
     }
     .prayer-indicator-pill .prayer-pill-text {
-        max-width: 50px !important;
+        max-width: 46px !important;
         font-size: 0.65rem !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .card {
+        padding: 10px 8px !important;
+    }
+    .btn {
+        padding: 6px 10px !important;
+        font-size: 0.82rem !important;
     }
 }
 
@@ -2046,6 +2080,8 @@ footer a { color: #38BDF8; text-decoration: none; }
     .topbar-container {
         padding: 2px 3px !important;
         gap: 2px !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
     }
     .topbar-left {
         gap: 3px !important;
@@ -2059,6 +2095,13 @@ footer a { color: #38BDF8; text-decoration: none; }
         min-width: 28px !important;
         max-width: 28px !important;
         font-size: 1.05rem !important;
+    }
+    .prayer-indicator-pill {
+        display: none !important;
+    }
+    .btn {
+        padding: 5px 8px !important;
+        font-size: 0.78rem !important;
     }
     .brand-logo-wrap {
         width: 28px !important;
@@ -2324,7 +2367,7 @@ function handleUniversalSearchInput(val) {
                     const badgeBg = item.type === 'drug' ? '#e0f2fe' : (item.type === 'reference' ? '#f0fdf4' : (item.type === 'contraindication' ? '#fef2f2' : '#f8fafc'));
                     const badgeColor = item.type === 'drug' ? '#0369a1' : (item.type === 'reference' ? '#15803d' : (item.type === 'contraindication' ? '#991b1b' : '#475569'));
                     html += `
-                    <a href="${item.url}" class="suggestion-item" style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; text-decoration: none; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; transition: all 0.15s ease;">
+                    <a href="${item.url}" class="suggestion-item" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 9px 12px; text-decoration: none; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; transition: all 0.15s ease;">
                         <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
                             <span style="font-size: 1.25rem; flex-shrink: 0;">${item.icon}</span>
                             <div style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 700; color: var(--text-main);">
@@ -2958,9 +3001,9 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={live_mobile_url}" alt="QR Code" style="width: 180px; height: 180px; display: block;">
             </div>
 
-            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                <input type="text" readonly value="{live_mobile_url}" id="mobile-url-input" style="flex: 1; font-weight: 700; font-size: 0.88rem; border: none; background: transparent; color: #047857; text-align: center; direction: ltr;">
-                <button type="button" onclick="copyMobileUrl()" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">نسخ الرابط</button>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <input type="text" readonly value="{live_mobile_url}" id="mobile-url-input" style="flex: 1 1 180px; min-width: 0; font-weight: 700; font-size: 0.88rem; border: none; background: transparent; color: #047857; text-align: center; direction: ltr;">
+                <button type="button" onclick="copyMobileUrl()" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; flex-shrink: 0;">نسخ الرابط</button>
             </div>
         </div>
     </div>
@@ -3538,11 +3581,11 @@ async def home_page(request: Request):
         alert_msg = f"{t('alert_pharmacy_stock_msg', 'يوجد أصناف دوائية أوشكت على النفاد في مخزونك!')} ({low_stock_count})"
         review_btn = t("alert_review_stock_btn", "مراجعة المخزون فوراً")
         stock_alert_html = f"""
-        <div style="background: var(--danger-bg); border: 1px solid #f87171; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="color: #991b1b; font-weight: 700;">
+        <div style="background: var(--danger-bg); border: 1px solid #f87171; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; box-sizing: border-box;">
+            <div style="color: #991b1b; font-weight: 700; flex: 1 1 240px; min-width: 0; word-break: break-word;">
                 {alert_title}: {alert_msg}
             </div>
-            <a href="/clinic#inventory" class="btn btn-accent" style="font-size: 0.82rem;">{review_btn}</a>
+            <a href="/clinic#inventory" class="btn btn-accent" style="font-size: 0.82rem; flex-shrink: 0;">{review_btn}</a>
         </div>
         """
 
@@ -3550,19 +3593,19 @@ async def home_page(request: Request):
     for cs in cases:
         img_badge = f'<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">📷 {t("case_img_badge", "مرفق صورة")}</span>' if cs["image_filename"] else ""
         cases_html += f"""
-        <div class="card" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div>
-                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">
+        <div class="card" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; box-sizing: border-box;">
+            <div style="flex: 1 1 240px; min-width: 0; word-break: break-word;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary); word-break: break-word;">
                     {cs['animal_name']} <span style="font-size: 0.85rem; color: var(--text-muted);">({cs['species']})</span> {img_badge}
                 </div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; word-break: break-word;">
                     {t('case_age_label', 'العمر')}: {cs['age']} | {t('case_weight_label', 'الوزن')}: {cs['weight']} {t('unit_kg', 'كجم')} | {t('case_date_label', 'التاريخ')}: {cs['created_at'][:16]}
                 </div>
-                <div style="font-size: 0.9rem; margin-top: 6px;">
+                <div style="font-size: 0.9rem; margin-top: 6px; word-break: break-word;">
                     <strong>{t('case_symptoms_label', 'الأعراض')}:</strong> {cs['symptoms'][:120]}...
                 </div>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <a href="/case/{cs['id']}" class="btn btn-primary" style="font-size: 0.85rem;">📋 {t('case_open_report', 'فتح التقرير السريري')}</a>
                 <form action="/delete/{cs['id']}" method="POST" onsubmit="return confirm('{t('confirm_delete_case', 'هل تريد حذف هذه الحالة؟')}');" style="margin: 0;">
                     <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.85rem;">🗑️</button>
@@ -3588,42 +3631,42 @@ async def home_page(request: Request):
             urg_tag = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">🚨 عاجلة</span>' if sp.get("is_urgent") else '<span style="background:#ccfbf1;color:#0f766e;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">📢 تعميم سريري</span>'
             sp_title = (sp.get('title') or '')[:70]
             items_html += f"""
-            <a href="/community#post-{sp['id']}" style="display:block;text-decoration:none;color:inherit;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all 0.2s ease;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="width:32px;height:32px;border-radius:50%;background:#0f766e;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">🩺</span>
-                        <div>
+            <a href="/community#post-{sp['id']}" style="display:block;text-decoration:none;color:inherit;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all 0.2s ease;box-shadow:0 1px 3px rgba(0,0,0,0.05);min-width:0;box-sizing:border-box;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                        <span style="width:32px;height:32px;border-radius:50%;background:#0f766e;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">🩺</span>
+                        <div style="min-width:0;word-break:break-word;">
                             <div style="font-weight:700;font-size:0.85rem;color:var(--text);">{sp.get('author_name','طبيب بيطري')}</div>
                             <div style="font-size:0.72rem;color:var(--text-muted);">{sp.get('author_specialty','طب وجراحة الحيوان')}</div>
                         </div>
                     </div>
                     {urg_tag}
                 </div>
-                <div style="font-weight:800;font-size:0.92rem;color:var(--primary);margin-bottom:6px;line-height:1.4;">
+                <div style="font-weight:800;font-size:0.92rem;color:var(--primary);margin-bottom:6px;line-height:1.4;word-break:break-word;">
                     {sp_title}
                 </div>
-                <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px dashed var(--border);padding-top:6px;">
+                <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px dashed var(--border);padding-top:6px;flex-wrap:wrap;gap:6px;">
                     <span>🕒 {sp.get('created_at','')[:16]}</span>
                     <span style="color:#0f766e;font-weight:700;">عرض ومشاركة بالرأي ←</span>
                 </div>
             </a>
             """
         spotlight_html = f"""
-        <div class="card" style="margin-bottom:24px;border-right:5px solid #0f766e;background:linear-gradient(135deg, rgba(15,118,110,0.03) 0%, rgba(204,251,241,0.08) 100%);">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:1.4rem;">📢</span>
-                    <div>
-                        <h3 style="margin:0;font-size:1.1rem;color:#0f766e;">نبض مجتمع الأطباء البيطريين (VetBook Live Feed)</h3>
-                        <p style="margin:2px 0 0;font-size:0.8rem;color:var(--text-muted);">أحدث الحالات والتعميمات السريرية المعممة على كافة الأطباء المسجلين</p>
+        <div class="card" style="margin-bottom:24px;border-right:5px solid #0f766e;background:linear-gradient(135deg, rgba(15,118,110,0.03) 0%, rgba(204,251,241,0.08) 100%);width:100%;box-sizing:border-box;overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1 1 240px;min-width:0;">
+                    <span style="font-size:1.4rem;flex-shrink:0;">📢</span>
+                    <div style="min-width:0;word-break:break-word;">
+                        <h3 style="margin:0;font-size:1.1rem;color:#0f766e;word-break:break-word;">نبض مجتمع الأطباء البيطريين (VetBook Live Feed)</h3>
+                        <p style="margin:2px 0 0;font-size:0.8rem;color:var(--text-muted);word-break:break-word;">أحدث الحالات والتعميمات السريرية المعممة على كافة الأطباء المسجلين</p>
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <a href="/community" class="btn btn-primary" style="font-size:0.82rem;padding:6px 14px;">تصفح المجتمع الكامل 🩺</a>
                     <a href="/community?action=new" class="btn btn-accent" style="font-size:0.82rem;padding:6px 14px;">➕ نشر حالة للجميع</a>
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 250px), 1fr));gap:12px;">
                 {items_html}
             </div>
         </div>
@@ -3658,7 +3701,7 @@ async def home_page(request: Request):
 
     <div class="grid-2">
         <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 1.3rem;">📋 {t('cases_title')}</h2>
                 <a href="/vision-detect" class="btn btn-accent" style="font-size: 0.85rem;">👁️ {t('nav_vision_detect')}</a>
             </div>
@@ -3692,9 +3735,9 @@ async def home_page(request: Request):
                         </div>
                         <div>
                             <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('case_age')} & {t('case_weight')}</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" name="age" placeholder="{t('case_age_label', 'العمر')}" style="width: 50%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                                <input type="text" name="weight" placeholder="{t('case_weight_unit', 'الوزن كجم')}" style="width: 50%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <input type="text" name="age" placeholder="{t('case_age_label', 'العمر')}" style="flex: 1 1 90px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                <input type="text" name="weight" placeholder="{t('case_weight_unit', 'الوزن كجم')}" style="flex: 1 1 90px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
                             </div>
                         </div>
                     </div>
@@ -6393,7 +6436,7 @@ async def contraindications_page(
     </div>
 
     <!-- Results Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
         <div style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">
             عدد المواد والممنوعات المسجلة: ({len(items)})
         </div>
@@ -7073,7 +7116,7 @@ async def pharmacy_page(request: Request, country: str = "ALL", q: str = ""):
 
         <form action="/pharmacy" method="GET" style="display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap;">
             <input type="hidden" name="country" value="{country}">
-            <input type="text" name="q" value="{q}" placeholder="{t('pharmacy_search')}" style="flex: 1; min-width: 260px; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+            <input type="text" name="q" value="{q}" placeholder="{t('pharmacy_search')}" style="flex: 1 1 200px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
             <button type="submit" class="btn btn-primary">🔍 {t('search_drugs_btn', 'بحث في الأدوية')}</button>
         </form>
 
