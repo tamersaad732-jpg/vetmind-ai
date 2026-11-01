@@ -829,6 +829,56 @@ body.dark-theme .best-answer-bubble {
         padding: 10px 12px !important;
     }
 }
+
+/* Doctor Profile Header Styles (Zero-Overflow Universal Scaling) */
+.fb-profile-cover {
+    height: clamp(120px, 25vw, 180px);
+    border-radius: 16px 16px 0 0;
+    position: relative;
+}
+.fb-profile-header-body {
+    padding: 0 clamp(12px, 3.5vw, 24px) 20px clamp(12px, 3.5vw, 24px);
+    position: relative;
+}
+.profile-header-avatar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: clamp(-42px, -9vw, -55px);
+    margin-bottom: 16px;
+    width: 100%;
+}
+.profile-header-avatar {
+    width: clamp(68px, 16vw, 105px) !important;
+    height: clamp(68px, 16vw, 105px) !important;
+    min-width: clamp(68px, 16vw, 105px) !important;
+    max-width: clamp(68px, 16vw, 105px) !important;
+    border-radius: 50% !important;
+    border: 3.5px solid var(--fb-card) !important;
+    background: linear-gradient(135deg, #0f766e, #0d9488) !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem) !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
+    flex-shrink: 0 !important;
+}
+.profile-header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+@media (max-width: 600px) {
+    .profile-header-actions .btn {
+        padding: 6px 12px !important;
+        font-size: 0.78rem !important;
+    }
+}
 </style>
 """
 
@@ -2588,17 +2638,17 @@ async def community_doctor_profile(request: Request, user_id: int):
         <div style="max-width: 960px; margin: 0 auto; padding: 0 12px;">
             <!-- Facebook-style Profile Header Card (STRICT NO-MESSENGER) -->
             <div class="fb-card" style="margin-bottom: 20px;">
-                <div style="height: 180px; background: {cover_bg}; border-radius: 16px 16px 0 0; position: relative;"></div>
+                <div class="fb-profile-cover" style="background: {cover_bg};"></div>
                 
-                <div style="padding: 0 24px 20px 24px; position: relative;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-top: -55px; margin-bottom: 16px;">
-                        <div style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--fb-card); background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
+                <div class="fb-profile-header-body">
+                    <div class="profile-header-avatar-row">
+                        <div class="profile-header-avatar">
                             {t_dict['name'][0]}
                         </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            {f'<button type="button" onclick="toggleColleagueConnect({user_id}, this)" class="btn" style="padding: 8px 18px; border-radius: 20px; font-weight: 700; {connect_btn_style}">{connect_btn_text}</button>' if (curr_user and curr_user['id'] != user_id) else ''}
-                            <button type="button" onclick="alert('تم نسخ رابط الملف الشخصي!')" class="btn btn-outline" style="padding: 8px 18px; border-radius: 20px; font-weight: 700;">🔗 مشاركة الملف</button>
-                            <a href="/community" class="btn btn-outline" style="padding: 8px 18px; border-radius: 20px;">⬅️ العودة للشبكة</a>
+                        <div class="profile-header-actions">
+                            {f'<button type="button" onclick="toggleColleagueConnect({user_id}, this)" class="btn" style="padding: 8px 16px; border-radius: 20px; font-weight: 700; {connect_btn_style}">{connect_btn_text}</button>' if (curr_user and curr_user['id'] != user_id) else ''}
+                            <button type="button" onclick="alert('تم نسخ رابط الملف الشخصي!')" class="btn btn-outline" style="padding: 8px 16px; border-radius: 20px; font-weight: 700;">🔗 مشاركة الملف</button>
+                            <a href="/community" class="btn btn-outline" style="padding: 8px 16px; border-radius: 20px;">⬅️ العودة للشبكة</a>
                         </div>
                     </div>
 

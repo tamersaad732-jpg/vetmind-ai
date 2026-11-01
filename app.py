@@ -1321,14 +1321,15 @@ body.dark .lang-pill.active-lang,
 .user-profile-widget {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     flex-shrink: 0;
+    min-width: 0;
 }
 .user-avatar-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
+    gap: 7px;
+    padding: 3px 10px 3px 4px;
     border-radius: var(--radius-pill);
     background: var(--bg);
     border: 1px solid var(--border);
@@ -1338,15 +1339,26 @@ body.dark .lang-pill.active-lang,
     font-weight: 700;
     font-size: 0.82rem;
     flex-shrink: 0;
+    max-width: 180px;
+    box-sizing: border-box;
 }
 .user-avatar-link:hover {
     border-color: var(--primary-border);
     background: var(--primary-light);
     color: var(--primary);
 }
+.user-avatar-link .user-name {
+    max-width: 95px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
 .user-avatar-circle {
     width: 28px;
     height: 28px;
+    min-width: 28px;
+    max-width: 28px;
     border-radius: 50%;
     background: var(--ai-gradient);
     color: white;
@@ -1356,6 +1368,7 @@ body.dark .lang-pill.active-lang,
     font-size: 0.85rem;
     font-weight: 800;
     flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(15, 76, 129, 0.2);
 }
 
 /* Auth Buttons */
@@ -1814,8 +1827,172 @@ footer a { color: #38BDF8; text-decoration: none; }
 @media (max-width: 992px) {
     .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
     .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+    .topbar-right .lang-selector-pill {
+        display: none !important; /* Accessible inside mobile drawer */
+    }
+    .user-profile-widget span[style*="PREMIUM"] {
+        display: none !important; /* Accessible inside profile & drawer */
+    }
+    .user-profile-widget a[href="/logout"] {
+        display: none !important; /* Accessible inside mobile drawer */
+    }
 }
 
+/* Tablet & Mobile Breakpoint (<= 860px): Universal Compact Topbar & Fluid Profile Widget */
+@media (max-width: 860px) {
+    .topbar-container {
+        padding: 5px 8px !important;
+        gap: 5px !important;
+        min-height: 50px !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    .topbar-left {
+        gap: 6px !important;
+        min-width: 0 !important;
+    }
+    .topbar-right {
+        gap: 4px !important;
+        min-width: 0 !important;
+    }
+
+    /* Standardized Responsive Topbar Action Icons (Universal Fluid Scale) */
+    .mobile-hamburger-btn {
+        width: clamp(30px, 7vw, 34px) !important;
+        height: clamp(30px, 7vw, 34px) !important;
+        min-width: clamp(30px, 7vw, 34px) !important;
+        max-width: clamp(30px, 7vw, 34px) !important;
+        font-size: clamp(1.1rem, 2.8vw, 1.25rem) !important;
+        border-radius: 9px !important;
+        flex-shrink: 0 !important;
+    }
+    .brand-logo-wrap {
+        width: clamp(30px, 7vw, 34px) !important;
+        height: clamp(30px, 7vw, 34px) !important;
+        min-width: clamp(30px, 7vw, 34px) !important;
+        max-width: clamp(30px, 7vw, 34px) !important;
+        border-radius: 9px !important;
+        flex-shrink: 0 !important;
+    }
+    .brand-logo-wrap svg {
+        width: clamp(18px, 4.5vw, 22px) !important;
+        height: clamp(18px, 4.5vw, 22px) !important;
+    }
+    .brand-name {
+        font-size: clamp(0.85rem, 2.5vw, 1.0rem) !important;
+    }
+    .brand-tagline {
+        display: none !important;
+    }
+    .brand-badge {
+        display: none !important;
+    }
+    .icon-action-btn {
+        width: clamp(30px, 7vw, 34px) !important;
+        height: clamp(30px, 7vw, 34px) !important;
+        min-width: clamp(30px, 7vw, 34px) !important;
+        max-width: clamp(30px, 7vw, 34px) !important;
+        font-size: clamp(0.95rem, 2.4vw, 1.05rem) !important;
+        border-radius: 9px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Prayer Times Pill: Fluid, legible, never overflows */
+    .prayer-indicator-pill {
+        width: auto !important;
+        height: clamp(28px, 6.5vw, 32px) !important;
+        padding: 0 clamp(4px, 1.4vw, 7px) !important;
+        border-radius: 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        max-width: clamp(80px, 22vw, 105px) !important;
+    }
+    .prayer-indicator-pill .prayer-pill-icon {
+        font-size: clamp(0.85rem, 2.2vw, 0.95rem) !important;
+        flex-shrink: 0 !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        display: inline-block !important;
+        font-size: clamp(0.65rem, 2vw, 0.70rem) !important;
+        font-weight: 800 !important;
+        max-width: clamp(52px, 15vw, 75px) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .prayer-indicator-pill .prayer-pill-countdown {
+        display: none !important;
+    }
+
+    /* Profile Widget: Clean, perfectly circular avatar button that NEVER overflows */
+    .user-profile-widget {
+        gap: 0 !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    .user-profile-widget .user-badge {
+        display: none !important;
+    }
+    .user-profile-widget .user-name {
+        display: none !important;
+    }
+    .user-profile-widget span[style*="PREMIUM"] {
+        display: none !important;
+    }
+    .user-profile-widget a[href="/logout"] {
+        display: none !important;
+    }
+    .user-profile-widget .user-avatar-link {
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        width: clamp(28px, 6.5vw, 32px) !important;
+        height: clamp(28px, 6.5vw, 32px) !important;
+        min-width: clamp(28px, 6.5vw, 32px) !important;
+        max-width: clamp(28px, 6.5vw, 32px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+    .user-profile-widget .user-avatar-circle {
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        font-size: clamp(0.78rem, 2.4vw, 0.88rem) !important;
+        border-radius: 50% !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.25) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Auth Buttons (Logged-out state) */
+    .auth-buttons {
+        gap: 4px !important;
+    }
+    .btn-login-pill {
+        padding: 4px 8px !important;
+        font-size: 0.72rem !important;
+        height: clamp(28px, 6.5vw, 32px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    .btn-register-pill {
+        display: none !important; /* Available in mobile drawer */
+    }
+}
+
+/* Mobile Screens (<= 680px) */
 @media (max-width: 680px) {
     .container {
         padding: 10px 8px 30px 8px !important;
@@ -1835,98 +2012,90 @@ footer a { color: #38BDF8; text-decoration: none; }
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
     }
-    .topbar-container {
-        padding: 4px 6px !important;
-        gap: 4px !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }
-    .topbar-right {
-        gap: 4px !important;
-    }
-    .brand-tagline {
-        display: none !important;
-    }
-    .brand-name {
-        font-size: 0.88rem !important;
-    }
-    .brand-badge {
-        display: none !important;
-    }
-    /* Compact, beautiful, fully-readable prayer pill on mobile that NEVER overflows */
-    .prayer-indicator-pill {
-        width: auto !important;
-        height: 34px !important;
-        padding: 0 8px !important;
-        border-radius: 17px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 4px !important;
-        flex-shrink: 0 !important;
-        font-size: 0.72rem !important;
-        box-sizing: border-box !important;
-        max-width: 105px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-icon {
-        font-size: 0.95rem !important;
-        flex-shrink: 0 !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        display: inline-block !important;
-        font-size: 0.70rem !important;
-        font-weight: 800 !important;
-        max-width: 76px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    .prayer-indicator-pill .prayer-pill-countdown {
-        display: none !important; /* Hide countdown on small mobile to fit without overflowing */
-    }
-    .topbar-search-icon-mobile {
-        width: 34px !important;
-        height: 34px !important;
-        min-width: 34px !important;
-        max-width: 34px !important;
-        padding: 0 !important;
-        border-radius: 9px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
-        margin: 0 !important;
-        font-size: 0.95rem !important;
-    }
-    .user-profile-widget .user-badge {
-        display: none !important;
-    }
-    .user-profile-widget .user-name {
-        display: none !important;
-    }
-    .user-profile-widget span[style*="PREMIUM"] {
-        display: none !important;
-    }
-    .user-profile-widget a[href="/logout"] {
-        display: none !important;
-    }
-    .user-profile-widget .user-avatar-circle {
-        width: 34px !important;
-        height: 34px !important;
-        font-size: 0.95rem !important;
-    }
-    .user-profile-widget {
-        gap: 2px !important;
-    }
-    .topbar-right .lang-selector-pill {
-        display: none !important;
-    }
 }
 
+/* Narrow Mobile Screens (<= 420px) - Hide brand title to prioritize icons */
 @media (max-width: 420px) {
     .brand-titles {
         display: none !important;
+    }
+    .topbar-container {
+        padding: 4px 5px !important;
+        gap: 3px !important;
+    }
+    .topbar-left {
+        gap: 4px !important;
+    }
+    .topbar-right {
+        gap: 3px !important;
+    }
+    .prayer-indicator-pill {
+        max-width: 78px !important;
+        padding: 0 4px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        max-width: 50px !important;
+        font-size: 0.65rem !important;
+    }
+}
+
+/* Ultra-Compact & Foldable Screens (<= 340px) */
+@media (max-width: 340px) {
+    .topbar-container {
+        padding: 2px 3px !important;
+        gap: 2px !important;
+    }
+    .topbar-left {
+        gap: 3px !important;
+    }
+    .topbar-right {
+        gap: 2px !important;
+    }
+    .mobile-hamburger-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        font-size: 1.05rem !important;
+    }
+    .brand-logo-wrap {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+    }
+    .brand-logo-wrap svg {
+        width: 17px !important;
+        height: 17px !important;
+    }
+    .icon-action-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        font-size: 0.88rem !important;
+    }
+    .user-profile-widget .user-avatar-link {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+    }
+    .user-profile-widget .user-avatar-circle {
+        font-size: 0.76rem !important;
+    }
+    .prayer-indicator-pill {
+        max-width: 68px !important;
+        height: 28px !important;
+        padding: 0 3px !important;
+        gap: 2px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-icon {
+        font-size: 0.80rem !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        max-width: 44px !important;
+        font-size: 0.60rem !important;
     }
 }
 
@@ -6080,12 +6249,21 @@ async def profile_page(request: Request):
 
     api_key_stored = request.cookies.get("groq_api_key", "")
 
+    initial_letter = user['name'][0] if user.get('name') else 'V'
     body = f"""
-    <div style="max-width: 600px; margin: 20px auto;">
-        <div class="card" style="border-top: 6px solid var(--primary);">
-            <h1 style="margin-top: 0; font-size: 1.5rem; color: var(--primary);">👤 {t('profile_title')}</h1>
+    <div style="max-width: 600px; margin: 20px auto; padding: 0 8px; box-sizing: border-box;">
+        <div class="card" style="border-top: 6px solid var(--primary); padding: clamp(14px, 4vw, 24px);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 16px; flex-wrap: wrap;">
+                <div class="user-avatar-circle" style="width: clamp(52px, 14vw, 68px) !important; height: clamp(52px, 14vw, 68px) !important; min-width: clamp(52px, 14vw, 68px) !important; max-width: clamp(52px, 14vw, 68px) !important; font-size: clamp(1.4rem, 4vw, 1.8rem) !important; box-shadow: 0 4px 12px rgba(15, 76, 129, 0.25); border: 2px solid rgba(255,255,255,0.9);">
+                    {initial_letter}
+                </div>
+                <div style="min-width: 0; flex: 1 1 auto;">
+                    <h1 style="margin: 0; font-size: clamp(1.2rem, 3.5vw, 1.5rem); color: var(--primary); line-height: 1.3;">👤 {t('profile_title')}</h1>
+                    <div style="font-size: 0.90rem; color: var(--text-muted); font-weight: 700; margin-top: 2px;">د. {user['name']}</div>
+                </div>
+            </div>
             
-            <div style="background: var(--bg); padding: 16px; border-radius: 10px; margin-bottom: 20px; line-height: 1.8;">
+            <div style="background: var(--bg); padding: clamp(12px, 3.5vw, 18px); border-radius: 10px; margin-bottom: 20px; line-height: 1.8;">
                 <div><strong>{t('profile_name', 'الاسم')}:</strong> {t('dr_prefix', 'د.')} {user['name']}</div>
                 <div><strong>{t('profile_email', 'البريد المهني')}:</strong> {user['email']}</div>
                 <div><strong>{t('profile_phone', 'رقم الهاتف')}:</strong> {user['phone']}</div>
