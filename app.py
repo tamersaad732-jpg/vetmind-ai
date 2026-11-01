@@ -66,6 +66,17 @@ app = FastAPI(title="VetMind AI Enterprise v4.3 - Global Clinical Veterinary Pla
 app.include_router(clinic_routes.router)
 app.include_router(interactive_tools.router)
 app.include_router(community_routes.router)
+@app.get("/uploads/{filename:path}", include_in_schema=False)
+async def serve_upload_file(filename: str):
+    from fastapi.responses import FileResponse, Response
+    for test_dir in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads"), STATIC_DIR]:
+        fpath = os.path.join(test_dir, filename)
+        if os.path.exists(fpath) and os.path.isfile(fpath):
+            return FileResponse(fpath)
+    # SVG fallback
+    svg_fallback = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#f8fafc" rx="12"/><text x="60" y="66" font-family="sans-serif" font-size="34" fill="#94a3b8" text-anchor="middle">📷</text></svg>'
+    return Response(content=svg_fallback, media_type="image/svg+xml")
+
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 

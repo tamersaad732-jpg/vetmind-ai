@@ -54,9 +54,73 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Multi-Layer JSON Backup Sync for Post Persistence
+# Multi-Layer JSON Backup Sync & Deletion Tombstones for Post Persistence
 BACKUP_SYNC_FILE = os.path.join(UPLOAD_DIR, "community_posts_sync.json")
 STATIC_BACKUP_FILE = os.path.join(BASE_DIR, "static", "community_posts_sync.json")
+DELETED_POSTS_FILE = os.path.join(UPLOAD_DIR, "community_deleted_posts.json")
+STATIC_DELETED_FILE = os.path.join(BASE_DIR, "static", "community_deleted_posts.json")
+
+def get_deleted_posts_set() -> set:
+    deleted = set()
+    for fpath in [DELETED_POSTS_FILE, STATIC_DELETED_FILE]:
+        if os.path.exists(fpath):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for item in data:
+                            if isinstance(item, (int, str)):
+                                deleted.add(item)
+                            elif isinstance(item, dict):
+                                if "id" in item:
+                                    deleted.add(item["id"])
+                                if "title" in item:
+                                    deleted.add(item["title"])
+            except Exception:
+                pass
+    return deleted
+
+def delete_post_from_backup_sync(post_id: int, title: str = ""):
+    try:
+        # 1. Scrub from all sync JSON files
+        for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
+            if os.path.exists(p_file):
+                try:
+                    with open(p_file, "r", encoding="utf-8") as f:
+                        posts = json.load(f)
+                    if isinstance(posts, list):
+                        new_posts = [
+                            p for p in posts 
+                            if p.get("id") != post_id and (not title or p.get("title") != title)
+                        ]
+                        with open(p_file, "w", encoding="utf-8") as f:
+                            json.dump(new_posts, f, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
+
+        # 2. Add tombstone to DELETED_POSTS_FILE & STATIC_DELETED_FILE
+        for d_file in [DELETED_POSTS_FILE, STATIC_DELETED_FILE]:
+            try:
+                os.makedirs(os.path.dirname(d_file), exist_ok=True)
+                cur_deleted = []
+                if os.path.exists(d_file):
+                    try:
+                        with open(d_file, "r", encoding="utf-8") as f:
+                            cur_deleted = json.load(f)
+                    except Exception:
+                        cur_deleted = []
+                if not isinstance(cur_deleted, list):
+                    cur_deleted = []
+                if post_id not in cur_deleted:
+                    cur_deleted.append(post_id)
+                if title and title not in cur_deleted:
+                    cur_deleted.append(title)
+                with open(d_file, "w", encoding="utf-8") as f:
+                    json.dump(cur_deleted[:500], f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+    except Exception as e:
+        print("delete_post_from_backup_sync error:", e)
 
 def save_post_to_backup_sync(post_dict: dict):
     try:
@@ -87,6 +151,7 @@ def save_post_to_backup_sync(post_dict: dict):
 
 def sync_posts_from_backup_sync(conn):
     try:
+        deleted_set = get_deleted_posts_set()
         posts = []
         for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
             if os.path.exists(p_file):
@@ -104,15 +169,19 @@ def sync_posts_from_backup_sync(conn):
         c.execute("SELECT title, created_at FROM community_posts")
         existing_keys = set((r[0], r[1]) for r in c.fetchall())
         for p in posts:
-            key = (p.get("title"), p.get("created_at"))
-            if key not in existing_keys and p.get("title") and p.get("content"):
+            p_id = p.get("id")
+            p_title = p.get("title")
+            if p_id in deleted_set or p_title in deleted_set:
+                continue
+            key = (p_title, p.get("created_at"))
+            if key not in existing_keys and p_title and p.get("content"):
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
                     category, title, content, is_urgent, species, breed, age, weight,
-                    gender, symptoms, medications, group_id, page_id, image_path, video_path,
+                    gender, symptoms, medications, group_id, page_id, image_path, extra_images, video_path,
                     media_type, quality_score, virality_score, privacy, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?, ?)
                 """, (
                     p.get("user_id", 4),
                     p.get("author_name", "طبيب بيطري"),
@@ -132,6 +201,7 @@ def sync_posts_from_backup_sync(conn):
                     p.get("group_id", 0),
                     p.get("page_id", 0),
                     p.get("image_path"),
+                    p.get("extra_images", ""),
                     p.get("video_path"),
                     p.get("media_type", "text"),
                     p.get("quality_score", 10),
@@ -554,18 +624,51 @@ REACTIONS = {
     "healing": {"label": "شفاء ودعم", "icon": "🐾", "color": "#059669"}
 }
 
+def format_media_url(path: str) -> str:
+    if not path:
+        return ""
+    path = str(path).strip()
+    if path.startswith("data:") or path.startswith("http://") or path.startswith("https://"):
+        return path
+    if path.startswith("/uploads/"):
+        return path
+    if path.startswith("uploads/"):
+        return "/" + path
+    return f"/uploads/{path}"
+
+def parse_extra_images(raw: str) -> list:
+    if not raw:
+        return []
+    raw = str(raw).strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        try:
+            items = json.loads(raw)
+            if isinstance(items, list):
+                return [str(x).strip() for x in items if str(x).strip()]
+        except Exception:
+            pass
+    if "|||" in raw:
+        return [x.strip() for x in raw.split("|||") if x.strip()]
+    if raw.startswith("data:"):
+        return [raw]
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
 def extract_youtube_embed(url: str) -> str:
     if not url:
         return ""
+    url = url.strip()
     if "youtu.be/" in url:
-        vid_id = url.split("youtu.be/")[1].split("?")[0].split("&")[0]
+        vid_id = url.split("youtu.be/")[1].split("?")[0].split("&")[0].split("/")[0]
+        return f"https://www.youtube.com/embed/{vid_id}"
+    if "youtube.com/shorts/" in url:
+        vid_id = url.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0].split("/")[0]
         return f"https://www.youtube.com/embed/{vid_id}"
     if "watch?v=" in url:
-        vid_id = url.split("watch?v=")[1].split("&")[0]
+        vid_id = url.split("watch?v=")[1].split("&")[0].split("#")[0]
         return f"https://www.youtube.com/embed/{vid_id}"
-    if "embed/" in url:
-        return url
-    return ""
+    if "youtube.com/embed/" in url:
+        return url.split("?")[0]
+    return url
 
 def evaluate_clinical_content(title: str, content: str, has_media: bool, is_urgent: bool, has_details: bool) -> dict:
     score = 50
@@ -1410,13 +1513,55 @@ function openEditPostModal(postId) {
     openModal('edit-post-modal-' + postId);
 }
 
-function deletePost(postId) {
-    if (!confirm('هل تريد بالتأكيد حذف هذه الحالة السريرية نهائياً من المنصة؟')) return;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/community/post/delete/' + postId;
-    document.body.appendChild(form);
-    form.submit();
+function openStoryViewer(src, author, caption) {
+    const m = document.getElementById('image-modal');
+    const img = document.getElementById('image-modal-src');
+    if (m && img) {
+        img.src = src;
+        m.style.display = 'flex';
+    }
+}
+
+async function deletePost(postId) {
+    if (!confirm('هل تريد بالتأكيد حذف هذه الحالة السريرية نهائياً من المنصة والشبكة؟')) return;
+    const postEl = document.getElementById('post-' + postId);
+    if (postEl) {
+        postEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        postEl.style.opacity = '0.3';
+    }
+    try {
+        const postTitle = postEl ? (postEl.querySelector('.post-heading, h3, strong')?.innerText || '').trim() : '';
+        const res = await fetch('/community/post/delete/' + postId, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        // Scrub from client-side localStorage so it can NEVER sync back:
+        try {
+            let myPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+            myPosts = myPosts.filter(p => p.id !== postId && (!postTitle || p.title !== postTitle));
+            localStorage.setItem('vetbook_my_posts', JSON.stringify(myPosts));
+
+            let deletedList = JSON.parse(localStorage.getItem('vetbook_deleted_posts') || '[]');
+            if (!deletedList.includes(postId)) deletedList.push(postId);
+            if (postTitle && !deletedList.includes(postTitle)) deletedList.push(postTitle);
+            localStorage.setItem('vetbook_deleted_posts', JSON.stringify(deletedList));
+        } catch (e) {}
+
+        if (postEl) {
+            postEl.style.transform = 'scale(0.95)';
+            setTimeout(() => { postEl.remove(); }, 250);
+        } else {
+            location.reload();
+        }
+    } catch (err) {
+        console.error('Delete post error:', err);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/community/post/delete/' + postId;
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 
 async function sharePost(postId) {
@@ -1729,7 +1874,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
-        const localPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+        const deletedList = JSON.parse(localStorage.getItem('vetbook_deleted_posts') || '[]');
+        let localPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+        if (deletedList.length > 0 && localPosts.length > 0) {
+            localPosts = localPosts.filter(p => !deletedList.includes(p.id) && !deletedList.includes(p.title));
+            localStorage.setItem('vetbook_my_posts', JSON.stringify(localPosts));
+        }
         if (localPosts.length > 0) {
             fetch('/api/community/sync-posts', {
                 method: 'POST',
@@ -1738,6 +1888,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(() => {});
         }
     } catch (e) {}
+
+    // Live Media Preview in Composer Modal
+    const mediaInput = document.getElementById('composer-media-files');
+    const mediaPreview = document.getElementById('composer-media-preview');
+    if (mediaInput && mediaPreview) {
+        mediaInput.addEventListener('change', function() {
+            mediaPreview.innerHTML = '';
+            const files = Array.from(this.files || []);
+            if (files.length === 0) return;
+            files.forEach(f => {
+                const item = document.createElement('div');
+                item.style.cssText = 'position: relative; width: 68px; height: 68px; border-radius: 8px; overflow: hidden; border: 1px solid var(--fb-border); background: #000; display: inline-flex; align-items: center; justify-content: center;';
+                if (f.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(f);
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                    item.appendChild(img);
+                } else if (f.type.startsWith('video/')) {
+                    item.innerHTML = '<span style="font-size: 1.6rem;">🎥</span>';
+                } else {
+                    item.innerHTML = '<span style="font-size: 1.6rem;">📁</span>';
+                }
+                mediaPreview.appendChild(item);
+            });
+        });
+    }
 });
 </script>
 """
@@ -1745,64 +1921,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
-    if video_path:
-        if video_path.startswith("http://") or video_path.startswith("https://"):
-            return f"""
-            <div style="margin: 12px 0; background: #000; border-radius: 12px; overflow: hidden; width: 100%;">
-                <iframe src="{video_path}" style="width: 100%; aspect-ratio: 16/9; border: none; display: block;" allowfullscreen></iframe>
+    html_parts = []
+    
+    if video_path and str(video_path).strip():
+        v_url = format_media_url(video_path)
+        if "youtube.com/embed" in v_url:
+            html_parts.append(f"""
+            <div style="margin: 12px 0; background: #000; border-radius: 12px; overflow: hidden; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <iframe src="{v_url}" style="width: 100%; aspect-ratio: 16/9; border: none; display: block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
-            """
+            """)
         else:
-            return f"""
-            <div style="margin: 12px 0; background: #000; border-radius: 12px; overflow: hidden; width: 100%;">
+            html_parts.append(f"""
+            <div style="margin: 12px 0; background: #000; border-radius: 12px; overflow: hidden; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                 <video controls playsinline preload="metadata" style="width: 100%; max-height: 520px; display: block; background: #0f172a;">
-                    <source src="/uploads/{video_path}">
+                    <source src="{v_url}">
+                    المتصفح لا يدعم تشغيل هذا الفيديو.
                 </video>
             </div>
-            """
+            """)
 
-    if not img_list:
+    clean_imgs = [format_media_url(img) for img in img_list if img and str(img).strip()]
+    cnt = len(clean_imgs)
+    if cnt == 0 and not html_parts:
         return ""
+    elif cnt == 0:
+        return "".join(html_parts)
 
-    cnt = len(img_list)
+    grid_html = ""
     if cnt == 1:
-        return f"""
-        <div class="fb-media-grid grid-1" onclick="openImageModal('/uploads/{img_list[0]}')">
-            <img src="/uploads/{img_list[0]}" alt="Case photo" loading="lazy">
+        grid_html = f"""
+        <div class="fb-media-grid grid-1" onclick="openImageModal('{clean_imgs[0]}')">
+            <img src="{clean_imgs[0]}" alt="Case photo" loading="lazy" onerror="this.style.display=\'none\'">
         </div>
         """
     elif cnt == 2:
-        return f"""
+        grid_html = f"""
         <div class="fb-media-grid grid-2">
-            <img src="/uploads/{img_list[0]}" onclick="openImageModal('/uploads/{img_list[0]}')" loading="lazy">
-            <img src="/uploads/{img_list[1]}" onclick="openImageModal('/uploads/{img_list[1]}')" loading="lazy">
+            <img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'">
+            <img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'">
         </div>
         """
     elif cnt == 3:
-        return f"""
+        grid_html = f"""
         <div class="fb-media-grid grid-3">
             <div class="media-col-left">
-                <img src="/uploads/{img_list[0]}" onclick="openImageModal('/uploads/{img_list[0]}')" loading="lazy">
+                <img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'">
             </div>
             <div class="media-col-right">
-                <img src="/uploads/{img_list[1]}" onclick="openImageModal('/uploads/{img_list[1]}')" loading="lazy">
-                <img src="/uploads/{img_list[2]}" onclick="openImageModal('/uploads/{img_list[2]}')" loading="lazy">
+                <img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'">
+                <img src="{clean_imgs[2]}" onclick="openImageModal('{clean_imgs[2]}')" loading="lazy" onerror="this.style.display=\'none\'">
             </div>
         </div>
         """
     else:
         extra = cnt - 3
-        return f"""
+        grid_html = f"""
         <div class="fb-media-grid grid-4">
-            <div style="position: relative;"><img src="/uploads/{img_list[0]}" onclick="openImageModal('/uploads/{img_list[0]}')" loading="lazy"></div>
-            <div style="position: relative;"><img src="/uploads/{img_list[1]}" onclick="openImageModal('/uploads/{img_list[1]}')" loading="lazy"></div>
-            <div style="position: relative;"><img src="/uploads/{img_list[2]}" onclick="openImageModal('/uploads/{img_list[2]}')" loading="lazy"></div>
-            <div style="position: relative;" onclick="openImageModal('/uploads/{img_list[3]}')">
-                <img src="/uploads/{img_list[3]}" loading="lazy">
+            <div style="position: relative;"><img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;"><img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;"><img src="{clean_imgs[2]}" onclick="openImageModal('{clean_imgs[2]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;" onclick="openImageModal('{clean_imgs[3]}')">
+                <img src="{clean_imgs[3]}" loading="lazy" onerror="this.style.display=\'none\'">
                 {f'<div class="media-extra-overlay">+{extra}</div>' if extra > 0 else ''}
             </div>
         </div>
         """
+
+    html_parts.append(grid_html)
+    return "".join(html_parts)
 
 
 @router.get("/community", response_class=HTMLResponse)
@@ -1851,9 +2038,10 @@ async def community_hub(
         </div>
     """
     for st in stories:
+        st_url = format_media_url(st['media_url'])
         stories_html += f"""
-        <div class="story-card" onclick="openStoryViewer('{st['media_url']}', '{st['author_name']}', '{st['caption']}')">
-            <img src="/uploads/{st['media_url']}" alt="Story">
+        <div class="story-card" onclick="openStoryViewer('{st_url}', '{st['author_name']}', '{st['caption']}')">
+            <img src="{st_url}" alt="Story" onerror="this.src=\'/static/favicon.svg\'">
             <div style="position: absolute; bottom: 8px; right: 8px; left: 8px; color: white; font-size: 0.78rem; font-weight: 800; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.3;">
                 {st['author_name'][:18]}
             </div>
@@ -2669,9 +2857,7 @@ async def community_hub(
         if p.get("image_path"):
             media_images.append(p["image_path"])
         if p.get("extra_images"):
-            for ex in p["extra_images"].split(","):
-                if ex.strip():
-                    media_images.append(ex.strip())
+            media_images.extend(parse_extra_images(p["extra_images"]))
         media_html = render_facebook_media_grid(media_images, p.get("video_path"))
 
         # Poll Widget
@@ -3155,8 +3341,9 @@ async def community_hub(
                 <!-- Multiple Media Upload -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">📷 إرفاق صور / أشعة (يمكن اختيار عدة صور):</label>
-                        <input type="file" name="media_files" multiple accept="image/*,video/*" style="width: 100%; font-size: 0.82rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">📷 إرفاق صور / أشعة / فيديو (يمكن اختيار عدة ملفات):</label>
+                        <input type="file" name="media_files" id="composer-media-files" multiple accept="image/*,video/*" style="width: 100%; font-size: 0.82rem;">
+                        <div id="composer-media-preview" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;"></div>
                     </div>
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">🎥 أو رابط فيديو يوتيوب:</label>
@@ -3257,10 +3444,11 @@ async def community_create_post(
 ):
     from app import get_current_user
 
+    import base64
     user = get_current_user(request)
     author_id = user["id"] if user else 4
     author_name = user.get("name", "طبيب بيطري") if user else "طبيب بيطري"
-    author_spec = user.get("specialty") or user.get("role") or "طب وجراحة الحيوان"
+    author_spec = (user.get("specialty") or user.get("role") or "طب وجراحة الحيوان") if user else "طب وجراحة الحيوان"
     author_country = user.get("country", "مصر") if user else "مصر"
 
     primary_img = None
@@ -3270,33 +3458,87 @@ async def community_create_post(
 
     if youtube_url and youtube_url.strip():
         saved_video = extract_youtube_embed(youtube_url.strip())
-        media_type = "video"
+        if saved_video:
+            media_type = "video"
 
     if media_files:
         for mf in media_files:
-            if mf and mf.filename:
-                ext = os.path.splitext(mf.filename)[1].lower()
-                if ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-                    fname = f"post_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext}"
-                    try:
-                        with open(os.path.join(UPLOAD_DIR, fname), "wb") as buf:
-                            shutil.copyfileobj(mf.file, buf)
-                        if not primary_img:
-                            primary_img = fname
-                            media_type = "image"
-                        else:
-                            extra_imgs.append(fname)
-                    except Exception:
-                        pass
-                elif ext in [".mp4", ".webm", ".mov"] and not saved_video:
-                    fname = f"vid_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext}"
-                    try:
-                        with open(os.path.join(UPLOAD_DIR, fname), "wb") as buf:
-                            shutil.copyfileobj(mf.file, buf)
-                        saved_video = fname
-                        media_type = "video"
-                    except Exception:
-                        pass
+            if not mf or not mf.filename:
+                continue
+            ext = os.path.splitext(mf.filename)[1].lower()
+            content_type = (getattr(mf, "content_type", "") or "").lower()
+            try:
+                raw_bytes = await mf.read()
+            except Exception:
+                continue
+            if not raw_bytes or len(raw_bytes) < 4:
+                continue
+
+            is_img = (
+                content_type.startswith("image/") or 
+                ext in [".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp", ".svg", ".heic", ".heif", ".avif"]
+            )
+            is_vid = (
+                content_type.startswith("video/") or 
+                ext in [".mp4", ".webm", ".mov", ".mkv", ".avi", ".3gp", ".m4v"]
+            )
+
+            if is_img:
+                fname = f"post_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext if ext else '.jpg'}"
+                # Save to disk
+                for d in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads")]:
+                    if os.path.exists(d) and os.access(d, os.W_OK):
+                        try:
+                            with open(os.path.join(d, fname), "wb") as buf:
+                                buf.write(raw_bytes)
+                        except Exception:
+                            pass
+
+                # Build optimized Base64 Data URI for serverless durability (Vercel)
+                img_data_uri = None
+                try:
+                    from PIL import Image, ImageOps
+                    import io
+                    im = Image.open(io.BytesIO(raw_bytes))
+                    im = ImageOps.exif_transpose(im)
+                    if im.mode in ("RGBA", "P"):
+                        im = im.convert("RGB")
+                    max_dim = 1200
+                    if max(im.size) > max_dim:
+                        im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+                    out = io.BytesIO()
+                    im.save(out, format="JPEG", quality=82, optimize=True)
+                    c_bytes = out.getvalue()
+                    img_data_uri = f"data:image/jpeg;base64,{base64.b64encode(c_bytes).decode('ascii')}"
+                except Exception:
+                    if len(raw_bytes) <= 1.5 * 1024 * 1024:
+                        mime = content_type if content_type.startswith("image/") else "image/jpeg"
+                        img_data_uri = f"data:{mime};base64,{base64.b64encode(raw_bytes).decode('ascii')}"
+                    else:
+                        img_data_uri = fname
+
+                final_img_ref = img_data_uri or fname
+                if not primary_img:
+                    primary_img = final_img_ref
+                    media_type = "image"
+                else:
+                    extra_imgs.append(final_img_ref)
+
+            elif is_vid and not saved_video:
+                fname = f"vid_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext if ext else '.mp4'}"
+                for d in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads")]:
+                    if os.path.exists(d) and os.access(d, os.W_OK):
+                        try:
+                            with open(os.path.join(d, fname), "wb") as buf:
+                                buf.write(raw_bytes)
+                        except Exception:
+                            pass
+                if len(raw_bytes) <= 3 * 1024 * 1024:
+                    mime = content_type if content_type.startswith("video/") else "video/mp4"
+                    saved_video = f"data:{mime};base64,{base64.b64encode(raw_bytes).decode('ascii')}"
+                else:
+                    saved_video = fname
+                media_type = "video"
 
     eval_res = evaluate_clinical_content(title, content, bool(primary_img or saved_video), bool(is_urgent), bool(species or symptoms))
     quality_score = eval_res["score"]
@@ -3313,7 +3555,7 @@ async def community_create_post(
     """, (
         author_id, author_name, author_spec, author_country,
         category, title.strip(), content.strip(), is_urgent, privacy, species, breed, age, weight,
-        gender, symptoms, medications, group_id, page_id, primary_img, ",".join(extra_imgs), saved_video,
+        gender, symptoms, medications, group_id, page_id, primary_img, (json.dumps(extra_imgs, ensure_ascii=False) if extra_imgs else ""), saved_video,
         media_type, quality_score, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ))
     post_id = c.lastrowid
@@ -3355,7 +3597,7 @@ async def community_create_post(
         "group_id": group_id,
         "page_id": page_id,
         "image_path": primary_img,
-        "extra_images": ",".join(extra_imgs),
+        "extra_images": (json.dumps(extra_imgs, ensure_ascii=False) if extra_imgs else ""),
         "video_path": saved_video,
         "media_type": media_type,
         "quality_score": quality_score,
@@ -3404,21 +3646,42 @@ async def community_edit_post(
 async def community_delete_post(request: Request, post_id: int):
     from app import get_current_user
     user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/community", status_code=303)
+    current_user_id = user["id"] if user else 4
+    is_admin = bool(user and (user.get("is_admin") or user.get("role") == "admin"))
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT user_id FROM community_posts WHERE id = ?", (post_id,))
+    c.execute("SELECT id, user_id, title FROM community_posts WHERE id = ?", (post_id,))
     p = c.fetchone()
-    if p and (user.get("is_admin") or user.get("role") == "admin" or user["id"] == p["user_id"]):
-        c.execute("DELETE FROM community_posts WHERE id = ?", (post_id,))
-        c.execute("DELETE FROM community_comments WHERE post_id = ?", (post_id,))
-        c.execute("DELETE FROM community_likes WHERE post_id = ?", (post_id,))
-        c.execute("DELETE FROM community_bookmarks WHERE post_id = ?", (post_id,))
-        conn.commit()
+    if not p:
+        conn.close()
+        if request.headers.get("accept") == "application/json" or request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JSONResponse({"success": False, "error": "المنشور غير موجود"}, status_code=404)
+        return RedirectResponse("/community", status_code=303)
 
+    # Allow delete if admin, post author, or guest author
+    if not (is_admin or p["user_id"] == current_user_id or not user):
+        conn.close()
+        if request.headers.get("accept") == "application/json" or request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JSONResponse({"success": False, "error": "غير مصرح لك بحذف هذا المنشور"}, status_code=403)
+        return RedirectResponse("/community", status_code=303)
+
+    post_title = p["title"]
+    c.execute("DELETE FROM community_posts WHERE id = ?", (post_id,))
+    c.execute("DELETE FROM community_comments WHERE post_id = ?", (post_id,))
+    c.execute("DELETE FROM community_likes WHERE post_id = ?", (post_id,))
+    c.execute("DELETE FROM community_bookmarks WHERE post_id = ?", (post_id,))
+    try:
+        c.execute("DELETE FROM community_reports WHERE target_type = 'post' AND target_id = ?", (post_id,))
+    except Exception:
+        pass
+    conn.commit()
     conn.close()
+
+    delete_post_from_backup_sync(post_id, post_title)
+
+    if request.headers.get("accept") == "application/json" or request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JSONResponse({"success": True, "post_id": post_id, "message": "تم حذف المنشور نهائياً بنجاح"})
     return RedirectResponse("/community", status_code=303)
 
 
@@ -3701,18 +3964,50 @@ async def community_create_story(
     story_media: UploadFile = File(...),
     caption: str = Form("")
 ):
+    import base64
     from app import get_current_user
     user = get_current_user(request)
-    if not user or not story_media or not story_media.filename:
+    author_id = user["id"] if user else 4
+    author_name = user.get("name", "طبيب بيطري") if user else "طبيب بيطري"
+    if not story_media or not story_media.filename:
         return RedirectResponse("/community", status_code=303)
 
-    ext = os.path.splitext(story_media.filename)[1] or ".jpg"
-    saved_name = f"story_{int(datetime.now().timestamp())}_{user['id']}{ext}"
+    ext = (os.path.splitext(story_media.filename)[1] or ".jpg").lower()
+    content_type = (getattr(story_media, "content_type", "") or "").lower()
+    saved_name = f"story_{int(datetime.now().timestamp())}_{author_id}{ext}"
     try:
-        with open(os.path.join(UPLOAD_DIR, saved_name), "wb") as buf:
-            shutil.copyfileobj(story_media.file, buf)
+        raw_bytes = await story_media.read()
     except Exception:
         return RedirectResponse("/community", status_code=303)
+
+    # Save to disk
+    for d in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads")]:
+        if os.path.exists(d) and os.access(d, os.W_OK):
+            try:
+                with open(os.path.join(d, saved_name), "wb") as buf:
+                    buf.write(raw_bytes)
+            except Exception:
+                pass
+
+    media_ref = saved_name
+    is_img = content_type.startswith("image/") or ext in [".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp"]
+    if is_img:
+        try:
+            from PIL import Image, ImageOps
+            import io
+            im = Image.open(io.BytesIO(raw_bytes))
+            im = ImageOps.exif_transpose(im)
+            if im.mode in ("RGBA", "P"):
+                im = im.convert("RGB")
+            max_dim = 1000
+            if max(im.size) > max_dim:
+                im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            out = io.BytesIO()
+            im.save(out, format="JPEG", quality=80, optimize=True)
+            media_ref = f"data:image/jpeg;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
+        except Exception:
+            if len(raw_bytes) <= 1.5 * 1024 * 1024:
+                media_ref = f"data:image/jpeg;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
 
     conn = get_db()
     c = conn.cursor()
@@ -3720,9 +4015,9 @@ async def community_create_story(
     INSERT INTO community_stories (user_id, author_name, media_url, caption, created_at)
     VALUES (?, ?, ?, ?, ?)
     """, (
-        user["id"],
-        user.get("name", "طبيب بيطري"),
-        saved_name,
+        author_id,
+        author_name,
+        media_ref,
         caption.strip(),
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ))
@@ -4484,6 +4779,7 @@ async def api_community_sync_posts(request: Request):
         if not client_posts:
             return JSONResponse({"status": "empty", "synced": 0})
 
+        deleted_set = get_deleted_posts_set()
         conn = get_db()
         c = conn.cursor()
         c.execute("SELECT title, created_at FROM community_posts")
@@ -4491,13 +4787,17 @@ async def api_community_sync_posts(request: Request):
 
         synced_count = 0
         for p in client_posts:
-            key = (p.get("title"), p.get("created_at"))
-            if key not in existing_keys and p.get("title") and p.get("content"):
+            p_id = p.get("id")
+            p_title = p.get("title")
+            if p_id in deleted_set or p_title in deleted_set:
+                continue
+            key = (p_title, p.get("created_at"))
+            if key not in existing_keys and p_title and p.get("content"):
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
                     category, title, content, is_urgent, privacy, species, breed, age, weight,
-                    gender, symptoms, medications, group_id, page_id, image_path, video_path,
+                    gender, symptoms, medications, group_id, page_id, image_path, extra_images, video_path,
                     media_type, quality_score, virality_score, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
                 """, (
@@ -4520,6 +4820,7 @@ async def api_community_sync_posts(request: Request):
                     p.get("group_id", 0),
                     p.get("page_id", 0),
                     p.get("image_path"),
+                    p.get("extra_images", ""),
                     p.get("video_path"),
                     p.get("media_type", "text"),
                     p.get("quality_score", 10),
