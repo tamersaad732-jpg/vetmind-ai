@@ -1891,8 +1891,290 @@ footer {
 footer a { color: #38BDF8; text-decoration: none; }
 
 /* ========================================================================== */
-/* LAPTOP & SCREEN-RESPONSIVE BREAKPOINTS (Universal Anti-Overflow Worldwide) */
+/* UNIVERSAL RESPONSIVE BREAKPOINTS (Zero Overflow & All Actions Preserved)  */
 /* ========================================================================== */
+
+/* Action Icon Buttons: Standardized 36x36px on Desktop/Laptop, 34x34px on Tablet/Mobile */
+.icon-action-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    border-radius: 9px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: var(--transition-smooth);
+    padding: 0;
+    text-decoration: none;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+.icon-action-btn:hover {
+    background: var(--card-bg);
+    border-color: var(--primary-border);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.topbar-search-icon-compact {
+    display: none;
+}
+
+/* Install Button: Adaptive pill on desktop, sleek square button on small screens */
+.btn-install-header {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    background: var(--ai-gradient);
+    color: #ffffff !important;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 36px;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+.btn-install-header:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+/* Language Selector Pill */
+.lang-selector-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    height: 36px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.lang-selector-pill select {
+    border: none;
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    padding-right: 2px;
+}
+
+/* Islamic Prayer Indicator Pill */
+.prayer-indicator-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    font-size: 0.82rem;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    background: #ECFDF5;
+    border: 1.5px solid #6EE7B7;
+    color: #065F46;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 36px;
+    box-sizing: border-box;
+    transition: var(--transition-smooth);
+}
+.prayer-indicator-pill:hover {
+    background: #D1FAE5;
+    border-color: #34D399;
+}
+.prayer-pill-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.prayer-pill-text {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #065F46;
+    white-space: nowrap;
+    display: inline-block;
+}
+.prayer-pill-countdown {
+    background: #D1FAE5;
+    color: #047857;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Prayer Pill High-Contrast Dark Theme (Always Sharp & Legible) */
+body.dark-theme .prayer-indicator-pill,
+html.dark-theme .prayer-indicator-pill,
+.dark .prayer-indicator-pill,
+[data-theme="dark"] .prayer-indicator-pill {
+    background: #064E3B !important;
+    border: 1.5px solid #10B981 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-icon,
+html.dark-theme .prayer-indicator-pill .prayer-pill-icon,
+.dark .prayer-indicator-pill .prayer-pill-icon,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-icon {
+    color: #FFFFFF !important;
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-text,
+html.dark-theme .prayer-indicator-pill .prayer-pill-text,
+.dark .prayer-indicator-pill .prayer-pill-text,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-text {
+    color: #FFFFFF !important;
+}
+body.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
+html.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
+.dark .prayer-indicator-pill .prayer-pill-countdown,
+[data-theme="dark"] .prayer-indicator-pill .prayer-pill-countdown {
+    background: #047857 !important;
+    border: 1px solid #10B981 !important;
+    color: #A7F3D0 !important;
+}
+
+/* User Profile Widget */
+.user-profile-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.user-avatar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px 3px 3px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text-main);
+    transition: var(--transition-smooth);
+    height: 36px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.user-avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ai-gradient);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ========================================================================== */
+/* ADMIN DASHBOARD STYLES (Clean, Non-Overlapping Enterprise Layout)           */
+/* ========================================================================== */
+.admin-tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+}
+.admin-tab-btn:hover {
+    color: var(--primary);
+    background: var(--bg);
+}
+.admin-tab-btn.active {
+    color: var(--primary) !important;
+    border-bottom-color: var(--primary) !important;
+    background: var(--card-bg) !important;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+}
+.admin-tab-pane {
+    animation: adminFadeIn 0.2s ease-in-out;
+}
+@keyframes adminFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.admin-kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.admin-kpi-card .kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.admin-kpi-card .kpi-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.admin-kpi-card .kpi-num {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin: 8px 0;
+    line-height: 1.2;
+}
+.admin-kpi-card .kpi-sub {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* ========================================================================== */
+/* RESPONSIVE MEDIA QUERIES (Preserves All Icons & Prevents Overflow)         */
+/* ========================================================================== */
+
 @media (max-width: 1400px) {
     .container {
         padding: 16px 14px 36px 14px !important;
@@ -1904,34 +2186,9 @@ footer a { color: #38BDF8; text-decoration: none; }
     .brand-tagline {
         display: none !important;
     }
-    .brand-badge {
-        display: none !important;
-    }
-    .btn-install-header {
-        display: none !important;
-    }
-    .topbar-desktop-only {
-        display: none !important;
-    }
     .topbar-center {
-        flex: 1 1 180px !important;
-        max-width: 220px !important;
-    }
-    .prayer-indicator-pill {
-        padding: 4px 8px !important;
-        gap: 4px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        max-width: 80px !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-    .user-avatar-link {
-        max-width: 140px !important;
-        padding: 3px 6px !important;
-    }
-    .user-avatar-link .user-name {
-        max-width: 70px !important;
+        flex: 1 1 190px !important;
+        max-width: 230px !important;
     }
     .grid-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1943,372 +2200,218 @@ footer a { color: #38BDF8; text-decoration: none; }
     }
 }
 
-@media (max-width: 1180px) {
-    .grid-2 {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
+@media (max-width: 1100px) {
+    .admin-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
     }
-    .topbar-center {
+}
+
+@media (max-width: 1024px) {
+    .brand-badge {
         display: none !important;
     }
-    .topbar-search-icon-mobile {
-        display: inline-flex !important;
+    /* Compact Square Install App Button */
+    .btn-install-header {
+        padding: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        border-radius: 9px !important;
+        justify-content: center !important;
+        font-size: 1.1rem !important;
     }
+    .btn-install-header span {
+        display: none !important;
+    }
+    /* Compact Language Button with native select overlay */
     .lang-selector-pill {
-        display: none !important; /* Accessible inside mobile drawer */
+        padding: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        border-radius: 9px !important;
+        justify-content: center !important;
+        position: relative;
+        overflow: hidden;
+    }
+    .lang-selector-pill span {
+        font-size: 1.1rem !important;
+    }
+    .lang-selector-pill select {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    /* Compact Avatar Button */
+    .user-avatar-link {
+        padding: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        border-radius: 50% !important;
+        justify-content: center !important;
+        background: transparent !important;
+        border: 1.5px solid var(--primary-border) !important;
+    }
+    .user-avatar-circle {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .user-name, .user-badge {
+        display: none !important;
     }
     .user-profile-widget span[style*="PREMIUM"] {
         display: none !important;
     }
     .user-profile-widget a[href="/logout"] {
-        display: none !important;
-    }
-    .user-avatar-link {
-        padding: 2px !important;
-        background: transparent !important;
-        border: none !important;
-    }
-    .user-avatar-link .user-name {
-        display: none !important;
+        display: none !important; /* Always in hamburger drawer */
     }
 }
 
 @media (max-width: 992px) {
-    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
-    .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+    .topbar-center {
+        display: none !important;
+    }
+    .topbar-search-icon-compact {
+        display: inline-flex !important;
+    }
+    .grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
 }
 
-/* Tablet & Mobile Breakpoint (<= 860px): Universal Compact Topbar & Fluid Profile Widget */
 @media (max-width: 860px) {
     .topbar-container {
         padding: 5px 8px !important;
         gap: 5px !important;
         min-height: 50px !important;
         max-width: 100vw !important;
-        overflow-x: hidden !important;
     }
     .topbar-left {
         gap: 6px !important;
-        min-width: 0 !important;
     }
     .topbar-right {
         gap: 4px !important;
-        min-width: 0 !important;
     }
-
-    /* Standardized Responsive Topbar Action Icons (Universal Fluid Scale) */
     .mobile-hamburger-btn {
-        width: clamp(30px, 7vw, 34px) !important;
-        height: clamp(30px, 7vw, 34px) !important;
-        min-width: clamp(30px, 7vw, 34px) !important;
-        max-width: clamp(30px, 7vw, 34px) !important;
-        font-size: clamp(1.1rem, 2.8vw, 1.25rem) !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        font-size: 1.2rem !important;
         border-radius: 9px !important;
-        flex-shrink: 0 !important;
     }
     .brand-logo-wrap {
-        width: clamp(30px, 7vw, 34px) !important;
-        height: clamp(30px, 7vw, 34px) !important;
-        min-width: clamp(30px, 7vw, 34px) !important;
-        max-width: clamp(30px, 7vw, 34px) !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
         border-radius: 9px !important;
-        flex-shrink: 0 !important;
     }
     .brand-logo-wrap svg {
-        width: clamp(18px, 4.5vw, 22px) !important;
-        height: clamp(18px, 4.5vw, 22px) !important;
+        width: 20px !important;
+        height: 20px !important;
     }
     .brand-name {
-        font-size: clamp(0.85rem, 2.5vw, 1.0rem) !important;
+        font-size: 0.95rem !important;
     }
-    .brand-tagline {
-        display: none !important;
-    }
-    .brand-badge {
-        display: none !important;
-    }
-    .icon-action-btn {
-        width: clamp(30px, 7vw, 34px) !important;
-        height: clamp(30px, 7vw, 34px) !important;
-        min-width: clamp(30px, 7vw, 34px) !important;
-        max-width: clamp(30px, 7vw, 34px) !important;
-        font-size: clamp(0.95rem, 2.4vw, 1.05rem) !important;
+    .icon-action-btn,
+    .btn-install-header,
+    .lang-selector-pill {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        font-size: 1.0rem !important;
         border-radius: 9px !important;
-        flex-shrink: 0 !important;
     }
-
-    /* Prayer Times Pill: Fluid, legible, never overflows */
+    .user-avatar-link {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+    }
     .prayer-indicator-pill {
-        width: auto !important;
-        height: clamp(28px, 6.5vw, 32px) !important;
-        padding: 0 clamp(4px, 1.4vw, 7px) !important;
-        border-radius: 16px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 3px !important;
-        flex-shrink: 0 !important;
-        box-sizing: border-box !important;
-        max-width: clamp(80px, 22vw, 105px) !important;
-    }
-    .prayer-indicator-pill .prayer-pill-icon {
-        font-size: clamp(0.85rem, 2.2vw, 0.95rem) !important;
-        flex-shrink: 0 !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        display: inline-block !important;
-        font-size: clamp(0.65rem, 2vw, 0.70rem) !important;
-        font-weight: 800 !important;
-        max-width: clamp(52px, 15vw, 75px) !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        height: 34px !important;
+        padding: 0 8px !important;
+        gap: 4px !important;
+        border-radius: 17px !important;
     }
     .prayer-indicator-pill .prayer-pill-countdown {
         display: none !important;
     }
-
-    /* Profile Widget: Clean, perfectly circular avatar button that NEVER overflows */
-    .user-profile-widget {
-        gap: 0 !important;
-        margin: 0 !important;
-        flex-shrink: 0 !important;
-    }
-    .user-profile-widget .user-badge {
-        display: none !important;
-    }
-    .user-profile-widget .user-name {
-        display: none !important;
-    }
-    .user-profile-widget span[style*="PREMIUM"] {
-        display: none !important;
-    }
-    .user-profile-widget a[href="/logout"] {
-        display: none !important;
-    }
-    .user-profile-widget .user-avatar-link {
-        padding: 0 !important;
-        border: none !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        width: clamp(28px, 6.5vw, 32px) !important;
-        height: clamp(28px, 6.5vw, 32px) !important;
-        min-width: clamp(28px, 6.5vw, 32px) !important;
-        max-width: clamp(28px, 6.5vw, 32px) !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border-radius: 50% !important;
-        flex-shrink: 0 !important;
-        margin: 0 !important;
-    }
-    .user-profile-widget .user-avatar-circle {
-        width: 100% !important;
-        height: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        font-size: clamp(0.78rem, 2.4vw, 0.88rem) !important;
-        border-radius: 50% !important;
-        border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
-        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.25) !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
-    }
-
-    /* Auth Buttons (Logged-out state) */
-    .auth-buttons {
-        gap: 4px !important;
-    }
-    .btn-login-pill {
-        padding: 4px 8px !important;
+    .prayer-indicator-pill .prayer-pill-text {
         font-size: 0.72rem !important;
-        height: clamp(28px, 6.5vw, 32px) !important;
-        display: inline-flex !important;
-        align-items: center !important;
-    }
-    .btn-register-pill {
-        display: none !important; /* Available in mobile drawer */
+        font-weight: 800 !important;
     }
 }
 
-/* Mobile Screens (<= 680px) */
-@media (max-width: 680px) {
-    .container {
-        padding: 10px 8px 30px 8px !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    .card {
-        padding: 14px 12px !important;
-        border-radius: 14px !important;
-        margin-bottom: 14px !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .grid-2, .grid-3, .grid-4 {
+@media (max-width: 600px) {
+    .admin-kpi-grid {
         grid-template-columns: 1fr !important;
-        gap: 12px !important;
-    }
-    .mobile-app-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-    }
-    .btn, .btn-primary, .btn-secondary, .btn-accent, .btn-gold, .btn-download, .btn-outline, .btn-fb-primary, .btn-fb-outline, .btn-fb-danger {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 6px !important;
-        box-sizing: border-box !important;
-        min-height: 38px !important;
-        padding: 7px 12px !important;
-        line-height: 1.3 !important;
-        white-space: normal !important;
-        word-break: normal !important;
-        text-align: center !important;
-    }
-    .badge, .pill-btn, .tag, .chip, .user-badge {
-        white-space: nowrap !important;
-        display: inline-flex !important;
-        align-items: center !important;
+        gap: 10px !important;
     }
 }
 
-/* Compact Mobile Screens (<= 420px) - Fluid Topbar without collision */
-@media (max-width: 420px) {
-    .brand-titles {
-        display: none !important;
-    }
+@media (max-width: 480px) {
     .topbar-container {
         padding: 4px 6px !important;
         gap: 4px !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }
-    .topbar-left {
-        gap: 4px !important;
-        min-width: 0 !important;
-    }
-    .topbar-right {
-        gap: 4px !important;
-        min-width: 0 !important;
-    }
-    .prayer-indicator-pill {
-        max-width: 78px !important;
-        padding: 2px 4px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        max-width: 46px !important;
-        font-size: 0.65rem !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-    .card {
-        padding: 10px 8px !important;
-    }
-    .btn {
-        padding: 6px 10px !important;
-        font-size: 0.82rem !important;
-    }
-}
-
-/* Narrow & Foldable Screens (<= 380px) - Pure Compact Icon Mode for Prayer Pill to prevent squeezing */
-@media (max-width: 380px) {
-    .prayer-indicator-pill {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        max-width: 30px !important;
-        padding: 0 !important;
-        justify-content: center !important;
-        border-radius: 9px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        display: none !important;
-    }
-    .prayer-indicator-pill .prayer-pill-countdown {
-        display: none !important;
-    }
-    .prayer-indicator-pill .prayer-pill-icon {
-        font-size: 0.95rem !important;
-        margin: 0 !important;
-    }
-}
-
-/* Ultra-Compact & 320px Foldable Screens (<= 340px) */
-@media (max-width: 340px) {
-    .topbar-container {
-        padding: 2px 3px !important;
-        gap: 2px !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }
-    .topbar-left {
-        gap: 3px !important;
-    }
-    .topbar-right {
-        gap: 2px !important;
     }
     .mobile-hamburger-btn {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
-        font-size: 1.05rem !important;
-    }
-    .prayer-indicator-pill {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
-        padding: 0 !important;
-        justify-content: center !important;
-        border-radius: 8px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        display: none !important;
-    }
-    .prayer-indicator-pill .prayer-pill-countdown {
-        display: none !important;
-    }
-    .btn {
-        padding: 5px 8px !important;
-        font-size: 0.78rem !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        font-size: 1.1rem !important;
     }
     .brand-logo-wrap {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
     }
-    .brand-logo-wrap svg {
-        width: 17px !important;
-        height: 17px !important;
-    }
-    .icon-action-btn {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
+    .brand-name {
         font-size: 0.88rem !important;
     }
-    .user-profile-widget .user-avatar-link {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
+    .icon-action-btn,
+    .btn-install-header,
+    .lang-selector-pill {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        font-size: 0.95rem !important;
     }
-    .user-profile-widget .user-avatar-circle {
-        font-size: 0.76rem !important;
+    .user-avatar-link {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+    }
+    .prayer-indicator-pill {
+        height: 32px !important;
+        padding: 0 5px !important;
+        max-width: 65px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        max-width: 42px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: 0.68rem !important;
     }
 }
 
 @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 """
-
 GLOBAL_APP_JS = """
 // ---------------------------------------------------------------------------
 // 1. PWA Standalone Detection & Universal Prompt Hiding
@@ -3024,29 +3127,32 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     <span class="prayer-pill-countdown">{prayer_c_text}</span>
                 </a>
 
-                <!-- High-Contrast Language Selector -->
-                <div class="lang-selector-pill">
+                <!-- Compact Search Trigger (Visible when center search bar collapses on tablets & mobile) -->
+                <button type="button" onclick="openSearchModal()" class="icon-action-btn topbar-search-icon-compact" title="{t('search_hint', 'بحث سريع (Ctrl+K)')}" aria-label="بحث سريع">
+                    🔍
+                </button>
+
+                <!-- High-Contrast Adaptive Language Selector -->
+                <div class="lang-selector-pill" title="{t('select_lang', 'اختيار اللغة')}">
                     <span style="font-size: 0.85rem;">🌐</span>
                     <select id="lang-quick-select" onchange="changeLanguage(this.value)" aria-label="اختيار اللغة">
                         {lang_options}
                     </select>
                 </div>
 
-
-
                 <!-- Theme Toggle -->
-                <button type="button" onclick="toggleTheme()" class="icon-action-btn" title="{t('nav_toggle_theme', 'تبديل نمط العرض')}">
+                <button type="button" onclick="toggleTheme()" class="icon-action-btn" title="{t('nav_toggle_theme', 'تبديل نمط العرض')}" aria-label="تبديل نمط العرض">
                     🌓
                 </button>
 
-                <!-- API Key (desktop) -->
-                <button type="button" onclick="openApiModal()" class="icon-action-btn topbar-desktop-only" title="{t('nav_api_key', 'مفتاح الـ API')}">
+                <!-- API Key Trigger (Universal - Always Visible on Desktop, Laptop, Tablet & Mobile) -->
+                <button type="button" onclick="openApiModal()" class="icon-action-btn" title="{t('nav_api_key', 'مفتاح الـ API')}" aria-label="مفتاح الـ API">
                     🔑
                 </button>
 
-                <!-- Install App (desktop only, hidden if already installed) -->
+                <!-- Install App Button (Adaptive pill on desktop, sleek square button on small screens) -->
                 <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" title="تحميل وتثبيت التطبيق">
-                    📥 <span>تثبيت التطبيق</span>
+                    📥 <span>تثبيت</span>
                 </button>
 
                 <!-- User Profile / Auth -->
@@ -4290,6 +4396,25 @@ async def process_support_ticket(
 # ==============================================================================
 ADMIN_PAGE_JS = """
 <script>
+function switchAdminTab(tabName) {
+    document.querySelectorAll('.admin-tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+    const pane = document.getElementById('admin-pane-' + tabName);
+    const btn = document.getElementById('tab-btn-' + tabName);
+    if (pane) pane.style.display = 'block';
+    if (btn) btn.classList.add('active');
+    try { localStorage.setItem('vetmind_admin_active_tab', tabName); } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const savedTab = localStorage.getItem('vetmind_admin_active_tab');
+        if (savedTab && document.getElementById('admin-pane-' + savedTab)) {
+            switchAdminTab(savedTab);
+        }
+    } catch(e) {}
+});
+
 function filterUsersTable() {
     const q = (document.getElementById('user-search-input').value || '').toLowerCase().trim();
     const statusF = document.getElementById('user-status-filter').value;
@@ -4321,54 +4446,75 @@ function resetUserFilters() {
 }
 
 function openUserDetailsModal(u) {
-    document.getElementById('modal-user-avatar').innerText = u.name ? u.name[0] : 'V';
-    document.getElementById('modal-user-name').innerText = 'د. ' + u.name;
-    document.getElementById('modal-user-id').innerText = 'User ID: #' + u.id + ' | مسجل: ' + u.created_at + ' | آخر ظهور: ' + u.last_active;
-    document.getElementById('modal-user-email').innerText = u.email;
-    document.getElementById('modal-user-phone').innerText = u.phone;
-    document.getElementById('modal-user-clinic').innerText = u.country + ' - ' + u.clinic;
-    document.getElementById('modal-user-syndicate').innerText = u.syndicate;
-    document.getElementById('modal-user-cases-cnt').innerText = u.cases_posts;
-    document.getElementById('modal-user-comments-cnt').innerText = u.comments;
-    document.getElementById('modal-user-chats-cnt').innerText = u.chats;
+    const av = document.getElementById('modal-user-avatar');
+    if (av) av.innerText = u.name ? u.name[0] : 'V';
+    const nm = document.getElementById('modal-user-name');
+    if (nm) nm.innerText = 'د. ' + u.name;
+    const idEl = document.getElementById('modal-user-id');
+    if (idEl) idEl.innerText = 'User ID: #' + u.id + ' | مسجل: ' + u.created_at + ' | آخر ظهور: ' + u.last_active;
+    const em = document.getElementById('modal-user-email');
+    if (em) em.innerText = u.email;
+    const ph = document.getElementById('modal-user-phone');
+    if (ph) ph.innerText = u.phone;
+    const cl = document.getElementById('modal-user-clinic');
+    if (cl) cl.innerText = u.country + ' - ' + u.clinic;
+    const sy = document.getElementById('modal-user-syndicate');
+    if (sy) sy.innerText = u.syndicate;
+    const cs = document.getElementById('modal-user-cases-cnt');
+    if (cs) cs.innerText = u.cases_posts;
+    const cm = document.getElementById('modal-user-comments-cnt');
+    if (cm) cm.innerText = u.comments;
+    const ch = document.getElementById('modal-user-chats-cnt');
+    if (ch) ch.innerText = u.chats;
 
     const roleBadgeEl = document.getElementById('modal-user-role-badge');
-    if (u.role === 'admin') roleBadgeEl.innerHTML = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">👑 مشرف Admin</span>';
-    else if (u.role === 'verified') roleBadgeEl.innerHTML = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">🩺 طبيب موثق</span>';
-    else roleBadgeEl.innerHTML = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border);">👨‍⚕️ طبيب مسجل</span>';
+    if (roleBadgeEl) {
+        if (u.role === 'admin') roleBadgeEl.innerHTML = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; white-space: nowrap;">👑 مشرف Admin</span>';
+        else if (u.role === 'verified') roleBadgeEl.innerHTML = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; white-space: nowrap;">🩺 طبيب موثق</span>';
+        else roleBadgeEl.innerHTML = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border); white-space: nowrap;">👨‍⚕️ طبيب مسجل</span>';
+    }
 
     const statusBadgeEl = document.getElementById('modal-user-status-badge');
-    if (u.status === 'approved') statusBadgeEl.innerHTML = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">✅ معتمد نشط</span>';
-    else if (u.status === 'suspended') statusBadgeEl.innerHTML = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">🚫 موقوف</span>';
-    else statusBadgeEl.innerHTML = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">⏳ قيد المراجعة</span>';
+    if (statusBadgeEl) {
+        if (u.status === 'approved') statusBadgeEl.innerHTML = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">✅ معتمد نشط</span>';
+        else if (u.status === 'suspended') statusBadgeEl.innerHTML = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">🚫 موقوف</span>';
+        else statusBadgeEl.innerHTML = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">⏳ قيد المراجعة</span>';
+    }
 
     const cardPrev = document.getElementById('modal-user-card-preview');
-    if (u.card_img) {
-        cardPrev.innerHTML = '<a href="/uploads/' + encodeURIComponent(u.card_img) + '" target="_blank"><img src="/uploads/' + encodeURIComponent(u.card_img) + '" style="max-height: 220px; max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);"><br><span class="btn btn-outline" style="margin-top: 8px; font-size: 0.8rem;">🔍 فتح الصورة بحجم كامل</span></a>';
-    } else {
-        cardPrev.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">لم يقم الطبيب برفع صورة الكارنيه بعد.</span>';
+    if (cardPrev) {
+        if (u.card_img) {
+            cardPrev.innerHTML = '<a href="/uploads/' + encodeURIComponent(u.card_img) + '" target="_blank"><img src="/uploads/' + encodeURIComponent(u.card_img) + '" style="max-height: 220px; max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);"><br><span class="btn btn-outline" style="margin-top: 8px; font-size: 0.8rem;">🔍 فتح المستند بحجم كامل</span></a>';
+        } else {
+            cardPrev.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">لم يقم الطبيب برفع صورة الكارنيه بعد.</span>';
+        }
     }
 
     const actionsEl = document.getElementById('modal-user-actions');
-    let btns = '';
-    if (u.status === 'approved') {
-        btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-outline" style="color: #b45309;">⏳ تعليق التوثيق</a>';
-    } else {
-        btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-primary" style="background: #15803d;">✅ توثيق واعتماد الطبيب</a>';
+    if (actionsEl) {
+        let btns = '';
+        if (u.status === 'approved') {
+            btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-outline" style="color: #b45309; white-space: nowrap;">⏳ تعليق التوثيق</a>';
+        } else {
+            btns += '<a href="/admin/toggle-verify/' + u.id + '" class="btn btn-primary" style="background: #15803d; white-space: nowrap;">✅ توثيق واعتماد الطبيب</a>';
+        }
+        btns += '<a href="/admin/toggle-admin/' + u.id + '" class="btn btn-outline" style="color: #7e22ce; white-space: nowrap;">👑 تغيير صلاحية الإدارة</a>';
+        if (u.status === 'suspended') {
+            btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #16a34a; white-space: nowrap;">🔄 إلغاء الإيقاف وتفعيل</a>';
+        } else {
+            btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #dc2626; white-space: nowrap;">🚫 إيقاف الحساب</a>';
+        }
+        btns += '<a href="/admin/delete-user/' + u.id + '" onclick="return confirm(\'تحذير: هل أنت متأكد من حذف هذا المستخدم نهائياً؟\');" class="btn btn-outline" style="color: var(--danger); white-space: nowrap;">🗑️ حذف نهائي</a>';
+        actionsEl.innerHTML = btns;
     }
-    btns += '<a href="/admin/toggle-admin/' + u.id + '" class="btn btn-outline" style="color: #7e22ce;">👑 تغيير صلاحية الإدارة</a>';
-    if (u.status === 'suspended') {
-        btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #16a34a;">🔄 إلغاء الإيقاف وتفعيل</a>';
-    } else {
-        btns += '<a href="/admin/toggle-status/' + u.id + '" class="btn btn-outline" style="color: #dc2626;">🚫 إيقاف الحساب</a>';
-    }
-    actionsEl.innerHTML = btns;
 
-    document.getElementById('user-details-modal').style.display = 'flex';
+    const modal = document.getElementById('user-details-modal');
+    if (modal) modal.style.display = 'flex';
 }
 
 function closeUserDetailsModal() {
-    document.getElementById('user-details-modal').style.display = 'none';
+    const modal = document.getElementById('user-details-modal');
+    if (modal) modal.style.display = 'none';
 }
 </script>
 """
@@ -4408,7 +4554,6 @@ async def admin_page(request: Request):
     verified_vets_count = c.fetchone()[0]
 
     # 4. Total clinical cases
-    total_posts_count = 0
     c.execute("SELECT COUNT(*) FROM cases")
     total_cases_count = c.fetchone()[0]
 
@@ -4417,12 +4562,8 @@ async def admin_page(request: Request):
     total_ai_consults_count = c.fetchone()[0]
 
     # Per-user activity statistics lookup
-    user_posts_map = {}
-
     c.execute("SELECT user_id, COUNT(*) as cnt FROM cases GROUP BY user_id")
     user_cases_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
-
-    user_comments_map = {}
 
     c.execute("SELECT user_id, COUNT(*) as cnt FROM chat_messages WHERE role = 'user' GROUP BY user_id")
     user_chats_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
@@ -4431,46 +4572,41 @@ async def admin_page(request: Request):
     all_users = [dict(r) for r in c.fetchall()]
 
     c.execute("SELECT * FROM broadcast_notifications ORDER BY id DESC")
-    all_notifs = c.fetchall()
+    all_notifs = [dict(r) for r in c.fetchall()]
 
-    c.execute("SELECT * FROM support_tickets ORDER BY id DESC LIMIT 20")
-    all_tickets = c.fetchall()
-
+    c.execute("SELECT * FROM support_tickets ORDER BY id DESC LIMIT 50")
+    all_tickets = [dict(r) for r in c.fetchall()]
 
     conn.close()
 
-    subs_rows = ""
-
-    # Comprehensive Users Rows & Client Modals
+    # Users Table Rows
     users_rows = ""
     for u in all_users:
         uid = u["id"]
-        p_cnt = user_posts_map.get(uid, 0)
         cs_cnt = user_cases_map.get(uid, 0)
-        cm_cnt = user_comments_map.get(uid, 0)
         ch_cnt = user_chats_map.get(uid, 0)
 
-        card_html = f'<a href="/uploads/{u["id_card_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 700;">🪪 عرض الكارنيه</a>' if u.get("id_card_image") else "<span style='color: var(--text-dim); font-size: 0.75rem;'>لم يُرفع</span>"
+        card_html = f'<a href="/uploads/{u["id_card_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 700; white-space: nowrap;">🪪 عرض الكارنيه</a>' if u.get("id_card_image") else "<span style='color: var(--text-muted); font-size: 0.75rem;'>لم يُرفع</span>"
 
         v_status = u.get("verification_status", "pending")
         if v_status == "approved":
-            status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">✅ معتمد نشط</span>'
+            status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">✅ معتمد نشط</span>'
             status_tag = "approved"
         elif v_status == "suspended":
-            status_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">🚫 موقوف</span>'
+            status_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">🚫 موقوف</span>'
             status_tag = "suspended"
         else:
-            status_badge = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">⏳ قيد المراجعة</span>'
+            status_badge = '<span style="background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">⏳ قيد المراجعة</span>'
             status_tag = "pending"
 
         if u.get("is_admin"):
-            role_badge = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">👑 مشرف Admin</span>'
+            role_badge = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; white-space: nowrap;">👑 مشرف Admin</span>'
             role_tag = "admin"
         elif u.get("verified_vet") or v_status == "approved":
-            role_badge = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem;">🩺 طبيب موثق</span>'
+            role_badge = '<span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 800; font-size: 0.72rem; white-space: nowrap;">🩺 طبيب موثق</span>'
             role_tag = "verified"
         else:
-            role_badge = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border);">👨‍⚕️ طبيب مسجل</span>'
+            role_badge = '<span style="background: var(--bg); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 0.72rem; border: 1px solid var(--border); white-space: nowrap;">👨‍⚕️ طبيب مسجل</span>'
             role_tag = "regular"
 
         initial = u["name"][0] if u.get("name") else "V"
@@ -4495,15 +4631,15 @@ async def admin_page(request: Request):
             "status": status_tag,
             "created_at": reg_date,
             "last_active": last_active,
-            "cases_posts": p_cnt + cs_cnt,
-            "comments": cm_cnt,
+            "cases_posts": cs_cnt,
+            "comments": 0,
             "chats": ch_cnt,
             "card_img": u.get("id_card_image", "")
         }).replace('"', '&quot;').replace("'", "&#39;")
 
-        verify_action_btn = f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #15803d;" title="تغيير حالة التوثيق">✅ توثيق</a>' if v_status != "approved" else f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #b45309;" title="إلغاء التوثيق">⏳ تعليق</a>'
-        admin_toggle_btn = f'<a href="/admin/toggle-admin/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #7e22ce;" title="تعديل صلاحية الإدارة">👑 مشرف</a>'
-        suspend_btn = f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #dc2626;" title="إيقاف الحساب">🚫 إيقاف</a>' if v_status != "suspended" else f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #16a34a;" title="تفعيل الحساب">🔄 تفعيل</a>'
+        verify_action_btn = f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #15803d; white-space: nowrap;" title="تغيير حالة التوثيق">✅ توثيق</a>' if v_status != "approved" else f'<a href="/admin/toggle-verify/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #b45309; white-space: nowrap;" title="إلغاء التوثيق">⏳ تعليق</a>'
+        admin_toggle_btn = f'<a href="/admin/toggle-admin/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #7e22ce; white-space: nowrap;" title="تعديل صلاحية الإدارة">👑 مشرف</a>'
+        suspend_btn = f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #dc2626; white-space: nowrap;" title="إيقاف الحساب">🚫 إيقاف</a>' if v_status != "suspended" else f'<a href="/admin/toggle-status/{uid}" class="btn btn-outline" style="font-size: 0.72rem; padding: 4px 8px; color: #16a34a; white-space: nowrap;" title="تفعيل الحساب">🔄 تفعيل</a>'
 
         users_rows += f"""
         <tr class="user-row-item" data-search="{u.get('name', '')} {u.get('email', '')} {phone_val} {clinic_val} {country_val} {syndicate_val}" data-status="{status_tag}" data-role="{role_tag}">
@@ -4523,7 +4659,7 @@ async def admin_page(request: Request):
             <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.82rem;">
                 <div style="font-weight: 700; color: var(--primary);">{country_val}</div>
                 <div style="color: var(--text-muted); font-size: 0.78rem;">{clinic_val}</div>
-                <div style="font-size: 0.72rem; color: var(--text-dim);">قيد: {syndicate_val}</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">قيد: {syndicate_val}</div>
             </td>
             <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: center;">
                 {card_html}
@@ -4537,18 +4673,17 @@ async def admin_page(request: Request):
             </td>
             <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.78rem;">
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="حالات ومنشورات">📊 {p_cnt + cs_cnt}</span>
-                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="تعليقات">💬 {cm_cnt}</span>
-                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px;" title="استشارات AI">🤖 {ch_cnt}</span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; white-space: nowrap;" title="حالات سريرية">📊 {cs_cnt}</span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; white-space: nowrap;" title="استشارات AI">🤖 {ch_cnt}</span>
                 </div>
             </td>
             <td style="padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;">
                 <div style="display: flex; gap: 4px; align-items: center;">
-                    <button type="button" onclick='openUserDetailsModal({u_json_safe})' class="btn btn-primary" style="font-size: 0.72rem; padding: 4px 8px;" title="عرض الملف الكامل للمستخدم">🔍 الملف</button>
+                    <button type="button" onclick='openUserDetailsModal({u_json_safe})' class="btn btn-primary" style="font-size: 0.72rem; padding: 4px 8px; white-space: nowrap;" title="عرض الملف الكامل للمستخدم">🔍 الملف</button>
                     {verify_action_btn}
                     {admin_toggle_btn}
                     {suspend_btn}
-                    <a href="/admin/delete-user/{uid}" onclick="return confirm('تحذير: هل أنت متأكد من حذف هذا المستخدم نهائياً؟');" class="btn btn-outline" style="color: var(--danger); font-size: 0.72rem; padding: 4px 6px;" title="حذف الحساب">🗑️</a>
+                    <a href="/admin/delete-user/{uid}" onclick="return confirm('تحذير: هل أنت متأكد من حذف هذا المستخدم نهائياً؟');" class="btn btn-outline" style="color: var(--danger); font-size: 0.72rem; padding: 4px 6px; white-space: nowrap;" title="حذف الحساب">🗑️</a>
                 </div>
             </td>
         </tr>
@@ -4557,27 +4692,27 @@ async def admin_page(request: Request):
     tickets_rows = ""
     for tk in all_tickets:
         tickets_rows += f"""
-        <div style="padding: 12px; border-bottom: 1px solid var(--border);">
-            <div style="display: flex; justify-content: space-between; font-weight: 700;">
-                <span style="color: var(--primary);">#{tk['id']} {tk['subject']}</span>
-                <span style="font-size: 0.78rem; color: var(--text-muted);">{tk['created_at']}</span>
+        <div style="padding: 14px; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; flex-wrap: wrap; gap: 6px;">
+                <span style="color: var(--primary); font-size: 0.95rem;">#{tk.get('id', '')} {tk.get('subject', 'استفسار دعم')}</span>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">{tk.get('created_at', '')}</span>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">د. {tk['doctor_name']} ({tk['email']}) - {tk['country']}</div>
-            <div style="font-size: 0.88rem; margin-top: 6px; background: var(--bg); padding: 8px; border-radius: 6px;">{tk['message']}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">د. {tk.get('doctor_name', 'طبيب')} ({tk.get('email', '')}) - {tk.get('country', 'مصر')}</div>
+            <div style="font-size: 0.88rem; margin-top: 8px; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); line-height: 1.6;">{tk.get('message', '')}</div>
         </div>
         """
 
     notifs_rows = ""
     for n in all_notifs:
         notifs_rows += f"""
-        <div style="padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
-                <strong style="color: var(--primary);">{n['title']}</strong> ({n['target_country']})
-                <div style="font-size: 0.85rem; margin-top: 4px;">{n['message']}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">{n['created_at']}</div>
+                <strong style="color: var(--primary); font-size: 0.95rem;">{n.get('title', '')}</strong> <span style="background: var(--bg); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;">{n.get('target_country', 'الكل')}</span>
+                <div style="font-size: 0.88rem; margin-top: 6px; line-height: 1.6;">{n.get('message', '')}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">{n.get('created_at', '')}</div>
             </div>
             <form action="/admin/broadcast/delete/{n['id']}" method="POST" style="margin: 0;">
-                <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.8rem;">حذف</button>
+                <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.8rem; padding: 5px 10px;">🗑️ حذف</button>
             </form>
         </div>
         """
@@ -4585,136 +4720,277 @@ async def admin_page(request: Request):
     saved_alert = ""
     if request.query_params.get("saved"):
         saved_alert = """
-        <div style="background: #dcfce7; border: 2px solid #22c55e; color: #15803d; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(34,197,94,0.15);">
-            <span style="font-size: 1.6rem;">✅</span>
+        <div style="background: #dcfce7; border: 2px solid #22c55e; color: #15803d; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(34,197,94,0.15);">
+            <span style="font-size: 1.5rem;">✅</span>
             <div>تم بنجاح حفظ الإعدادات وتحديث بيانات النظام!</div>
         </div>
         """
     test_res = request.query_params.get("test_email")
     if test_res == "success":
         saved_alert += """
-        <div style="background: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.15);">
-            <span style="font-size: 1.6rem;">🎉</span>
-            <div>تم بنجاح إرسال الرسالة التجريبية! يرجى فتح صندوق الوارد للتأكد.</div>
+        <div style="background: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(16,185,129,0.15);">
+            <span style="font-size: 1.5rem;">🎉</span>
+            <div>تم بنجاح إرسال الرسالة التجريبية! يرجى فتح صندوق الوارد للتأكد من وصولها.</div>
         </div>
         """
     elif test_res == "error":
         err_msg = request.query_params.get("msg", "فشل الإرسال")
         saved_alert += f"""
-        <div style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.6rem;">⚠️</span>
+        <div style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">⚠️</span>
             <div>حدث خطأ أثناء محاولة إرسال الرسالة التجريبية: {err_msg}</div>
         </div>
         """
 
+    notifs_cnt = len(all_notifs)
+    tickets_cnt = len(all_tickets)
+
+    notifs_content = notifs_rows if notifs_rows else "<div style='padding: 24px; text-align: center; color: var(--text-muted);'>لا توجد إشعارات عامة منشورة حالياً.</div>"
+    tickets_content = tickets_rows if tickets_rows else "<div style='padding: 24px; text-align: center; color: var(--text-muted);'>لا توجد تذاكر دعم فني واردة حالياً.</div>"
+
     body = f"""
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
         <div>
             <h1 style="margin: 0; font-size: 1.8rem; color: var(--primary);">⚙️ لوحة الإدارة والتحكم الشاملة</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">إدارة الأطباء، توثيق الهويات، إحصائيات الاستخدام والإعدادات المركزية</p>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">إدارة بيانات الأطباء، اعتماد الهويات، ومتابعة إحصائيات المنصة وإعدادات النظام</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <a href="/admin/export-users" class="btn btn-primary" style="font-weight: 700; text-decoration: none;">📥 تصدير بيانات الأطباء (Excel / CSV)</a>
-            
+            <a href="/" class="btn btn-outline" style="font-weight: 700; text-decoration: none;">🏠 الرئيسية</a>
         </div>
     </div>
 
     {saved_alert}
 
-    <!-- 1. KPI Analytics Cards -->
-    <div class="grid-4" style="margin-bottom: 24px;">
-        <div class="card" style="border-top: 4px solid var(--primary); padding: 18px; margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">إجمالي الأطباء المسجلين</span>
-                <span style="font-size: 1.5rem;">🩺</span>
+    <!-- Admin Segmented Tabs Navigation -->
+    <div class="admin-tabs-nav" style="display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 24px; overflow-x: auto; padding-bottom: 2px;">
+        <button type="button" onclick="switchAdminTab('users')" id="tab-btn-users" class="admin-tab-btn active">👨‍⚕️ إدارة الأطباء والمستخدمين ({total_users_count})</button>
+        <button type="button" onclick="switchAdminTab('settings')" id="tab-btn-settings" class="admin-tab-btn">⚙️ إعدادات الذكاء الاصطناعي والخوادم</button>
+        <button type="button" onclick="switchAdminTab('broadcasts')" id="tab-btn-broadcasts" class="admin-tab-btn">📢 الإشعارات العامة ({notifs_cnt})</button>
+        <button type="button" onclick="switchAdminTab('tickets')" id="tab-btn-tickets" class="admin-tab-btn">🎧 تذاكر الدعم الفني ({tickets_cnt})</button>
+    </div>
+
+    <!-- TAB 1: USERS & CLINICAL ANALYTICS -->
+    <div id="admin-pane-users" class="admin-tab-pane" style="display: block;">
+        <!-- KPI Analytics Cards (Fluid Responsive Grid - No Overlap) -->
+        <div class="admin-kpi-grid">
+            <div class="admin-kpi-card" style="border-top: 4px solid var(--primary);">
+                <div class="kpi-header">
+                    <span class="kpi-title">إجمالي الأطباء المسجلين</span>
+                    <span style="font-size: 1.5rem;">🩺</span>
+                </div>
+                <div class="kpi-num" style="color: var(--primary);">{total_users_count}</div>
+                <div class="kpi-sub" style="color: #10b981;">+ أطباء بيطريون مرخصون</div>
             </div>
-            <div style="font-size: 2.1rem; font-weight: 800; color: var(--primary); margin: 6px 0;">{total_users_count}</div>
-            <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+ أطباء بيطريون مرخصون</div>
+
+            <div class="admin-kpi-card" style="border-top: 4px solid #10b981;">
+                <div class="kpi-header">
+                    <span class="kpi-title">النشطون اليوم (Online)</span>
+                    <span style="font-size: 1.5rem;">🟢</span>
+                </div>
+                <div class="kpi-num" style="color: #10b981;">{active_today_count}</div>
+                <div class="kpi-sub">تفاعلوا خلال آخر 24 ساعة</div>
+            </div>
+
+            <div class="admin-kpi-card" style="border-top: 4px solid #0284c7;">
+                <div class="kpi-header">
+                    <span class="kpi-title">الأطباء الموثقون</span>
+                    <span style="font-size: 1.5rem;">✅</span>
+                </div>
+                <div class="kpi-num" style="color: #0284c7;">{verified_vets_count}</div>
+                <div class="kpi-sub">تم اعتماد الكارنيه المهني</div>
+            </div>
+
+            <div class="admin-kpi-card" style="border-top: 4px solid #7c3aed;">
+                <div class="kpi-header">
+                    <span class="kpi-title">استشارات وسجلات AI</span>
+                    <span style="font-size: 1.5rem;">🤖</span>
+                </div>
+                <div class="kpi-num" style="color: #7c3aed;">{total_cases_count + total_ai_consults_count}</div>
+                <div class="kpi-sub">{total_cases_count} حالة + {total_ai_consults_count} استشارة AI</div>
+            </div>
         </div>
 
-        <div class="card" style="border-top: 4px solid #10b981; padding: 18px; margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">النشطون اليوم (Online)</span>
-                <span style="font-size: 1.5rem;">🟢</span>
+        <!-- Users Management Card -->
+        <div class="card" style="border-top: 4px solid var(--accent); margin-bottom: 24px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">👨‍⚕️ قاعدة بيانات الأطباء والعيادات المسجلة</h2>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 4px;">بحث وفلترة فورية، مراجعة الكارنيهات، وتحديث صلاحيات الحسابات</div>
+                </div>
             </div>
-            <div style="font-size: 2.1rem; font-weight: 800; color: #10b981; margin: 6px 0;">{active_today_count}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">تفاعلوا خلال آخر 24 ساعة</div>
-        </div>
 
-        <div class="card" style="border-top: 4px solid #0284c7; padding: 18px; margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">الأطباء الموثقون</span>
-                <span style="font-size: 1.5rem;">✅</span>
+            <!-- Filter & Search Toolbar -->
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 1 1 240px; min-width: 200px;">
+                    <input type="text" id="user-search-input" onkeyup="filterUsersTable()" placeholder="ابحث بالاسم، الإيميل، الهاتف، الدولة، العيادة أو رقم القيد..." style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main);">
+                </div>
+                <div style="min-width: 150px;">
+                    <select id="user-status-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
+                        <option value="all">كافة حالات التوثيق</option>
+                        <option value="approved">معتمد نشط ✅</option>
+                        <option value="pending">قيد المراجعة ⏳</option>
+                        <option value="suspended">موقوف 🚫</option>
+                    </select>
+                </div>
+                <div style="min-width: 150px;">
+                    <select id="user-role-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
+                        <option value="all">كافة الصلاحيات</option>
+                        <option value="admin">مشرف Admin 👑</option>
+                        <option value="verified">طبيب موثق 🩺</option>
+                        <option value="regular">طبيب مسجل 👨‍⚕️</option>
+                    </select>
+                </div>
+                <button type="button" onclick="resetUserFilters()" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.82rem;">إعادة ضبط</button>
             </div>
-            <div style="font-size: 2.1rem; font-weight: 800; color: #0284c7; margin: 6px 0;">{verified_vets_count}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">تم اعتماد الكارنيه المهني</div>
-        </div>
 
-        <div class="card" style="border-top: 4px solid #7c3aed; padding: 18px; margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">الحالات واستشارات AI</span>
-                <span style="font-size: 1.5rem;">🤖</span>
+            <div style="overflow-x: auto; width: 100%;">
+                <table id="users-table" style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.86rem;">
+                    <thead>
+                        <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
+                            <th style="padding: 12px 10px; white-space: nowrap;">الطبيب والصلاحية</th>
+                            <th style="padding: 12px 10px; white-space: nowrap;">بيانات الاتصال</th>
+                            <th style="padding: 12px 10px; white-space: nowrap;">الدولة والعيادة</th>
+                            <th style="padding: 12px 10px; text-align: center; white-space: nowrap;">الكارنيه</th>
+                            <th style="padding: 12px 10px; text-align: center; white-space: nowrap;">الحالة</th>
+                            <th style="padding: 12px 10px; white-space: nowrap;">التسجيل والنشاط</th>
+                            <th style="padding: 12px 10px; white-space: nowrap;">الاستخدام</th>
+                            <th style="padding: 12px 10px; text-align: center; white-space: nowrap;">إجراءات الإدارة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users_rows}
+                    </tbody>
+                </table>
             </div>
-            <div style="font-size: 2.1rem; font-weight: 800; color: #7c3aed; margin: 6px 0;">{total_cases_count + total_ai_consults_count}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{total_cases_count} حالة سريرية + {total_ai_consults_count} استشارة AI</div>
         </div>
     </div>
 
-    <!-- 2. Comprehensive Users Management Card -->
-    <div class="card" style="border-top: 4px solid var(--accent); margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">👨‍⚕️ إدارة وبيانات المستخدمين الشاملة</h2>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">بحث وفلترة فورية، مراجعة الكارنيهات، وتحديث صلاحيات الأطباء والعيادات</div>
+    <!-- TAB 2: SYSTEM & AI API SETTINGS -->
+    <div id="admin-pane-settings" class="admin-tab-pane" style="display: none;">
+        <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 24px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.35rem; color: #10b981;">⚙️ إعدادات الذكاء الاصطناعي وخادم البريد الإلكتروني</h2>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 4px;">ربط مفاتيح API وخوادم SMTP للتحقق بالمصادقة وإرسال الرسائل</div>
+                </div>
             </div>
-        </div>
 
-        <!-- Filter & Search Toolbar -->
-        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <div style="flex: 1 1 240px; min-width: 200px;">
-                <input type="text" id="user-search-input" onkeyup="filterUsersTable()" placeholder="ابحث بالاسم، الإيميل، الهاتف، الدولة، العيادة أو رقم القيد..." style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main);">
-            </div>
-            <div style="min-width: 150px;">
-                <select id="user-status-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
-                    <option value="all">كافة حالات التوثيق</option>
-                    <option value="approved">معتمد نشط ✅</option>
-                    <option value="pending">قيد المراجعة ⏳</option>
-                    <option value="suspended">موقوف 🚫</option>
-                </select>
-            </div>
-            <div style="min-width: 150px;">
-                <select id="user-role-filter" onchange="filterUsersTable()" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
-                    <option value="all">كافة الصلاحيات</option>
-                    <option value="admin">مشرف Admin 👑</option>
-                    <option value="verified">طبيب موثق 🩺</option>
-                    <option value="regular">طبيب مسجل 👨‍⚕️</option>
-                </select>
-            </div>
-            <button type="button" onclick="resetUserFilters()" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.82rem;">إعادة ضبط</button>
-        </div>
+            <form action="/admin/settings" method="POST">
+                <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: var(--primary);">🤖 مفتاح نموذج الذكاء الاصطناعي (Groq AI API Key)</h3>
+                <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">Groq API Key:</label>
+                    <input type="password" name="ai_api_key" value="{cfg_ai_api_key}" placeholder="gsk_••••••••••••••••••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--card-bg); color: var(--text-main);">
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">يُستخدم لتشغيل المستشار البيطري الذكي وتحليل الحالات السريرية.</div>
+                </div>
 
-        <div style="overflow-x: auto;">
-            <table id="users-table" style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.86rem;">
-                <thead>
-                    <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
-                        <th style="padding: 12px 10px;">الطبيب والصلاحية</th>
-                        <th style="padding: 12px 10px;">بيانات الاتصال</th>
-                        <th style="padding: 12px 10px;">الدولة والعيادة</th>
-                        <th style="padding: 12px 10px; text-align: center;">الكارنيه</th>
-                        <th style="padding: 12px 10px; text-align: center;">الحالة</th>
-                        <th style="padding: 12px 10px;">التسجيل والنشاط</th>
-                        <th style="padding: 12px 10px;">إحصائيات الاستخدام</th>
-                        <th style="padding: 12px 10px; text-align: center;">إجراءات الإدارة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users_rows}
-                </tbody>
-            </table>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+
+                <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: var(--primary);">✉️ إعدادات خادم البريد (Gmail SMTP / Resend API)</h3>
+                <div class="grid-2" style="margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">خادم البريد (SMTP Host):</label>
+                        <input type="text" name="smtp_host" value="{cfg_smtp_host}" placeholder="smtp.gmail.com" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">المنفذ (Port):</label>
+                        <input type="text" name="smtp_port" value="{cfg_smtp_port}" placeholder="587 أو 465" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">بريد الإرسال (SMTP User / Gmail):</label>
+                        <input type="text" name="smtp_user" value="{cfg_smtp_user}" placeholder="your_email@gmail.com" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">كود التطبيق السري (Gmail App Password):</label>
+                        <input type="password" name="smtp_pass" value="{cfg_smtp_pass}" placeholder="••••••••••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">أو مفتاح Resend API السحابي (اختياري):</label>
+                    <input type="password" name="resend_api_key" value="{cfg_resend_api_key}" placeholder="re_••••••••••••••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                </div>
+
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.95rem; font-weight: 800;">💾 حفظ الإعدادات</button>
+                </div>
+            </form>
+
+            <!-- Test Email Form -->
+            <div style="background: var(--bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-top: 16px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #10b981;">✉️ اختبار إرسال البريد الإلكتروني (Test Email Delivery)</h4>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">أرسل رسالة تحقق تجريبية للتأكد من صحة إعدادات SMTP وكلمة مرور التطبيق.</div>
+                <form action="/admin/test-email" method="POST" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <input type="email" name="test_to" required placeholder="أدخل بريدك للتجربة (your_email@gmail.com)" style="flex: 1 1 240px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main);">
+                    <button type="submit" class="btn btn-outline" style="color: #10b981; font-weight: 700; padding: 9px 16px; white-space: nowrap;">🚀 إرسال رسالة تجريبية</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    
+    <!-- TAB 3: BROADCAST NOTIFICATIONS -->
+    <div id="admin-pane-broadcasts" class="admin-tab-pane" style="display: none;">
+        <div class="card" style="border-top: 4px solid #ea580c; margin-bottom: 24px; padding: 24px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 1.35rem; color: #ea580c;">📢 إرسال إشعار عام لكافة الأطباء (Broadcast Announcement)</h2>
+            <form action="/admin/broadcast" method="POST" style="margin-bottom: 24px;">
+                <div class="grid-2" style="margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">عنوان الإشعار:</label>
+                        <input type="text" name="title" required placeholder="مثال: تحديث بروتوكول علاج الحمى القلاعية..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">الدولة المستهدفة:</label>
+                        <select name="target_country" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main); font-weight: 700;">
+                            <option value="الكل">🌍 كافة الدول (عام لكل الأطباء)</option>
+                            <option value="مصر">🇪🇬 مصر</option>
+                            <option value="السعودية">🇸🇦 السعودية</option>
+                            <option value="الإمارات">🇦🇪 الإمارات</option>
+                            <option value="الأردن">🇯🇴 الأردن</option>
+                            <option value="العراق">🇮🇶 العراق</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">نص الإشعار والتوجيه الإكلينيكي:</label>
+                    <textarea name="message" required rows="3" placeholder="اكتب نص الإشعار هنا ليصل لجميع الأطباء في شريط التنبيهات..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main); line-height: 1.6;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="background: #ea580c; border-color: #ea580c; font-weight: 800; padding: 10px 20px;">📢 بث الإشعار الآن</button>
+            </form>
+
+            <h3 style="font-size: 1.1rem; color: var(--primary); margin: 24px 0 12px 0;">📋 سجل الإشعارات العامة النشطة ({notifs_cnt}):</h3>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+                {notifs_content}
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: SUPPORT TICKETS -->
+    <div id="admin-pane-tickets" class="admin-tab-pane" style="display: none;">
+        <div class="card" style="border-top: 4px solid #0284c7; margin-bottom: 24px; padding: 24px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 1.35rem; color: #0284c7;">🎧 تذاكر واستفسارات الدعم الفني ({tickets_cnt})</h2>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+                {tickets_content}
+            </div>
+        </div>
+    </div>
+
+    <!-- User Full Details Modal (Enclosed Cleanly) -->
+    <div id="user-details-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 650px;">
+            <button type="button" class="modal-close" onclick="closeUserDetailsModal()">✕</button>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+                <div id="modal-user-avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--ai-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; flex-shrink: 0;">V</div>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary);" id="modal-user-name">د. الاسم</h2>
+                    <div id="modal-user-id" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">User ID: #1</div>
+                    <div style="display: flex; gap: 6px; margin-top: 6px;">
+                        <span id="modal-user-role-badge"></span>
+                        <span id="modal-user-status-badge"></span>
+                    </div>
+                </div>
+            </div>
 
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
                 <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
@@ -4771,6 +5047,7 @@ async def admin_page(request: Request):
     {ADMIN_PAGE_JS}
     """
     return HTMLResponse(content=get_base_html("لوحة الإدارة والتحكم الشاملة", body, user, lang), media_type="text/html; charset=utf-8")
+
 
 @app.get("/admin/toggle-admin/{user_id}")
 async def toggle_admin(request: Request, user_id: int):
