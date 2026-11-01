@@ -5891,8 +5891,11 @@ async def references_page(request: Request, tab: str = "all"):
                 </div>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                    <a href="/references/read/{r['id']}" class="btn" style="background: linear-gradient(135deg, {'#16a34a 0%, #15803d' if is_arab else '#0284c7 0%, #0369a1'} 100%); color: #ffffff; font-weight: 700; font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: inline-flex; align-items: center; gap: 6px;">
-                        📖 {t('read_single_book_btn', 'قراءة واستعراض المرجع')}
+                    <a href="/references/pdf/{r['id']}" target="_blank" rel="noopener noreferrer" class="btn" style="background: linear-gradient(135deg, {'#16a34a 0%, #15803d' if is_arab else '#0284c7 0%, #0369a1'} 100%); color: #ffffff; font-weight: 700; font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: inline-flex; align-items: center; gap: 6px;" title="{t('view_online_pdf_btn', 'استعراض المرجع في مستعرض خارجي مستقل')}">
+                        👁️ {t('view_online_pdf_btn', 'استعراض في مستعرض خارجي')}
+                    </a>
+                    <a href="/references/read/{r['id']}" class="btn" style="background: var(--card-bg); color: var(--text-main); border: 1.5px solid var(--border); font-weight: 700; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                        📖 {t('read_single_book_btn', 'قراءة الفصول')}
                     </a>
                     <a href="/references/download/{r['id']}" download class="btn" style="background: var(--card-bg); color: var(--text-main); border: 1.5px solid var(--border); font-weight: 700; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
                         📥 {t('download_single_book_btn', 'تحميل المرجع')}
@@ -5920,10 +5923,13 @@ async def references_page(request: Request, tab: str = "all"):
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border); padding-top: 12px;">
-                <a href="/references/read/{r['id']}" class="btn btn-primary" style="font-size: 0.85rem; font-weight: 700;">
+                <a href="/references/pdf/{r['id']}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    👁️ {t('view_online_pdf_btn', 'استعراض المرجع في مستعرض خارجي')}
+                </a>
+                <a href="/references/read/{r['id']}" class="btn btn-outline" style="font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
                     📖 قراءة فصول المرجع وتفاصيله
                 </a>
-                <a href="/references/download/{r['id']}" download class="btn btn-outline" style="font-size: 0.82rem; font-weight: 600;">
+                <a href="/references/download/{r['id']}" download class="btn btn-outline" style="font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
                     📥 {t('download_single_book_btn', 'تحميل ملف المرجع')}
                 </a>
             </div>
@@ -6119,8 +6125,25 @@ async def view_single_reference_pdf(ref_id: str):
     ref_id = ref_id.lower().strip()
     pdf_path = os.path.join(DOCS_DIR, f"{ref_id}.pdf")
     
+    from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
+    if ref_id in ARAB_FULL_BOOKS:
+        base_name = ARAB_FULL_BOOKS[ref_id]['filename_ar']
+    elif ref_id in GLOBAL_FULL_BOOKS:
+        base_name = GLOBAL_FULL_BOOKS[ref_id]['filename_en']
+    else:
+        base_name = f"VetMind_Reference_{ref_id}"
+
     if os.path.exists(pdf_path):
-        return FileResponse(pdf_path, media_type="application/pdf")
+        filename = f"{base_name}.pdf"
+        encoded = urllib.parse.quote(filename)
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename*=UTF-8''{encoded}",
+                "X-Content-Type-Options": "nosniff"
+            }
+        )
     else:
         # Never 404: Seamlessly redirect to the interactive in-app reader
         return RedirectResponse(f"/references/read/{ref_id}", status_code=303)
