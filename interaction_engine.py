@@ -4,7 +4,7 @@ VetMind AI - Comprehensive Veterinary Drug-Drug Interaction Matrix & Engine
 (فاحص التداخلات الدوائية والسلامة السريرية الشامل لجميع الأدوية البيطرية الـ 1,005)
 """
 import os
-import sqlite3
+from db_engine import get_db
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "vetmind.db")
 
@@ -109,8 +109,7 @@ def get_all_available_drugs_list() -> list:
     """
     drugs = []
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
+        conn = get_db()
         c = conn.cursor()
         c.execute("""
             SELECT id, trade_name, active_ingredient, category, country

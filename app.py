@@ -29,7 +29,6 @@ from dosage_engine import calculate_precise_dosage, format_drug_display, get_dru
 from prayer_engine import calculate_prayer_times
 import clinic_routes
 import interactive_tools
-import community_routes
 import universal_search
 import contraindications_data
 import interaction_engine
@@ -65,19 +64,40 @@ except Exception:
 app = FastAPI(title="VetMind AI Enterprise v4.3 - Global Clinical Veterinary Platform")
 app.include_router(clinic_routes.router)
 app.include_router(interactive_tools.router)
-app.include_router(community_routes.router)
 @app.get("/uploads/{filename:path}", include_in_schema=False)
-async def serve_upload_file(filename: str):
+async def serve_upload_file(request: Request, filename: str):
     from fastapi.responses import FileResponse, Response
+    from media_storage import get_media_from_db
+    clean_name = os.path.basename(filename)
+    # Check DB first for private flag or serverless media blob
+    conn = None
+    try:
+        conn = get_db()
+        db_media = get_media_from_db(conn, clean_name)
+    except Exception:
+        db_media = None
+    finally:
+        if conn:
+            conn.close()
+
+    if db_media:
+        if db_media.get("is_private"):
+            user = get_current_user(request)
+            if not user or (user["id"] != db_media.get("owner_id") and not user.get("is_admin") and user.get("role") != "admin"):
+                return JSONResponse({"error": "غير مصرح بالوصول إلى هذا الملف الخاص"}, status_code=403)
+        return Response(
+            content=db_media["bytes"],
+            media_type=db_media["mime_type"],
+            headers={"Cache-Control": "public, max-age=86400" if not db_media.get("is_private") else "private, no-store"}
+        )
+
     for test_dir in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads"), STATIC_DIR]:
-        fpath = os.path.join(test_dir, filename)
+        fpath = os.path.join(test_dir, clean_name)
         if os.path.exists(fpath) and os.path.isfile(fpath):
             return FileResponse(fpath)
     # SVG fallback
     svg_fallback = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#f8fafc" rx="12"/><text x="60" y="66" font-family="sans-serif" font-size="34" fill="#94a3b8" text-anchor="middle">📷</text></svg>'
     return Response(content=svg_fallback, media_type="image/svg+xml")
-
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -124,9 +144,8 @@ def get_effective_groq_api_key(request: Request = None) -> str:
     return ""
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    from db_engine import get_db as _unified_get_db
+    return _unified_get_db()
 
 def get_text(lang: str, key: str, default: str = "") -> str:
     lang_dict = TRANSLATIONS_DB.get(lang, TRANSLATIONS_DB.get("ar", {}))
@@ -148,21 +167,51 @@ def verify_password(password: str, hashed: str) -> bool:
     except Exception:
         return False
 
+def _get_session_secret() -> str:
+    sec = os.environ.get("SESSION_SECRET", "").strip()
+    if not sec or sec in ("YOUR_SESSION_SECRET_KEY_HERE", "YOUR_SECURE_RANDOM_SESSION_SECRET_KEY_HERE"):
+        sec = "vetmind_default_hmac_key_v4_transition_safe"
+    return sec
+
 def make_session_token(user_id: int) -> str:
-    raw = f"{user_id}:vetmind_enterprise_2026:{datetime.now().strftime('%Y%m%d')}"
-    sig = hashlib.sha256(raw.encode('utf-8')).hexdigest()
-    return f"{user_id}:{sig}"
+    import hmac
+    secret = _get_session_secret()
+    issued_ts = int(datetime.now().timestamp())
+    payload = f"{user_id}:{issued_ts}"
+    sig = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{user_id}:{issued_ts}:{sig}"
 
 def verify_session_token(token: str):
+    import hmac
     if not token or ":" not in token:
         return None
     try:
-        user_id_str, sig = token.split(":", 1)
-        user_id = int(user_id_str)
-        raw = f"{user_id}:vetmind_enterprise_2026:{datetime.now().strftime('%Y%m%d')}"
-        expected_sig = hashlib.sha256(raw.encode('utf-8')).hexdigest()
-        if sig == expected_sig:
-            return user_id
+        parts = token.split(":")
+        secret = _get_session_secret()
+        # New v2 token format: user_id:issued_ts:hmac_sig (valid for 30 days)
+        if len(parts) == 3:
+            user_id = int(parts[0])
+            issued_ts = int(parts[1])
+            sig = parts[2]
+            now_ts = int(datetime.now().timestamp())
+            if now_ts - issued_ts > 30 * 86400 or issued_ts > now_ts + 3600:
+                return None
+            payload = f"{user_id}:{issued_ts}"
+            expected_sig = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+            if hmac.compare_digest(sig, expected_sig):
+                return user_id
+            return None
+        # Legacy v1 token transition support (user_id:sha256_sig) so existing active sessions are not broken
+        elif len(parts) == 2:
+            user_id = int(parts[0])
+            sig = parts[1]
+            for candidate_sec in [secret, "YOUR_SESSION_SECRET_KEY_HERE"]:
+                for day_offset in (0, 1):
+                    d_str = (datetime.now() - timedelta(days=day_offset)).strftime("%Y%m%d")
+                    raw = f"{user_id}:{candidate_sec}:{d_str}"
+                    expected_sig = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+                    if hmac.compare_digest(sig, expected_sig):
+                        return user_id
     except Exception:
         return None
     return None
@@ -191,20 +240,22 @@ async def require_auth_middleware(request: Request, call_next):
     path = request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
     raw_info = f"{path} {request.url} {request.headers.get('x-now-route-matches', '')} {request.headers.get('x-matched-path', '')}".lower()
 
-    # 1. Allow all static files & media uploads & favicon
-    if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", ".css", ".js", ".png", ".jpg", ".svg", ".json", ".ico"]):
+    # 1. Allow static assets, public uploads, and health check
+    if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", "/api/storage-health"]):
         return await call_next(request)
 
     # 2. Allow public auth endpoints & language switch
-    if any(k in raw_info for k in ["login", "register", "verify-otp", "set-language"]):
+    if any(path.startswith(p) for p in ["/login", "/register", "/verify-otp", "/resend-otp", "/set-language"]):
         return await call_next(request)
 
     # 3. Check user authentication
     user = get_current_user(request)
     if not user:
-        accept_header = request.headers.get("accept", "")
-        if "application/json" in accept_header and "text/html" not in accept_header:
-            return JSONResponse({"status": "error", "message": "Authentication required", "redirect": "/login"}, status_code=401)
+        accept_header = (request.headers.get("accept") or "").lower()
+        content_type = (request.headers.get("content-type") or "").lower()
+        xreq = (request.headers.get("x-requested-with") or "").lower()
+        if path.startswith("/api/") or ("application/json" in accept_header and "text/html" not in accept_header) or "application/json" in content_type or xreq == "xmlhttprequest":
+            return JSONResponse({"status": "error", "error": "Authentication required", "message": "يرجى تسجيل الدخول أولاً", "redirect": "/login"}, status_code=401)
 
         target = path
         if request.url.query:
@@ -233,8 +284,7 @@ def get_user_lang(request: Request) -> str:
     # 4. Default fallback
     return "ar"
 
-def is_user_community_approved(user_dict: dict) -> bool:
-    """100% Free Community: All registered veterinarians have immediate, full access."""
+def is_user_verified(user_dict: dict) -> bool:
     return bool(user_dict)
 
 def analyze_image_locally(image_path: str):
@@ -832,10 +882,11 @@ html, body {
     letter-spacing: 0 !important;
 }
 
-/* Universal Text Wrap & Overflow Containment: Zero Text Out of Bounds on Any Screen */
-p, span, div, a, h1, h2, h3, h4, h5, h6, label, td, th, li, strong, b, em, blockquote, .post-text {
-    overflow-wrap: anywhere !important;
-    word-break: normal !important;
+/* Universal Text Wrap & Zero-Spill on ANY Screen Worldwide */
+p, span, div, a, h1, h2, h3, h4, h5, h6, label, td, th, li, strong, b, em, blockquote, input, select, textarea, button, .post-text {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
 }
 
 /* Ensure flex and grid children can shrink without breaking screen borders */
@@ -1668,12 +1719,7 @@ body.dark .lang-pill.active-lang,
     letter-spacing: 0 !important;
     text-align: center;
 }
-.bnav-community {
-    color: #0284c7;
-}
-.bnav-community.active {
-    color: #0369a1;
-}
+
 
 /* ========================================================================== */
 /* 6. GENERAL COMPONENTS: CARDS, GRIDS, BUTTONS & MODALS */
@@ -1707,30 +1753,24 @@ body.dark .lang-pill.active-lang,
 
 .grid-2 {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
-    gap: clamp(14px, 2vw, 20px) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(12px, 2vw, 20px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 .grid-3 {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
-    gap: clamp(12px, 1.8vw, 20px) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: clamp(10px, 1.8vw, 18px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 .grid-4 {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
-    gap: clamp(10px, 1.5vw, 18px) !important;
-}
-
-/* Laptop Optimization (1024px to 1366px) */
-@media (max-width: 1280px) {
-    .grid-4 {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 14px !important;
-    }
-    .grid-3 {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 14px !important;
-    }
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: clamp(10px, 1.5vw, 16px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Buttons */
@@ -1850,34 +1890,92 @@ footer {
 }
 footer a { color: #38BDF8; text-decoration: none; }
 
-/* Responsive Media Queries - Stacking without Collisions */
-@media (max-width: 1150px) {
-    .topbar-center {
+/* ========================================================================== */
+/* LAPTOP & SCREEN-RESPONSIVE BREAKPOINTS (Universal Anti-Overflow Worldwide) */
+/* ========================================================================== */
+@media (max-width: 1400px) {
+    .container {
+        padding: 16px 14px 36px 14px !important;
+    }
+    .topbar-container {
+        padding: 6px 12px !important;
+        gap: 8px !important;
+    }
+    .brand-tagline {
+        display: none !important;
+    }
+    .brand-badge {
+        display: none !important;
+    }
+    .btn-install-header {
         display: none !important;
     }
     .topbar-desktop-only {
         display: none !important;
     }
-    .topbar-right .btn-install-header {
+    .topbar-center {
+        flex: 1 1 180px !important;
+        max-width: 220px !important;
+    }
+    .prayer-indicator-pill {
+        padding: 4px 8px !important;
+        gap: 4px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        max-width: 80px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .user-avatar-link {
+        max-width: 140px !important;
+        padding: 3px 6px !important;
+    }
+    .user-avatar-link .user-name {
+        max-width: 70px !important;
+    }
+    .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+    .grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+}
+
+@media (max-width: 1180px) {
+    .grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .topbar-center {
         display: none !important;
     }
     .topbar-search-icon-mobile {
+        display: inline-flex !important;
+    }
+    .lang-selector-pill {
+        display: none !important; /* Accessible inside mobile drawer */
+    }
+    .user-profile-widget span[style*="PREMIUM"] {
+        display: none !important;
+    }
+    .user-profile-widget a[href="/logout"] {
+        display: none !important;
+    }
+    .user-avatar-link {
+        padding: 2px !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    .user-avatar-link .user-name {
         display: none !important;
     }
 }
 
 @media (max-width: 992px) {
-    .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
-    .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
-    .topbar-right .lang-selector-pill {
-        display: none !important; /* Accessible inside mobile drawer */
-    }
-    .user-profile-widget span[style*="PREMIUM"] {
-        display: none !important; /* Accessible inside profile & drawer */
-    }
-    .user-profile-widget a[href="/logout"] {
-        display: none !important; /* Accessible inside mobile drawer */
-    }
+    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+    .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
 }
 
 /* Tablet & Mobile Breakpoint (<= 860px): Universal Compact Topbar & Fluid Profile Widget */
@@ -2531,7 +2629,7 @@ def render_not_found_page(request: Request, current_user, lang: str) -> str:
             <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 10px;">روابط سريعة لأهم الأقسام:</div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
                 <a href="/chat" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💬</span> الشات الطبي</a>
-                <a href="/community" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">🌐</span> ملتقى VetBook</a>
+                
                 <a href="/pharmacy" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💊</span> الصيدلية</a>
                 <a href="/clinic" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">🏥</span> سجلات العيادة</a>
             </div>
@@ -2717,11 +2815,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-icon">💬</span>
                 <span class="m-label">{t('nav_chat')}</span>
             </a>
-            <a href="/community" class="mobile-menu-item" style="color: #0284c7; font-weight: 700;">
-                <span class="m-icon">🌐</span>
-                <span class="m-label">VetBook مجتمع الأطباء</span>
-                <span class="m-badge" style="background: #e0f2fe; color: #0369a1;">مجاني</span>
-            </a>
+            
             <a href="/clinic" class="mobile-menu-item">
                 <span class="m-icon">🏥</span>
                 <span class="m-label">{t('nav_clinic')}</span>
@@ -2816,7 +2910,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     title_l = title.lower()
     is_home_active = "active" if title in [t('nav_home'), 'الرئيسية', 'Home', 'Accueil', 'Startseite', 'Inicio', 'Главная', '首页'] else ""
     is_chat_active = "active" if "chat" in title_l or "شات" in title_l or "مساعد" in title_l or "ذكاء" in title_l else ""
-    is_comm_active = "active" if "vetbook" in title_l or "مجتمع" in title_l or "community" in title_l else ""
+    is_tools_active = "active" if "tool" in title_l or "أداة" in title_l or "أدوات" in title_l else ""
     is_clinic_active = "active" if "clinic" in title_l or "عيادة" in title_l or "حالات" in title_l else ""
 
     # Instagram / YouTube-Style Mobile Bottom Navigation Bar
@@ -2834,11 +2928,11 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </span>
             <span class="bnav-label">{t('nav_chat', 'الذكاء')}</span>
         </a>
-        <a href="/community" class="bnav-item bnav-community {is_comm_active}" title="مجتمع VetBook">
+        <a href="/tools" class="bnav-item {is_tools_active}" title="{t('nav_tools_30', 'الأدوات الـ 30')}">
             <span class="bnav-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             </span>
-            <span class="bnav-label">VetBook</span>
+            <span class="bnav-label">{t('nav_tools_30', 'الأدوات')}</span>
         </a>
         <a href="/clinic" class="bnav-item {is_clinic_active}" title="{t('nav_clinic', 'العيادة')}">
             <span class="bnav-icon">
@@ -2938,11 +3032,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     </select>
                 </div>
 
-                <!-- VetBook Community Feed Notification Bell -->
-                <a href="/community" class="icon-action-btn" title="مجتمع الأطباء والتعميمات السريرية (VetBook)" style="position: relative; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem;">
-                    🔔
-                    <span style="position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444;"></span>
-                </a>
+
 
                 <!-- Theme Toggle -->
                 <button type="button" onclick="toggleTheme()" class="icon-action-btn" title="{t('nav_toggle_theme', 'تبديل نمط العرض')}">
@@ -3506,6 +3596,7 @@ async def clinic_lab_page(request: Request):
     user = get_current_user(request)
     lang = get_user_lang(request)
     t = lambda k, d="": get_text(lang, k, d)
+    user_id = user["id"] if user else 4
 
     conn = get_db()
     c = conn.cursor()
@@ -3629,13 +3720,7 @@ async def home_page(request: Request):
     c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE user_id = ? AND performed_at >= ?", (user_id, three_days_ago))
     active_clients_3d = c.fetchone()[0]
 
-    # Fetch 3 latest broadcast community posts for homepage spotlight
-    spotlight_posts = []
-    try:
-        c.execute("SELECT id, title, author_name, author_specialty, category, is_urgent, created_at FROM community_posts ORDER BY id DESC LIMIT 3")
-        spotlight_posts = [dict(r) for r in c.fetchall()]
-    except Exception:
-        spotlight_posts = []
+
 
     conn.close()
 
@@ -3689,56 +3774,10 @@ async def home_page(request: Request):
         """
 
     spotlight_html = ""
-    if spotlight_posts:
-        items_html = ""
-        for sp in spotlight_posts:
-            urg_tag = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">🚨 عاجلة</span>' if sp.get("is_urgent") else '<span style="background:#ccfbf1;color:#0f766e;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">📢 تعميم سريري</span>'
-            sp_title = (sp.get('title') or '')[:70]
-            items_html += f"""
-            <a href="/community#post-{sp['id']}" style="display:block;text-decoration:none;color:inherit;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all 0.2s ease;box-shadow:0 1px 3px rgba(0,0,0,0.05);min-width:0;box-sizing:border-box;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-                    <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                        <span style="width:32px;height:32px;border-radius:50%;background:#0f766e;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">🩺</span>
-                        <div style="min-width:0;word-break:break-word;">
-                            <div style="font-weight:700;font-size:0.85rem;color:var(--text);">{sp.get('author_name','طبيب بيطري')}</div>
-                            <div style="font-size:0.72rem;color:var(--text-muted);">{sp.get('author_specialty','طب وجراحة الحيوان')}</div>
-                        </div>
-                    </div>
-                    {urg_tag}
-                </div>
-                <div style="font-weight:800;font-size:0.92rem;color:var(--primary);margin-bottom:6px;line-height:1.4;word-break:break-word;">
-                    {sp_title}
-                </div>
-                <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px dashed var(--border);padding-top:6px;flex-wrap:wrap;gap:6px;">
-                    <span>🕒 {sp.get('created_at','')[:16]}</span>
-                    <span style="color:#0f766e;font-weight:700;">عرض ومشاركة بالرأي ←</span>
-                </div>
-            </a>
-            """
-        spotlight_html = f"""
-        <div class="card" style="margin-bottom:24px;border-right:5px solid #0f766e;background:linear-gradient(135deg, rgba(15,118,110,0.03) 0%, rgba(204,251,241,0.08) 100%);width:100%;box-sizing:border-box;overflow:hidden;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-                <div style="display:flex;align-items:center;gap:10px;flex:1 1 240px;min-width:0;">
-                    <span style="font-size:1.4rem;flex-shrink:0;">📢</span>
-                    <div style="min-width:0;word-break:break-word;">
-                        <h3 style="margin:0;font-size:1.1rem;color:#0f766e;word-break:break-word;">نبض مجتمع الأطباء البيطريين (VetBook Live Feed)</h3>
-                        <p style="margin:2px 0 0;font-size:0.8rem;color:var(--text-muted);word-break:break-word;">أحدث الحالات والتعميمات السريرية المعممة على كافة الأطباء المسجلين</p>
-                    </div>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <a href="/community" class="btn btn-primary" style="font-size:0.82rem;padding:6px 14px;">تصفح المجتمع الكامل 🩺</a>
-                    <a href="/community?action=new" class="btn btn-accent" style="font-size:0.82rem;padding:6px 14px;">➕ نشر حالة للجميع</a>
-                </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 250px), 1fr));gap:12px;">
-                {items_html}
-            </div>
-        </div>
-        """
 
     body = f"""
     {stock_alert_html}
-    {spotlight_html}
+    
 
     <div class="grid-4"  style="margin-bottom: 24px;">
         <div class="card" style="border-top: 4px solid var(--primary); padding: 16px;">
@@ -3908,7 +3947,7 @@ async def verify_otp_page(request: Request, email: str = "", resent: int = 0, ch
     return HTMLResponse(content=get_base_html(t("otp_title"), body, None, lang), media_type="text/html; charset=utf-8")
 
 @app.post("/verify-otp")
-async def process_verify_otp(email: str = Form(...), otp_code: str = Form(...)):
+async def process_verify_otp(email: str = Form(...), otp_code: str = Form(...), redirect_url: str = Form("/")):
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT * FROM users WHERE email = ?", (email.strip().lower(),))
@@ -4368,26 +4407,22 @@ async def admin_page(request: Request):
     c.execute("SELECT COUNT(*) FROM users WHERE verification_status = 'approved' OR verified_vet = 1")
     verified_vets_count = c.fetchone()[0]
 
-    # 4. Total community posts & clinical cases
-    c.execute("SELECT COUNT(*) FROM community_posts")
-    total_posts_count = c.fetchone()[0]
+    # 4. Total clinical cases
+    total_posts_count = 0
     c.execute("SELECT COUNT(*) FROM cases")
     total_cases_count = c.fetchone()[0]
-    total_community_cases_count = total_posts_count + total_cases_count
 
     # 5. Total AI Consultations
     c.execute("SELECT COUNT(*) FROM chat_messages WHERE role = 'user'")
     total_ai_consults_count = c.fetchone()[0]
 
     # Per-user activity statistics lookup
-    c.execute("SELECT user_id, COUNT(*) as cnt FROM community_posts GROUP BY user_id")
-    user_posts_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+    user_posts_map = {}
 
     c.execute("SELECT user_id, COUNT(*) as cnt FROM cases GROUP BY user_id")
     user_cases_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
 
-    c.execute("SELECT user_id, COUNT(*) as cnt FROM community_comments GROUP BY user_id")
-    user_comments_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+    user_comments_map = {}
 
     c.execute("SELECT user_id, COUNT(*) as cnt FROM chat_messages WHERE role = 'user' GROUP BY user_id")
     user_chats_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
@@ -4401,37 +4436,10 @@ async def admin_page(request: Request):
     c.execute("SELECT * FROM support_tickets ORDER BY id DESC LIMIT 20")
     all_tickets = c.fetchall()
 
-    c.execute("SELECT * FROM community_subscriptions ORDER BY id DESC")
-    all_subs = c.fetchall()
 
     conn.close()
 
     subs_rows = ""
-    for s_row in all_subs:
-        s = dict(s_row)
-        receipt_btn = f'<a href="/uploads/{s["receipt_image"]}" target="_blank" class="btn btn-outline" style="font-size: 0.75rem; padding: 2px 8px;">🖼️ عرض الإيصال</a>' if s.get("receipt_image") else "<span style='color: var(--danger); font-size: 0.75rem;'>لا يوجد إيصال</span>"
-        status_val = s.get("status", "pending")
-        if status_val == "approved":
-            sub_status_badge = '<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">معتمد ومفعل ✅</span>'
-        elif status_val == "rejected":
-            sub_status_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">مرفوض ❌</span>'
-        else:
-            sub_status_badge = '<span style="background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">معلق قيد المراجعة ⏳</span>'
-
-        subs_rows += f"""
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); font-weight: 700;">#{s['id']}<br><span style="font-size: 0.75rem; color: var(--text-muted);">{s['created_at']}</span></td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">د. {s['doctor_name']} ({s['doctor_email']})<br><span style="font-size: 0.78rem; color: var(--text-muted);">{s['doctor_phone']} | قيد: {s['syndicate_id']} | {s['country']}</span></td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><strong>{s['plan_name']}</strong><br><span style="color: var(--accent); font-weight: 700;">{s['amount']} {s.get('currency', 'EGP')}</span></td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.82rem;">{s['payment_method']}<br><span style="font-family: monospace; background: var(--bg); padding: 1px 4px; border-radius: 4px;">{s['transaction_ref']}</span></td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{receipt_btn}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border);">{sub_status_badge}</td>
-            <td style="padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap;">
-                <a href="/admin/community/approve/{s['id']}" class="btn btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">✅ قبول وتفعيل</a>
-                <a href="/admin/community/reject/{s['id']}" class="btn btn-outline" style="color: var(--danger); font-size: 0.75rem; padding: 4px 8px;">❌ رفض</a>
-            </td>
-        </tr>
-        """
 
     # Comprehensive Users Rows & Client Modals
     users_rows = ""
@@ -4607,7 +4615,7 @@ async def admin_page(request: Request):
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <a href="/admin/export-users" class="btn btn-primary" style="font-weight: 700; text-decoration: none;">📥 تصدير بيانات الأطباء (Excel / CSV)</a>
-            <a href="/community" class="btn btn-outline" target="_blank" style="font-weight: 700; text-decoration: none;">🌐 مجتمع VetBook</a>
+            
         </div>
     </div>
 
@@ -4647,8 +4655,8 @@ async def admin_page(request: Request):
                 <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">الحالات واستشارات AI</span>
                 <span style="font-size: 1.5rem;">🤖</span>
             </div>
-            <div style="font-size: 2.1rem; font-weight: 800; color: #7c3aed; margin: 6px 0;">{total_community_cases_count + total_ai_consults_count}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">{total_community_cases_count} حالة + {total_ai_consults_count} استشارة AI</div>
+            <div style="font-size: 2.1rem; font-weight: 800; color: #7c3aed; margin: 6px 0;">{total_cases_count + total_ai_consults_count}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{total_cases_count} حالة سريرية + {total_ai_consults_count} استشارة AI</div>
         </div>
     </div>
 
@@ -4706,146 +4714,7 @@ async def admin_page(request: Request):
         </div>
     </div>
 
-    <!-- 3. Community Subscriptions Table -->
-    <div class="card" style="border-top: 4px solid #7c3aed; margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: #7c3aed;">💳 اشتراكات مجتمع الأطباء البيطريين وإيصالات السداد</h2>
-            <a href="/community" target="_blank" class="btn btn-outline" style="font-size: 0.8rem;">👥 فتح ملتقى الأطباء</a>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">مراجعة إشعارات وإيصالات التحويل البنكي وفودافون كاش وإنستاباي.</p>
-
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 0.88rem;">
-                <thead>
-                    <tr style="background: var(--bg);">
-                        <th style="padding: 10px;">الطلب والتاريخ</th>
-                        <th style="padding: 10px;">الطبيب والبيانات</th>
-                        <th style="padding: 10px;">الباقة والمبلغ</th>
-                        <th style="padding: 10px;">وسيلة الدفع والمرجع</th>
-                        <th style="padding: 10px;">إيصال التحويل</th>
-                        <th style="padding: 10px;">حالة الطلب</th>
-                        <th style="padding: 10px;">قرار الإدارة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {subs_rows if subs_rows else "<tr><td colspan='7' style='text-align: center; padding: 20px; color: var(--text-muted);'>لا توجد اشتراكات مجتمع مقدمة حالياً.</td></tr>"}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 4. Support Tickets -->
-    <div class="card" style="border-top: 4px solid #0284c7; margin-bottom: 24px;">
-        <h2 style="margin-top: 0; font-size: 1.3rem; color: #0284c7;">🎧 {t('admin_tab_tickets')}</h2>
-        {tickets_rows if tickets_rows else "<p style='color: var(--text-muted);'>لا توجد تذاكر دعم فني واردة حالياً.</p>"}
-    </div>
-
-    <!-- 5. Settings Card -->
-    <div class="card" style="border-top: 4px solid #10b981; margin-bottom: 24px;">
-        <h2 style="margin-top: 0; font-size: 1.3rem; color: #10b981;">⚙️ إعدادات البريد والرسائل والذكاء الاصطناعي (Settings)</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-            بيانات الربط المباشر للخوادم ومفاتيح الـ API:
-        </p>
-
-        <form action="/admin/settings" method="POST">
-            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">✉️ إعدادات خادم البريد الإلكتروني (Gmail SMTP / Resend)</h3>
-            <div class="grid-2" style="margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">خادم البريد (SMTP Host):</label>
-                    <input type="text" name="smtp_host" value="{cfg_smtp_host}" placeholder="smtp.gmail.com" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-                </div>
-                <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">المنفذ (Port):</label>
-                    <input type="text" name="smtp_port" value="{cfg_smtp_port}" placeholder="587 أو 465" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-                </div>
-            </div>
-            <div class="grid-2" style="margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">بريد الإرسال (SMTP User):</label>
-                    <input type="text" name="smtp_user" value="{cfg_smtp_user}" placeholder="your_clinic@gmail.com" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-                </div>
-                <div>
-                    <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">كود التطبيق السري (App Password):</label>
-                    <input type="password" name="smtp_pass" value="{cfg_smtp_pass}" placeholder="••••••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-                </div>
-            </div>
-
-            <div style="margin-bottom: 14px;">
-                <label style="display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">أو مفتاح Resend API:</label>
-                <input type="password" name="resend_api_key" value="{cfg_resend_api_key}" placeholder="re_••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-
-            <h3 style="font-size: 1.05rem; margin-bottom: 8px; color: var(--primary);">🤖 مفتاح الذكاء الاصطناعي (Groq AI API Key)</h3>
-            <div style="margin-bottom: 16px;">
-                <input type="password" name="ai_api_key" value="{cfg_ai_api_key}" placeholder="gsk_••••••••••••" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-weight: 800;">
-                💾 حفظ الإعدادات وتفعيل الخدمة فوراً
-            </button>
-        </form>
-
-        <!-- Test Email Instant Sender Form -->
-        <form action="/admin/test-email" method="POST" style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <span style="font-weight: 800; font-size: 0.92rem; color: var(--primary);">🧪 تجربة الإرسال الآن:</span>
-            <input type="email" name="test_to" required placeholder="اكتب بريدك الشخصي هنا لإرسال تجربة" style="flex: 1; min-width: 240px; padding: 9px 12px; border: 1.5px solid var(--primary); border-radius: 6px;">
-            <button type="submit" class="btn btn-accent" style="padding: 9px 18px; font-weight: 800;">📨 إرسال رسالة تجريبية الآن</button>
-        </form>
-    </div>
-
-    <!-- 6. Broadcast Center -->
-    <div class="card" style="border-top: 4px solid var(--primary);">
-        <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--primary);">📢 {t('admin_tab_broadcast')}</h2>
-        <form action="/admin/broadcast" method="POST">
-            <div class="grid-2" style="margin-bottom: 12px;">
-                <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 4px;">عنوان التنبيه أو التحديث</label>
-                    <input type="text" name="title" required placeholder="مثال: تنبيه وبائي: تفشي مرض الحمى القلاعية" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                </div>
-                <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 4px;">الدولة المستهدفة</label>
-                    <select name="target_country" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                        <option value="ALL">كافة الدول المسجلة (ALL)</option>
-                        <option value="مصر">مصر</option>
-                        <option value="السعودية">السعودية</option>
-                        <option value="الإمارات">الإمارات</option>
-                        <option value="الأردن">الأردن</option>
-                        <option value="السودان">السودان</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; font-weight: 700; margin-bottom: 4px;">نص الإشعار الإكلينيكي</label>
-                <textarea name="message" rows="3" required placeholder="اكتب نص الإشعار العام..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;"></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-accent">🚀 {t('admin_broadcast_send')}</button>
-        </form>
-
-        <div style="margin-top: 20px;">
-            <h4 style="margin-bottom: 10px;">الإشعارات النشطة السابقة:</h4>
-            {notifs_rows}
-        </div>
-    </div>
-
-    <!-- 7. Interactive Full User Details Modal -->
-    <div id="user-details-modal" class="modal">
-        <div class="modal-content" style="max-width: 620px;">
-            <button class="modal-close" onclick="closeUserDetailsModal()">✕</button>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
-                <div id="modal-user-avatar" style="width: 52px; height: 52px; border-radius: 50%; background: var(--ai-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; flex-shrink: 0;">V</div>
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <h2 id="modal-user-name" style="margin: 0; font-size: 1.35rem; color: var(--primary);">د. اسم الطبيب</h2>
-                        <span id="modal-user-role-badge"></span>
-                        <span id="modal-user-status-badge"></span>
-                    </div>
-                    <div id="modal-user-id" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">User ID: #000</div>
-                </div>
-            </div>
+    
 
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
                 <div style="background: var(--bg); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);">
@@ -4872,7 +4741,7 @@ async def admin_page(request: Request):
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
                     <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
                         <div id="modal-user-cases-cnt" style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">0</div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">حالات ومنشورات</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">حالات سريرية</div>
                     </div>
                     <div style="background: var(--card-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
                         <div id="modal-user-comments-cnt" style="font-size: 1.3rem; font-weight: 800; color: #0284c7;">0</div>
@@ -5154,13 +5023,18 @@ async def process_register(
 
     id_card_filename = ""
     if id_card_image and id_card_image.filename:
-        id_card_filename = f"id_card_{int(datetime.now().timestamp())}_{id_card_image.filename.replace(' ', '_')}"
-        save_path = os.path.join(UPLOAD_DIR, id_card_filename)
         try:
-            with open(save_path, "wb") as buffer:
-                shutil.copyfileobj(id_card_image.file, buffer)
+            from media_storage import store_media_permanently
+            raw_id_bytes = await id_card_image.read()
+            if raw_id_bytes:
+                m_res = store_media_permanently(
+                    conn, raw_id_bytes, id_card_image.filename,
+                    content_type=getattr(id_card_image, "content_type", ""),
+                    owner_id=0, is_private=1, allow_video=False
+                )
+                id_card_filename = m_res["filename"]
         except Exception:
-            pass
+            id_card_filename = ""
 
     pwd_hash = hash_password(password)
     clean_clinic = clinic_name.strip() if clinic_name else "طبيب / طالب بيطري"
@@ -5171,6 +5045,11 @@ async def process_register(
     VALUES (?, ?, ?, 'vet', ?, ?, 'pending', 0, ?, ?, ?, ?, 1, '', ?)
     """, (name.strip(), clean_email, pwd_hash, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), id_card_filename, country, clean_clinic, syndicate_id.strip(), phone.strip(), clean_pref_lang))
     new_user_id = c.lastrowid
+    if id_card_filename and new_user_id:
+        try:
+            c.execute("UPDATE media_files SET owner_id = ? WHERE filename = ?", (new_user_id, id_card_filename))
+        except Exception:
+            pass
     conn.commit()
     conn.close()
 
@@ -5207,16 +5086,16 @@ async def login_page(request: Request, redirect: str = "/"):
                 <p style="color: var(--text-muted); font-size: 0.88rem;">VetMind AI Enterprise Decision Support Suite</p>
             </div>
 
-            <form action="/login" method="POST">
+            <form action="/login" method="POST" autocomplete="off">
                 <input type="hidden" name="redirect_url" value="{redirect}">
                 <div style="margin-bottom: 14px;">
                     <label style="display: block; font-weight: 700; margin-bottom: 5px;">✉️ {t('login_email')}</label>
-                    <input type="email" name="email" required placeholder="doctor@vetmind.ai" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <input type="email" name="email" id="login_email" value="" required placeholder="" autocomplete="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                 </div>
 
                 <div style="margin-bottom: 18px;">
                     <label style="display: block; font-weight: 700; margin-bottom: 5px;">🔒 {t('login_password')}</label>
-                    <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <input type="password" name="password" id="login_password" value="" required placeholder="" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;">
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1.05rem; justify-content: center;">
@@ -5251,7 +5130,8 @@ async def process_login(request: Request, email: str = Form(...), password: str 
     u_pref = (u_dict.get("preferred_lang") or "ar").strip().lower()
     user_lang = u_pref if u_pref in SUPPORTED_LANGUAGES else "ar"
     conn.close()
-    resp = RedirectResponse("/", status_code=303)
+    safe_target = redirect_url if (redirect_url and redirect_url.startswith("/") and not redirect_url.startswith("//") and "/login" not in redirect_url) else "/"
+    resp = RedirectResponse(safe_target, status_code=303)
     token = make_session_token(user["id"])
     resp.set_cookie(key="vetmind_session", value=token, max_age=31536000, httponly=True)
     resp.set_cookie(key="vetmind_lang", value=user_lang, max_age=31536000, path="/", samesite="lax")
@@ -5281,14 +5161,24 @@ async def add_case(
     user_id = user["id"] if user else 0
     user_country = user.get("country", "مصر") if user else "مصر"
 
+    conn = get_db()
     image_filename = ""
     image_full_path = None
     if image and image.filename:
-        safe_name = f"{int(datetime.now().timestamp())}_{image.filename.replace(' ', '_')}"
-        image_full_path = os.path.join(UPLOAD_DIR, safe_name)
-        with open(image_full_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        image_filename = safe_name
+        try:
+            from media_storage import store_media_permanently
+            raw_case_img = await image.read()
+            if raw_case_img:
+                m_res = store_media_permanently(
+                    conn, raw_case_img, image.filename,
+                    content_type=getattr(image, "content_type", ""),
+                    owner_id=user_id, is_private=0, allow_video=False
+                )
+                image_filename = m_res["filename"]
+                image_full_path = os.path.join(UPLOAD_DIR, image_filename)
+        except Exception:
+            image_filename = ""
+            image_full_path = None
 
     vision_res = analyze_image_locally(image_full_path) if image_full_path else None
     
@@ -5306,7 +5196,6 @@ async def add_case(
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    conn = get_db()
     c = conn.cursor()
     c.execute("""
     INSERT INTO cases (animal_name, species, age, weight, symptoms, duration, image_filename, triage_level, triage_note, created_at, analysis_json, user_id)
@@ -5332,6 +5221,9 @@ async def view_case(request: Request, case_id: int):
 
     if not case_row:
         raise HTTPException(status_code=404, detail="الحالة السريرية غير موجودة")
+    # Strict per-user private data access
+    if not user or (case_row["user_id"] != user["id"] and not user.get("is_admin") and user.get("role") != "admin"):
+        raise HTTPException(status_code=403, detail="هذه الحالة السريرية خاصة ومحمية للمستخدم صاحب السجل فقط.")
 
     analysis = json.loads(case_row["analysis_json"]) if case_row["analysis_json"] else {}
     vision = analysis.get("vision_metrics")
@@ -5471,10 +5363,16 @@ async def view_case(request: Request, case_id: int):
     return HTMLResponse(content=get_base_html(f"تقرير حالة #{case_row['id']}", body, user, lang), media_type="text/html; charset=utf-8")
 
 @app.post("/delete/{case_id}")
-async def delete_case(case_id: int):
+async def delete_case(request: Request, case_id: int):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
     conn = get_db()
     c = conn.cursor()
-    c.execute("DELETE FROM cases WHERE id = ?", (case_id,))
+    if user.get("is_admin") or user.get("role") == "admin":
+        c.execute("DELETE FROM cases WHERE id = ?", (case_id,))
+    else:
+        c.execute("DELETE FROM cases WHERE id = ? AND user_id = ?", (case_id, user["id"]))
     conn.commit()
     conn.close()
     return RedirectResponse("/", status_code=303)
@@ -6449,7 +6347,7 @@ async def contraindications_page(
 
             <!-- Reference Citation -->
             <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border); padding-top: 8px; word-break: break-word;">
-                📚 <strong>المراجع العلمية المعتمدة:</strong> {item.get('references', 'Plumb\'s Veterinary Drug Handbook & BSAVA')}
+                📚 <strong>المراجع العلمية المعتمدة:</strong> {item.get("references", "Plumb's Veterinary Drug Handbook & BSAVA")}
             </div>
         </div>
         """
@@ -6561,7 +6459,7 @@ async def universal_search_page(
         ("references", "📚 المراجع", f"({counts.get('references', 0)})" if clean_q else ""),
         ("tools", "🛠️ الأدوات الإكلينيكية", f"({counts.get('tools', 0)})" if clean_q else ""),
         ("contraindications", "⛔ الممنوعات", f"({counts.get('contraindications', 0)})" if clean_q else ""),
-        ("community", "🌐 VetBook", f"({counts.get('community', 0)})" if clean_q else ""),
+        
         ("clinic", "🏥 العيادة", f"({counts.get('clinic', 0)})" if clean_q else "")
     ]
 
@@ -6609,10 +6507,7 @@ async def universal_search_page(
             border_c = "#dc2626"
             badge_bg = "#fef2f2"
             badge_color = "#b91c1c"
-        elif t_type == "community":
-            border_c = "#0d9488"
-            badge_bg = "#f0fdfa"
-            badge_color = "#0f766e"
+
         else:
             border_c = "#eab308"
             badge_bg = "#fefce8"
@@ -6672,7 +6567,7 @@ async def universal_search_page(
                     🔍 البحث الشامل في VetMind AI
                 </h1>
                 <p style="margin: 0 0 16px 0; color: #e0f2fe; font-size: clamp(0.85rem, 2.5vw, 0.95rem); line-height: 1.6;">
-                    ابحث عن أي دواء، مرجع علمي، أداة حسابية سريرية، ممنوعات بيطرية، حالة مرضية، أو منشور مجتمعي داخل التطبيق في مكان واحد وبنتائج فورية.
+                    ابحث عن أي دواء، مرجع علمي، أداة حسابية سريرية، ممنوعات بيطرية، أو حالة سريرية داخل عيادتك في مكان واحد وبنتائج فورية.
                 </p>
 
                 <!-- Search Input Form -->
@@ -7811,10 +7706,13 @@ async def save_admin_settings_endpoint(
         ("smtp_host", smtp_host.strip()),
         ("smtp_port", smtp_port.strip()),
         ("smtp_user", smtp_user.strip()),
-        ("smtp_pass", smtp_pass.strip()),
-        ("resend_api_key", resend_api_key.strip()),
-        ("ai_api_key", ai_api_key.strip())
     ]
+    if smtp_pass.strip() and not smtp_pass.strip().startswith("••"):
+        pairs.append(("smtp_pass", smtp_pass.strip()))
+    if resend_api_key.strip() and not resend_api_key.strip().startswith("••"):
+        pairs.append(("resend_api_key", resend_api_key.strip()))
+    if ai_api_key.strip() and not ai_api_key.strip().startswith("••"):
+        pairs.append(("ai_api_key", ai_api_key.strip()))
     for k, v in pairs:
         c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (k, v))
     conn.commit()
@@ -7837,3 +7735,27 @@ async def test_admin_email_endpoint(request: Request, test_to: str = Form(...)):
         err_text = res.get("status", "فشل غير معروف")
         err_encoded = urllib.parse.quote(err_text)
         return RedirectResponse(f"/admin?test_email=error&msg={err_encoded}", status_code=303)
+
+
+@app.get("/api/storage-health")
+async def api_storage_health():
+    from db_engine import get_storage_status
+    status = get_storage_status()
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM cases")
+        cases_cnt = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM users")
+        users_cnt = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM local_products")
+        drugs_cnt = c.fetchone()[0]
+        conn.close()
+        status["db_connected"] = True
+        status["cases_count"] = cases_cnt
+        status["users_count"] = users_cnt
+        status["products_count"] = drugs_cnt
+    except Exception as e:
+        status["db_connected"] = False
+        status["error"] = str(e)
+    return JSONResponse(status, status_code=200 if status.get("db_connected") else 503)

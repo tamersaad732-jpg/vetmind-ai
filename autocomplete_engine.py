@@ -7,10 +7,8 @@ Provides instantaneous fuzzy & substring search suggestions for:
 - Clinical Indications & Categories (التصنيفات العلاجية)
 """
 import os
-import sqlite3
 from dosage_engine import get_drug_concise_function
-
-DB_PATH = os.path.join(os.path.dirname(__file__), "vetmind.db")
+from db_engine import get_db
 
 def get_autocomplete_suggestions(query: str, category: str = "", country: str = "", limit: int = 10) -> list:
     """
@@ -21,8 +19,7 @@ def get_autocomplete_suggestions(query: str, category: str = "", country: str = 
     if not clean_q or len(clean_q) < 1:
         return []
 
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = get_db()
     c = conn.cursor()
 
     q_pattern = f"%{clean_q}%"

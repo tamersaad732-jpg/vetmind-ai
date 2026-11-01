@@ -29,12 +29,8 @@ if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
 
 
 def get_db_connection():
-    target = DB_PATH
-    if os.environ.get("VERCEL") and os.path.exists("/tmp/vetmind.db"):
-        target = "/tmp/vetmind.db"
-    conn = sqlite3.connect(target)
-    conn.row_factory = sqlite3.Row
-    return conn
+    from db_engine import get_db
+    return get_db()
 
 
 def get_setting(key: str, default: str = "") -> str:

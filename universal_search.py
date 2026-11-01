@@ -7,10 +7,9 @@ Searches comprehensively across:
 3. 30 Clinical Tools & Calculators (interactive_tools)
 4. Veterinary Contraindications & Toxicities (contraindications_data)
 5. Clinic Records & Cases (cases, appointments, animals)
-6. VetBook Community Posts & Cases (community_posts)
 """
 import os
-import sqlite3
+from db_engine import get_db
 from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "vetmind.db")
@@ -187,15 +186,6 @@ CLINICAL_TOOLS_CATALOG = [
         "url": "/clinic",
         "icon": "🏥",
         "summary": "إدارة كشوفات وحالات الحيوانات وطباعة الروشتات ومتابعة التطعيمات."
-    },
-    {
-        "id": "community",
-        "title": "مجتمع الأطباء البيطريين VetBook (Veterinary Social Network)",
-        "keywords": ["مجتمع", "فيسبوك", "بوستات", "حالات سريرية", "زملاء", "vetbook", "community"],
-        "category": "مجتمع الأطباء",
-        "url": "/community",
-        "icon": "🌐",
-        "summary": "الشبكة الاجتماعية والمهنية التفاعلية الأولى للأطباء البيطريين."
     }
 ]
 
@@ -207,7 +197,6 @@ def search_all_platform(query: str, category_filter: str = "all", limit: int = 3
     - Tools
     - Contraindications
     - Clinic records
-    - Community posts
     """
     clean_q = (query or "").strip().lower()
     if not clean_q:
@@ -218,8 +207,7 @@ def search_all_platform(query: str, category_filter: str = "all", limit: int = 3
         "references": [],
         "tools": [],
         "contraindications": [],
-        "community": [],
-        "clinic": []
+                "clinic": []
     }
 
     # 1. Search Clinical Tools & Hubs
@@ -306,10 +294,9 @@ def search_all_platform(query: str, category_filter: str = "all", limit: int = 3
     except Exception as e:
         pass
 
-    # 4. Search Database: Drugs, Clinic & Community
+    # 4. Search Database: Drugs & Clinic Records
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
+        conn = get_db()
         c = conn.cursor()
 
         # A) Drugs (local_products)
@@ -336,30 +323,7 @@ def search_all_platform(query: str, category_filter: str = "all", limit: int = 3
                 "score": 9
             })
 
-        # B) Community Posts (community_posts)
-        try:
-            c.execute("""
-                SELECT id, title, content, author_name, category, likes_count
-                FROM community_posts
-                WHERE title LIKE ? OR content LIKE ?
-                ORDER BY likes_count DESC, id DESC
-                LIMIT 8
-            """, (q_like, q_like))
-            comm_rows = c.fetchall()
-            for cp in comm_rows:
-                results["community"].append({
-                    "type": "community",
-                    "badge": "منشور مجتمع VetBook 🌐",
-                    "title": cp["title"] or f"حالة سريرية من د. {cp['author_name']}",
-                    "subtitle": f"الكاتب: د. {cp['author_name']} • القسم: {cp['category']}",
-                    "description": (cp["content"] or "")[:150] + "...",
-                    "url": f"/community#post-{cp['id']}",
-                    "icon": "🌐",
-                    "score": 6
-                })
-        except:
-            pass
-
+        
         # C) Clinic Cases (cases)
         try:
             c.execute("""
@@ -459,8 +423,7 @@ def get_universal_autocomplete_suggestions(query: str, limit: int = 10) -> list:
 
     # 4. Matching Drugs from DB
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
+        conn = get_db()
         c = conn.cursor()
         c.execute("""
             SELECT trade_name, active_ingredient, category
