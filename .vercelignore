@@ -1,0 +1,16 @@
+# Vercel Deployment Ignore Rules
+# Exclude heavy binaries, reference PDFs, uploads, and local tools from Serverless Lambda bundle
+
+static/reference_docs/*.pdf
+static/reference_docs/*.PDF
+uploads/
+scratch/
+bin/
+*.bat
+*.zip
+*.lnk
+*.pyc
+__pycache__/
+.git/
+.github/
+.gemini/

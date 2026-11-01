@@ -33,17 +33,20 @@ daemon.log
 Thumbs.db
 *.tmp
 bin/
+scratch/
 setup_git.py
 check_layout.py
 test_live_html.py
 
-static/reference_docs/
+# Reference PDFs (Keep HTML content, ignore large 100MB+ PDFs for git/cloud limits)
+static/reference_docs/*.pdf
+static/reference_docs/*.PDF
 static/reference_docs/*.zip
 
-?????_???????_???????.bat
-
-*.bat
-backups_vetbook_upgrade/
-
-
+# Uploaded user media
 uploads/
+
+# Batches and archives
+*.bat
+*.zip
+backups_vetbook_upgrade/
