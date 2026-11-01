@@ -1,127 +1,125 @@
-import os
-import re
-import json
-import shutil
-import sqlite3
-from datetime import datetime, timedelta
-from fastapi import APIRouter, Request, Form, File, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+# -*- coding: utf-8 -*-
+"""
+VetMind AI - VetBook Social Network & Clinical Case Exchange
+Full-Featured Veterinary Social Network inspired by modern social platforms (Facebook UX),
+tailored specifically for veterinarians, clinic owners, breeders, and veterinary institutions.
 
-from vetbook_algorithms import (
-    calculate_edgerank_score,
-    get_people_you_may_know,
-    get_trending_topics,
-    get_recommended_groups,
-    get_similar_cases
-)
+Features:
+- Main Feed & Smart Algorithmic Relevance (EdgeRank)
+- Clinical Post Composer (Multi-photo grid, video, demographics, urgent triage, privacy audience)
+- Specialized Reactions & Threaded Nested Comments
+- Real Social Graph: Friend Requests, Follows, Blocks, Mutual Colleagues
+- Veterinary Pages & Institutional Profiles (Clinics, Hospitals, Labs)
+- Specialized Clinical Groups & Societies
+- Conferences, Seminars & Clinical Events (RSVP)
+- In-App Real-Time Social Notifications
+- Deep Universal VetBook Search
+- Post & Comment Editing, Deleting, Bookmarking, and Direct Sharing
+- Profile Management with Cover & Avatar
+- Clinical Content Reporting & Admin Moderation Panel
+- Offline Resilience & Two-Way LocalStorage Sync
+- STRICT: NO Messenger / NO Private DMs
+- STRICT: ZERO AI Assistant inside VetBook (Clinical AI remains in diagnostic tools)
+"""
+
+import os
+import random
+import json
+import uuid
+import sqlite3
+import shutil
+from datetime import datetime, date, timedelta
+from fastapi import APIRouter, Request, Form, File, UploadFile, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 router = APIRouter()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
-if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
-    tmp_db = "/tmp/vetmind.db"
-    if not os.path.exists(tmp_db):
-        if os.path.exists(DB_PATH):
-            try:
-                shutil.copy2(DB_PATH, tmp_db)
-            except Exception:
-                pass
-    if os.path.exists(tmp_db):
-        DB_PATH = tmp_db
-    UPLOAD_DIR = "/tmp/uploads"
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-try:
+if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
+    UPLOAD_DIR = "/tmp/uploads"
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-except Exception:
-    pass
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+    if os.environ.get("VERCEL"):
+        tmp_db = "/tmp/vetmind.db"
+        if not os.path.exists(tmp_db):
+            shutil.copy2(DB_PATH, tmp_db)
+        conn = sqlite3.connect(tmp_db, timeout=20.0)
+    else:
+        conn = sqlite3.connect(DB_PATH, timeout=20.0)
     conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("PRAGMA journal_mode=WAL;")
-    except Exception:
-        pass
     return conn
 
-# ==============================================================================
-# MULTI-LAYER COMMUNITY POSTS PERSISTENCE & GLOBAL SYNC ENGINE
-# ==============================================================================
-COMMUNITY_SYNC_FILE = os.path.join(UPLOAD_DIR, "community_posts_sync.json")
-COMMUNITY_BACKUP_ALT = os.path.join(BASE_DIR, "static", "community_posts_sync.json")
-
-def get_sync_file_path():
-    try:
-        if os.path.exists(COMMUNITY_SYNC_FILE):
-            return COMMUNITY_SYNC_FILE
-        if os.path.exists(COMMUNITY_BACKUP_ALT):
-            return COMMUNITY_BACKUP_ALT
-        return COMMUNITY_SYNC_FILE
-    except Exception:
-        return "/tmp/community_posts_sync.json"
+# Multi-Layer JSON Backup Sync for Post Persistence
+BACKUP_SYNC_FILE = os.path.join(UPLOAD_DIR, "community_posts_sync.json")
+STATIC_BACKUP_FILE = os.path.join(BASE_DIR, "static", "community_posts_sync.json")
 
 def save_post_to_backup_sync(post_dict: dict):
-    """Permanently backs up a post to JSON to survive serverless container lifecycles."""
     try:
-        fpath = get_sync_file_path()
-        existing = []
-        if os.path.exists(fpath):
-            with open(fpath, "r", encoding="utf-8") as f:
-                existing = json.load(f)
-        # Avoid duplicates by title + created_at
-        exists = any(
-            (p.get("title") == post_dict.get("title") and p.get("created_at") == post_dict.get("created_at"))
-            for p in existing
-        )
-        if not exists:
-            existing.insert(0, post_dict)
-            with open(fpath, "w", encoding="utf-8") as f:
-                json.dump(existing[:200], f, ensure_ascii=False, indent=2)
-            if fpath != COMMUNITY_BACKUP_ALT:
+        posts = []
+        for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
+            if os.path.exists(p_file):
                 try:
-                    os.makedirs(os.path.dirname(COMMUNITY_BACKUP_ALT), exist_ok=True)
-                    with open(COMMUNITY_BACKUP_ALT, "w", encoding="utf-8") as f2:
-                        json.dump(existing[:200], f2, ensure_ascii=False, indent=2)
+                    with open(p_file, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, list):
+                            posts = loaded
+                            break
                 except Exception:
                     pass
+        p_clean = {k: v for k, v in post_dict.items() if isinstance(v, (str, int, float, bool)) or v is None}
+        posts = [p for p in posts if p.get("title") != p_clean.get("title")]
+        posts.insert(0, p_clean)
+        posts = posts[:200]
+        for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
+            try:
+                os.makedirs(os.path.dirname(p_file), exist_ok=True)
+                with open(p_file, "w", encoding="utf-8") as f:
+                    json.dump(posts, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
     except Exception as e:
         print("save_post_to_backup_sync error:", e)
 
 def sync_posts_from_backup_sync(conn):
-    """Restores any backed up posts into SQLite community_posts table."""
     try:
-        fpath = get_sync_file_path()
-        if not os.path.exists(fpath) and os.path.exists(COMMUNITY_BACKUP_ALT):
-            fpath = COMMUNITY_BACKUP_ALT
-        if not os.path.exists(fpath):
-            return
-        with open(fpath, "r", encoding="utf-8") as f:
-            backup_posts = json.load(f)
-        if not backup_posts:
+        posts = []
+        for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
+            if os.path.exists(p_file):
+                try:
+                    with open(p_file, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, list) and len(loaded) > 0:
+                            posts = loaded
+                            break
+                except Exception:
+                    pass
+        if not posts:
             return
         c = conn.cursor()
         c.execute("SELECT title, created_at FROM community_posts")
         existing_keys = set((r[0], r[1]) for r in c.fetchall())
-
-        for p in backup_posts:
+        for p in posts:
             key = (p.get("title"), p.get("created_at"))
             if key not in existing_keys and p.get("title") and p.get("content"):
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
                     category, title, content, is_urgent, species, breed, age, weight,
-                    gender, symptoms, medications, group_id, image_path, video_path,
-                    media_type, quality_score, virality_score, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    gender, symptoms, medications, group_id, page_id, image_path, video_path,
+                    media_type, quality_score, virality_score, privacy, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?, ?)
                 """, (
                     p.get("user_id", 4),
                     p.get("author_name", "طبيب بيطري"),
                     p.get("author_specialty", "طب وجراحة الحيوان"),
                     p.get("author_country", "مصر"),
                     p.get("category", "case_study"),
-                    p.get("title", "حالة سريرية"),
+                    p.get("title", ""),
                     p.get("content", ""),
                     p.get("is_urgent", 0),
                     p.get("species", ""),
@@ -132,11 +130,12 @@ def sync_posts_from_backup_sync(conn):
                     p.get("symptoms", ""),
                     p.get("medications", ""),
                     p.get("group_id", 0),
+                    p.get("page_id", 0),
                     p.get("image_path"),
                     p.get("video_path"),
                     p.get("media_type", "text"),
                     p.get("quality_score", 10),
-                    p.get("virality_score", 5.0),
+                    p.get("privacy", "public"),
                     p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 ))
                 existing_keys.add(key)
@@ -144,30 +143,36 @@ def sync_posts_from_backup_sync(conn):
     except Exception as e:
         print("sync_posts_from_backup_sync error:", e)
 
-def is_user_community_approved(user_dict: dict) -> bool:
-    """100% Free Community: Any logged-in registered veterinarian has complete access."""
-    return bool(user_dict)
-
 def init_community_schema():
     try:
         conn = get_db()
         c = conn.cursor()
         
-        # 1. Connection table for colleagues & followers (Replaces private DMs with public social networking)
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS community_connections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            colleague_id INTEGER NOT NULL,
-            status TEXT DEFAULT 'connected',
-            created_at TEXT NOT NULL,
-            UNIQUE(user_id, colleague_id)
-        )
-        """)
+        # 1. users table columns
+        c.execute("PRAGMA table_info(users)")
+        u_cols = set(r["name"] for r in c.fetchall())
+        user_new_cols = [
+            ("bio", "TEXT DEFAULT ''"),
+            ("cover_photo", "TEXT DEFAULT ''"),
+            ("reputation_score", "INTEGER DEFAULT 100"),
+            ("verified_vet", "INTEGER DEFAULT 1"),
+            ("specialty", "TEXT DEFAULT 'طب وجراحة الحيوان'"),
+            ("work_place", "TEXT DEFAULT ''"),
+            ("city", "TEXT DEFAULT ''"),
+            ("privacy_show_phone", "INTEGER DEFAULT 0"),
+            ("privacy_show_email", "INTEGER DEFAULT 0"),
+            ("privacy_posts_default", "TEXT DEFAULT 'public'")
+        ]
+        for col, ctype in user_new_cols:
+            if col not in u_cols:
+                try:
+                    c.execute(f"ALTER TABLE users ADD COLUMN {col} {ctype}")
+                except Exception:
+                    pass
 
-        # 2. Check community_posts columns
+        # 2. community_posts columns
         c.execute("PRAGMA table_info(community_posts)")
-        post_cols = [r["name"] for r in c.fetchall()]
+        post_cols = set(r["name"] for r in c.fetchall())
         cols_to_add = [
             ("is_urgent", "INTEGER DEFAULT 0"),
             ("species", "TEXT DEFAULT ''"),
@@ -182,13 +187,17 @@ def init_community_schema():
             ("lab_files", "TEXT DEFAULT ''"),
             ("extra_images", "TEXT DEFAULT ''"),
             ("group_id", "INTEGER DEFAULT 0"),
+            ("page_id", "INTEGER DEFAULT 0"),
+            ("shared_post_id", "INTEGER DEFAULT 0"),
             ("poll_data", "TEXT DEFAULT ''"),
-            ("ai_analysis", "TEXT DEFAULT ''"),
             ("shares_count", "INTEGER DEFAULT 0"),
             ("bookmarks_count", "INTEGER DEFAULT 0"),
             ("specialized_reactions_count", "INTEGER DEFAULT 0"),
             ("detailed_comments_count", "INTEGER DEFAULT 0"),
-            ("has_best_answer", "INTEGER DEFAULT 0")
+            ("has_best_answer", "INTEGER DEFAULT 0"),
+            ("privacy", "TEXT DEFAULT 'public'"),
+            ("is_edited", "INTEGER DEFAULT 0"),
+            ("updated_at", "TEXT DEFAULT ''")
         ]
         for col, ctype in cols_to_add:
             if col not in post_cols:
@@ -197,13 +206,14 @@ def init_community_schema():
                 except Exception:
                     pass
 
-        # 3. Check community_comments columns
+        # 3. community_comments columns
         c.execute("PRAGMA table_info(community_comments)")
-        cm_cols = [r["name"] for r in c.fetchall()]
+        cm_cols = set(r["name"] for r in c.fetchall())
         for col, ctype in [
             ("image_url", "TEXT DEFAULT ''"),
             ("is_best_answer", "INTEGER DEFAULT 0"),
-            ("is_ai_comment", "INTEGER DEFAULT 0")
+            ("likes_count", "INTEGER DEFAULT 0"),
+            ("parent_comment_id", "INTEGER DEFAULT 0")
         ]:
             if col not in cm_cols:
                 try:
@@ -211,22 +221,106 @@ def init_community_schema():
                 except Exception:
                     pass
 
-        # 4. Check users columns
-        c.execute("PRAGMA table_info(users)")
-        u_cols = [r["name"] for r in c.fetchall()]
-        for col, ctype in [
-            ("bio", "TEXT DEFAULT ''"),
-            ("cover_photo", "TEXT DEFAULT ''"),
-            ("reputation_score", "INTEGER DEFAULT 100"),
-            ("verified_vet", "INTEGER DEFAULT 1")
-        ]:
-            if col not in u_cols:
-                try:
-                    c.execute(f"ALTER TABLE users ADD COLUMN {col} {ctype}")
-                except Exception:
-                    pass
+        # 4. Friends Table (Real Social Network Friending)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_friends (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL,
+            receiver_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            UNIQUE(sender_id, receiver_id)
+        )
+        """)
 
-        # 5. Specialized Groups
+        # 5. Follows Table (Professional following)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_follows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            follower_id INTEGER NOT NULL,
+            following_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(follower_id, following_id)
+        )
+        """)
+
+        # 6. Blocks Table (Privacy & Safety)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_blocks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            blocker_id INTEGER NOT NULL,
+            blocked_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(blocker_id, blocked_id)
+        )
+        """)
+
+        # 7. Veterinary Pages Table (Clinics, Hospitals, Labs, Syndicates)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'clinic',
+            description TEXT DEFAULT '',
+            avatar_image TEXT DEFAULT '',
+            cover_image TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            email TEXT DEFAULT '',
+            website TEXT DEFAULT '',
+            address TEXT DEFAULT '',
+            city TEXT DEFAULT '',
+            country TEXT DEFAULT 'مصر',
+            is_verified INTEGER DEFAULT 0,
+            followers_count INTEGER DEFAULT 0,
+            owner_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """)
+
+        # 8. Page Followers Table
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_page_followers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            page_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(page_id, user_id)
+        )
+        """)
+
+        # 9. In-App Notifications Table
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            actor_id INTEGER,
+            actor_name TEXT,
+            actor_avatar TEXT,
+            action_type TEXT NOT NULL,
+            post_id INTEGER,
+            comment_id INTEGER,
+            message TEXT,
+            is_read INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+        """)
+
+        # 10. Reports Table (Content Moderation)
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reporter_id INTEGER NOT NULL,
+            target_type TEXT NOT NULL,
+            target_id INTEGER NOT NULL,
+            reason TEXT NOT NULL,
+            details TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL
+        )
+        """)
+
+        # 11. Groups Table
         c.execute("""
         CREATE TABLE IF NOT EXISTS community_groups (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -235,10 +329,13 @@ def init_community_schema():
             icon TEXT DEFAULT '🩺',
             category TEXT DEFAULT 'general',
             members_count INTEGER DEFAULT 1,
+            is_private INTEGER DEFAULT 0,
+            created_by INTEGER DEFAULT 1,
             created_at TEXT NOT NULL
         )
         """)
 
+        # 12. Group Members Table
         c.execute("""
         CREATE TABLE IF NOT EXISTS community_group_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -250,16 +347,42 @@ def init_community_schema():
         )
         """)
 
-        # 6. Events / Webinars
+        # 13. Events Table
         c.execute("""
         CREATE TABLE IF NOT EXISTS community_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
+            description TEXT DEFAULT '',
             date_time TEXT NOT NULL,
             location TEXT NOT NULL,
-            interested_count INTEGER DEFAULT 0
+            interested_count INTEGER DEFAULT 0,
+            created_by INTEGER DEFAULT 1,
+            created_at TEXT
         )
         """)
+
+        # 14. Event Attendees Table
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_event_attendees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'interested',
+            created_at TEXT NOT NULL,
+            UNIQUE(event_id, user_id)
+        )
+        """)
+
+        # Performance Indexes
+        c.execute("CREATE INDEX IF NOT EXISTS idx_posts_user ON community_posts(user_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_posts_privacy ON community_posts(privacy)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_posts_group ON community_posts(group_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_posts_page ON community_posts(page_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_comments_post ON community_comments(post_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_likes_post ON community_likes(post_id, user_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_friends_sender ON community_friends(sender_id, status)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_friends_receiver ON community_friends(receiver_id, status)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_notifs_user ON community_notifications(user_id, is_read)")
 
         # Seed groups if empty
         c.execute("SELECT count(*) FROM community_groups")
@@ -281,13 +404,28 @@ def init_community_schema():
         c.execute("SELECT count(*) FROM community_events")
         if c.fetchone()[0] == 0:
             demo_events = [
-                ("مؤتمر الطب البيطري العربي للحيوانات الأليفة 2026", "الخميس 12 نوفمبر • 10:00 ص", "مركز المؤتمرات - القاهرة & بث مباشر", 87),
-                ("ويبينار: التحديثات العالمية في علاج مغص الخيول الحاد", "الإثنين 16 نوفمبر • 08:00 م", "Zoom Webinar Online", 134),
-                ("ورشة عمل: قراءة وفحص السونار البطني للحوامل في الأبقار", "السبت 21 نوفمبر • 02:00 م", "مستشفى الطب البيطري التعليمي", 62)
+                ("مؤتمر الطب البيطري العربي للحيوانات الأليفة 2026", "المؤتمر العلمي السنوي لمناقشة أحدث المستجدات في طب وجراحة الحيوانات الأليفة", "الخميس 12 نوفمبر • 10:00 ص", "مركز المؤتمرات - القاهرة & بث مباشر", 87),
+                ("ويبينار: التحديثات العالمية في علاج مغص الخيول الحاد", "ندوة سريرية تفاعلية حول التشخيص المبكر والتدخل الجراحي والدوائي لحالات المغص", "الإثنين 16 نوفمبر • 08:00 م", "Zoom Webinar Online", 134),
+                ("ورشة عمل: قراءة وفحص السونار البطني للحوامل في الأبقار", "تدريب تطبيقي على تشخيص العشار وتحديد جنس الجنين وأمراض الجهاز التناسلي", "السبت 21 نوفمبر • 02:00 م", "مستشفى الطب البيطري التعليمي", 62)
             ]
-            for e_title, e_dt, e_loc, e_int in demo_events:
-                c.execute("INSERT INTO community_events (title, date_time, location, interested_count) VALUES (?, ?, ?, ?)",
-                          (e_title, e_dt, e_loc, e_int))
+            for e_title, e_desc, e_dt, e_loc, e_int in demo_events:
+                c.execute("INSERT INTO community_events (title, description, date_time, location, interested_count, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                          (e_title, e_desc, e_dt, e_loc, e_int, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+        # Seed pages if empty
+        c.execute("SELECT count(*) FROM community_pages")
+        if c.fetchone()[0] == 0:
+            demo_pages = [
+                ("مستشفى العاصمة البيطري التخصصي", "hospital", "مستشفى بيطري متكامل مجهز بأحدث غرف العمليات الجراحية والرعاية المركزة ووحدة الأشعة المقطعية.", "01000000001", "info@capital-vet.com", "القاهرة الجديدة", 1, 312),
+                ("مركز ألفا لتشخيص وطب الخيول", "clinic", "مركز رائد في الفحص بالأمواج فوق الصوتية، المناظير، وتأهيل خيول السباق والقفز.", "01000000002", "alpha@equine-vet.com", "الجيزة - مصر", 1, 245),
+                ("مختبر بايوفيت للتحاليل الجزيئية PCR", "lab", "أدق التحاليل البيطرية، تشخيص الأمراض الوبائية والفيروسية، وفحص السموم الفطرية.", "01000000003", "lab@biovet.org", "الإسكندرية", 1, 189),
+                ("الجمعية الطبية البيطرية للحيوانات الأليفة", "syndicate", "منظمة علمية مهنية تهدف إلى ترقية المعايير الإكلينيكية لطب الحيوانات الصغيرة والتبادل العلمي.", "01000000004", "contact@vetsociety.org", "مصر والشرق الأوسط", 1, 520)
+            ]
+            for p_name, p_cat, p_desc, p_ph, p_em, p_city, p_ver, p_fol in demo_pages:
+                c.execute("""
+                INSERT INTO community_pages (name, category, description, phone, email, city, is_verified, followers_count, owner_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                """, (p_name, p_cat, p_desc, p_ph, p_em, p_city, p_ver, p_fol, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         conn.commit()
         conn.close()
@@ -295,6 +433,99 @@ def init_community_schema():
         print("Schema init notice:", e)
 
 init_community_schema()
+
+# Social Graph & Privacy Helpers
+def get_user_friends_ids(user_id: int, conn) -> set:
+    if not user_id:
+        return set()
+    c = conn.cursor()
+    c.execute("""
+    SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS friend_id
+    FROM community_friends
+    WHERE (sender_id = ? OR receiver_id = ?) AND status = 'accepted'
+    """, (user_id, user_id, user_id))
+    return set(r[0] for r in c.fetchall())
+
+def is_friend(user_a: int, user_b: int, conn) -> bool:
+    if not user_a or not user_b or user_a == user_b:
+        return False
+    c = conn.cursor()
+    c.execute("""
+    SELECT id FROM community_friends
+    WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
+      AND status = 'accepted'
+    """, (user_a, user_b, user_b, user_a))
+    return bool(c.fetchone())
+
+def get_friendship_info(viewer_id: int, target_id: int, conn) -> dict:
+    if not viewer_id or not target_id or viewer_id == target_id:
+        return {"status": "self", "request_id": None}
+    c = conn.cursor()
+    c.execute("""
+    SELECT id, sender_id, receiver_id, status FROM community_friends
+    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+    """, (viewer_id, target_id, target_id, viewer_id))
+    row = c.fetchone()
+    if not row:
+        return {"status": "none", "request_id": None}
+    status = row["status"]
+    if status == "accepted":
+        return {"status": "friends", "request_id": row["id"]}
+    if status == "pending":
+        if row["sender_id"] == viewer_id:
+            return {"status": "outgoing_pending", "request_id": row["id"]}
+        else:
+            return {"status": "incoming_pending", "request_id": row["id"]}
+    return {"status": "none", "request_id": None}
+
+def get_blocked_user_ids(user_id: int, conn) -> set:
+    if not user_id:
+        return set()
+    c = conn.cursor()
+    c.execute("""
+    SELECT blocked_id FROM community_blocks WHERE blocker_id = ?
+    UNION
+    SELECT blocker_id FROM community_blocks WHERE blocked_id = ?
+    """, (user_id, user_id))
+    return set(r[0] for r in c.fetchall())
+
+def create_notification(conn, user_id: int, actor_id: int, actor_name: str, actor_avatar: str, action_type: str, message: str, post_id: int = None, comment_id: int = None):
+    if not user_id or user_id == actor_id:
+        return
+    try:
+        c = conn.cursor()
+        c.execute("""
+        INSERT INTO community_notifications (
+            user_id, actor_id, actor_name, actor_avatar, action_type, post_id, comment_id, message, is_read, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        """, (user_id, actor_id, actor_name, actor_avatar, action_type, post_id, comment_id, message, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+    except Exception as e:
+        print("create_notification error:", e)
+
+def get_unread_notifications_count(user_id: int, conn) -> int:
+    if not user_id:
+        return 0
+    c = conn.cursor()
+    c.execute("SELECT count(*) FROM community_notifications WHERE user_id = ? AND is_read = 0", (user_id,))
+    return c.fetchone()[0]
+
+def get_incoming_friend_requests_count(user_id: int, conn) -> int:
+    if not user_id:
+        return 0
+    c = conn.cursor()
+    c.execute("SELECT count(*) FROM community_friends WHERE receiver_id = ? AND status = 'pending'", (user_id,))
+    return c.fetchone()[0]
+
+def can_view_post(post: dict, viewer_id: int, friends_set: set, is_admin: bool) -> bool:
+    if is_admin or post.get("user_id") == viewer_id:
+        return True
+    privacy = post.get("privacy", "public")
+    if privacy == "only_me":
+        return False
+    if privacy == "friends":
+        return post.get("user_id") in friends_set
+    return True
 
 CATEGORIES = {
     "all": {"name": "جميع الأقسام", "icon": "🌐", "color": "#0f766e"},
@@ -367,7 +598,7 @@ def compute_virality_score(post_dict: dict) -> float:
 COMMUNITY_CSS = """
 <style>
 /* ==============================================================================
-   VETBOOK - FACEBOOK-SCALE VETERINARY SOCIAL NETWORK DESIGN SYSTEM
+   VETBOOK - COMPREHENSIVE VETERINARY SOCIAL NETWORK DESIGN SYSTEM (FACEBOOK UX)
    ============================================================================== */
 :root {
     --fb-bg: #f0f2f5;
@@ -381,7 +612,7 @@ COMMUNITY_CSS = """
     --fb-border: #e2e8f0;
     --fb-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
     --fb-shadow-hover: 0 6px 16px rgba(0,0,0,0.09);
-    --fb-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fb-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body.dark-theme, html.dark-theme, [data-theme="dark"] {
@@ -398,7 +629,6 @@ body.dark-theme, html.dark-theme, [data-theme="dark"] {
     box-sizing: border-box;
 }
 
-/* Strict Anti-Overlap Typography Rules */
 body {
     letter-spacing: 0 !important;
 }
@@ -406,21 +636,21 @@ body {
 .fb-app-wrapper {
     background-color: var(--fb-bg);
     min-height: 100vh;
-    padding-bottom: 85px;
+    padding-bottom: 90px;
     max-width: 100vw;
     width: 100%;
     overflow-x: hidden;
     box-sizing: border-box;
 }
 
-/* VetBook Sub-Navigation Strip (Facebook Style Header Pills) */
+/* Sub-Navigation Strip (Facebook-Style Tabs with Real Badges) */
 .vetbook-subnav-strip {
     background: var(--fb-card);
     border-bottom: 1px solid var(--fb-border);
     position: sticky;
     top: 56px;
     z-index: 100;
-    padding: 6px 12px;
+    padding: 8px 14px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -444,614 +674,522 @@ body {
     white-space: nowrap;
     transition: all 0.18s ease;
     border: 1px solid transparent;
+    position: relative;
 }
 .vetbook-nav-pill:hover {
     background: rgba(15, 118, 110, 0.08);
     color: var(--fb-primary);
 }
 .vetbook-nav-pill.active {
-    background: #0f766e;
+    background: var(--fb-primary);
+    color: #ffffff !important;
+    border-color: var(--fb-primary);
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);
+}
+.vetbook-pill-badge {
+    background: #ef4444;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
+    font-size: 0.70rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    margin-right: 4px;
 }
 
-/* 3-Column Desktop Grid (RTL First: Right Column is Right Sidebar, Left is Left Sidebar) */
-.fb-container {
-    max-width: 1480px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 18px 12px;
+/* VetBook Search Bar */
+.vetbook-search-input {
+    padding: 8px 14px 8px 36px;
+    border: 1px solid var(--fb-border);
+    border-radius: 24px;
+    font-size: 0.85rem;
+    background: var(--fb-bg);
+    color: var(--fb-text);
+    outline: none;
+    transition: all 0.2s ease;
+    width: 220px;
+}
+.vetbook-search-input:focus {
+    width: 280px;
+    border-color: var(--fb-primary);
+    background: var(--fb-card);
+    box-shadow: 0 0 0 3px rgba(15,118,110,0.15);
+}
+
+/* Main Grid Layout */
+.fb-main-container {
+    max-width: 1280px;
+    margin: 16px auto;
+    padding: 0 14px;
     display: grid;
-    grid-template-columns: 280px 1fr 310px;
+    grid-template-columns: 280px minmax(0, 1fr) 300px;
     gap: 20px;
     align-items: start;
-    box-sizing: border-box;
 }
-
-@media (max-width: 1140px) {
-    .fb-container {
-        grid-template-columns: 240px 1fr;
-        gap: 16px;
+@media (max-width: 1080px) {
+    .fb-main-container {
+        grid-template-columns: 1fr;
     }
-    .fb-left-col {
-        display: none !important;
+    .fb-sidebar-col {
+        display: none;
     }
 }
 
-@media (max-width: 768px) {
-    .fb-container {
-        grid-template-columns: 1fr !important;
-        padding: 8px 4px !important;
-        gap: 10px !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }
-    .fb-right-col {
-        display: none !important;
-    }
-    .fb-main-feed {
-        width: 100% !important;
-        max-width: 100vw !important;
-        min-width: 0 !important;
-    }
-}
-
+/* Cards & Components */
 .fb-card {
     background: var(--fb-card);
     border: 1px solid var(--fb-border);
-    border-radius: 16px;
-    box-shadow: var(--fb-shadow);
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    overflow: hidden;
-    max-width: 100%;
-    width: 100%;
-    overflow-wrap: break-word;
-    word-break: normal;
-}
-
-.fb-sticky-sidebar {
-    position: sticky;
-    top: 115px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-/* Stories Bar */
-.fb-stories-strip {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 4px 2px 10px 2px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-}
-.fb-stories-strip::-webkit-scrollbar { display: none; }
-
-.fb-story-card {
-    min-width: 112px;
-    width: 112px;
-    height: 180px;
     border-radius: 14px;
+    box-shadow: var(--fb-shadow);
     overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    background-size: cover;
-    background-position: center;
-}
-.fb-story-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
-}
-.fb-story-create-card {
-    background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-    border: 1.5px dashed #0f766e;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 10px;
-}
-
-/* Post Composer */
-.fb-composer-box {
-    padding: 14px 18px;
     margin-bottom: 16px;
+    transition: box-shadow 0.2s ease;
 }
-.fb-composer-input {
-    background: var(--fb-bg);
-    border: 1px solid var(--fb-border);
-    border-radius: 25px;
-    padding: 12px 18px;
-    width: 100%;
-    color: var(--fb-text-muted);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-align: right;
-    transition: background 0.2s;
-    outline: none;
-    line-height: 1.45;
-}
-.fb-composer-input:hover {
-    background: #e2e8f0;
-}
-body.dark-theme .fb-composer-input:hover {
-    background: #334155;
+.fb-card:hover {
+    box-shadow: var(--fb-shadow-hover);
 }
 
-/* Clinical Demographics Badge Box */
-.case-demographics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 10px 14px;
-    margin: 12px 0;
-    font-size: 0.82rem;
-    line-height: 1.6;
-}
-body.dark-theme .case-demographics-grid {
-    background: #0f172a;
-    border-color: #334155;
-}
-
-/* Urgent Case Glowing Border & Banner */
+/* Urgent Banner */
 .urgent-post-card {
-    border-top: 5px solid #dc2626 !important;
-    border-right: 2px solid #ef4444 !important;
-    box-shadow: 0 0 18px rgba(220, 38, 38, 0.15) !important;
+    border-right: 6px solid #dc2626 !important;
 }
-
 .urgent-banner-row {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    border-bottom: 1.5px solid #f87171;
-    padding: 8px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 10px 14px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    color: #991b1b;
     font-weight: 800;
-    font-size: 0.84rem;
-    flex-wrap: wrap;
-    gap: 6px;
-    box-sizing: border-box;
-    width: 100%;
-    line-height: 1.5;
-}
-.urgent-banner-left {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow-wrap: break-word;
-    word-break: normal;
+    font-size: 0.86rem;
+    margin-bottom: 12px;
 }
 .urgent-badge {
     background: #dc2626;
     color: #ffffff;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
 }
 
-/* Facebook Smart Media Grid */
+/* Demographics Grid */
+.case-demographics-grid {
+    background: var(--fb-bg);
+    border: 1px solid var(--fb-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* Media Grid (Facebook Style 1, 2, 3, 4 images) */
 .fb-media-grid {
     margin: 12px 0;
-    border-radius: 12px;
     overflow: hidden;
-    background: #0f172a;
-    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--fb-border);
+    background: #000;
+    position: relative;
 }
 .fb-media-grid.grid-1 img {
     width: 100%;
     max-height: 520px;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
-    cursor: zoom-in;
+    cursor: pointer;
 }
 .fb-media-grid.grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 2px;
 }
 .fb-media-grid.grid-2 img {
     width: 100%;
-    height: 280px;
+    aspect-ratio: 1/1;
     object-fit: cover;
-    cursor: zoom-in;
+    display: block;
+    cursor: pointer;
 }
 .fb-media-grid.grid-3 {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 4px;
-    height: 320px;
+    gap: 2px;
 }
 .fb-media-grid.grid-3 .media-col-left img {
     width: 100%;
     height: 100%;
+    aspect-ratio: 1/1;
     object-fit: cover;
-    cursor: zoom-in;
+    display: block;
+    cursor: pointer;
 }
 .fb-media-grid.grid-3 .media-col-right {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
 }
 .fb-media-grid.grid-3 .media-col-right img {
     width: 100%;
-    height: calc(160px - 2px);
+    height: 100%;
     object-fit: cover;
-    cursor: zoom-in;
+    display: block;
+    cursor: pointer;
 }
 .fb-media-grid.grid-4 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 2px;
 }
-.fb-media-grid.grid-4 .media-slot {
-    position: relative;
-    height: 180px;
-    overflow: hidden;
-}
-.fb-media-grid.grid-4 .media-slot img {
+.fb-media-grid.grid-4 img {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 1/1;
     object-fit: cover;
-    cursor: zoom-in;
+    display: block;
+    cursor: pointer;
 }
-.fb-media-grid .media-more-overlay {
+.media-extra-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.68);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65);
     color: white;
-    font-size: 1.4rem;
+    font-size: 1.8rem;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    backdrop-filter: blur(2px);
 }
 
-/* Reaction Bar Popup */
-.reaction-wrapper {
-    position: relative;
-    display: inline-block;
-}
-.fb-reactions-popup {
+/* Reactions Popup */
+.reactions-popup-box {
     position: absolute;
     bottom: calc(100% + 6px);
     right: 0;
     background: var(--fb-card);
     border: 1px solid var(--fb-border);
     border-radius: 30px;
-    padding: 6px 14px;
+    padding: 6px 10px;
     display: none;
-    gap: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-    z-index: 100;
-    animation: popUpAnim 0.2s ease-out;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    z-index: 50;
+    animation: scaleIn 0.15s ease-out;
 }
-@keyframes popUpAnim {
-    from { opacity: 0; transform: translateY(10px) scale(0.9); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
 }
-.reaction-item-btn {
+.reaction-emoji-btn {
     background: none;
     border: none;
-    font-size: 1.45rem;
+    font-size: 1.5rem;
     cursor: pointer;
     transition: transform 0.15s ease;
-    padding: 2px;
-    line-height: 1;
+    padding: 2px 4px;
 }
-.reaction-item-btn:hover {
-    transform: scale(1.4) translateY(-3px);
+.reaction-emoji-btn:hover {
+    transform: scale(1.35);
 }
 
-.fb-action-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--fb-border);
-    position: relative;
-    flex-wrap: wrap;
-    gap: 4px;
-    box-sizing: border-box;
-    width: 100%;
-}
+/* Post Actions Bar */
 .fb-action-btn {
+    flex: 1;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.85rem;
-    padding: 6px 10px;
-    border-radius: 8px;
-    transition: background 0.15s ease;
-    white-space: nowrap;
-    text-decoration: none;
-}
-.fb-action-btn:hover {
-    background: rgba(0,0,0,0.04);
-}
-
-/* Threaded Comments & Bubbles */
-.fb-comment-bubble {
-    background: #f1f5f9;
-    border-radius: 18px;
-    padding: 10px 16px;
-    color: var(--fb-text);
-    font-size: 0.9rem;
-    line-height: 1.75;
-    word-break: normal;
-    overflow-wrap: break-word;
-}
-body.dark-theme .fb-comment-bubble {
-    background: #0f172a;
-    border: 1px solid #334155;
-}
-
-.best-answer-bubble {
-    background: #ecfdf5 !important;
-    border: 1.5px solid #10b981 !important;
-}
-body.dark-theme .best-answer-bubble {
-    background: #064e3b !important;
-    border-color: #059669 !important;
-}
-
-/* Species & Sort Filter Strips */
-.species-strip-container {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    margin-bottom: 8px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-.species-strip-container::-webkit-scrollbar { display: none; }
-
-.sort-pills-scroll {
-    display: flex;
-    align-items: center;
+    justify-content: center;
     gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    max-width: 100%;
-}
-.sort-pills-scroll::-webkit-scrollbar { display: none; }
-
-/* PYMK & Trending Widgets */
-.pymk-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px;
-    border-radius: 12px;
-    background: var(--fb-bg);
-    border: 1px solid var(--fb-border);
-    margin-bottom: 8px;
-    gap: 8px;
-}
-.trending-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: var(--fb-bg);
-    border: 1px solid var(--fb-border);
-    font-size: 0.8rem;
+    padding: 8px 10px;
+    font-size: 0.88rem;
     font-weight: 700;
-    color: var(--fb-text);
-    text-decoration: none;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--fb-text-muted);
     transition: all 0.15s ease;
 }
-.trending-pill:hover {
-    border-color: #0f766e;
-    color: #0f766e;
+.fb-action-btn:hover {
+    background: rgba(15, 118, 110, 0.08);
+    color: var(--fb-primary);
 }
 
-/* Mobile & Universal Responsiveness */
-@media (max-width: 768px) {
-    .fb-container {
-        padding: 6px 4px !important;
-        gap: 10px !important;
-        width: 100% !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }
-    .fb-card {
-        border-radius: 12px !important;
-    }
-    .fb-card-content {
-        padding: 12px 10px !important;
-    }
-    .fb-composer-box {
-        padding: 10px 10px !important;
-    }
-    .fb-action-bar {
-        gap: 2px !important;
-        padding: 4px 0 !important;
-    }
-    .fb-action-btn {
-        padding: 5px 6px !important;
-        font-size: 0.74rem !important;
-        gap: 3px !important;
-        flex: 1 1 auto;
-        min-width: fit-content;
-        justify-content: center;
-    }
-    .urgent-banner-row {
-        padding: 6px 10px !important;
-        font-size: 0.78rem !important;
-    }
-    .case-demographics-grid {
-        grid-template-columns: 1fr 1fr !important;
-        padding: 8px 10px !important;
-        gap: 6px !important;
-        font-size: 0.76rem !important;
-    }
+/* Threaded Comments & Nested Replies */
+.fb-comment-bubble {
+    background: var(--fb-bg);
+    border: 1px solid var(--fb-border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: var(--fb-text);
+    line-height: 1.6;
+    word-break: break-word;
+}
+.best-answer-bubble {
+    border: 2px solid #10b981 !important;
+    background: #ecfdf5 !important;
+}
+.nested-reply-box {
+    margin-right: 36px;
+    margin-top: 8px;
+    border-right: 2px solid var(--fb-border);
+    padding-right: 12px;
 }
 
-@media (max-width: 480px) {
-    .fb-action-btn {
-        padding: 4px 4px !important;
-        font-size: 0.70rem !important;
-    }
-    .case-demographics-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .fb-composer-input {
-        font-size: 0.85rem !important;
-        padding: 10px 12px !important;
-    }
+/* Stories Strip */
+.stories-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+.stories-strip::-webkit-scrollbar { display: none; }
+.story-card {
+    min-width: 110px;
+    height: 170px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    background: #0f172a;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    box-shadow: var(--fb-shadow);
+}
+.story-card:hover {
+    transform: translateY(-2px);
+}
+.story-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
 }
 
-/* Doctor Profile Header Styles (Zero-Overflow Universal Scaling) */
+/* Friends Grid */
+.friend-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+.friend-card {
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 12px;
+    overflow: hidden;
+    padding: 14px;
+    text-align: center;
+    box-shadow: var(--fb-shadow);
+    transition: all 0.2s ease;
+}
+.friend-card:hover {
+    box-shadow: var(--fb-shadow-hover);
+    transform: translateY(-2px);
+}
+.friend-avatar-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--fb-primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Pages & Groups Cards */
+.page-card-grid, .group-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+.page-card, .group-card {
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--fb-shadow);
+    transition: all 0.2s ease;
+}
+.page-card:hover, .group-card:hover {
+    box-shadow: var(--fb-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* Notifications List */
+.notif-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--fb-border);
+    transition: background 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+}
+.notif-item:hover {
+    background: rgba(15, 118, 110, 0.04);
+}
+.notif-item.unread {
+    background: rgba(15, 118, 110, 0.08);
+}
+.notif-unread-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #0f766e;
+    flex-shrink: 0;
+}
+
+/* Modals */
+.fb-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+}
+.fb-modal-box {
+    background: var(--fb-card);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    border: 1px solid var(--fb-border);
+    animation: modalPop 0.2s ease-out;
+}
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Profile Header */
 .fb-profile-cover {
-    height: clamp(120px, 25vw, 180px);
-    border-radius: 16px 16px 0 0;
+    height: 220px;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
     position: relative;
 }
 .fb-profile-header-body {
-    padding: 0 clamp(12px, 3.5vw, 24px) 20px clamp(12px, 3.5vw, 24px);
+    padding: 0 24px 20px 24px;
     position: relative;
 }
 .profile-header-avatar-row {
     display: flex;
-    justify-content: space-between;
     align-items: flex-end;
+    justify-content: space-between;
+    margin-top: -60px;
+    margin-bottom: 14px;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: clamp(-42px, -9vw, -55px);
-    margin-bottom: 16px;
-    width: 100%;
 }
 .profile-header-avatar {
-    width: clamp(68px, 16vw, 105px) !important;
-    height: clamp(68px, 16vw, 105px) !important;
-    min-width: clamp(68px, 16vw, 105px) !important;
-    max-width: clamp(68px, 16vw, 105px) !important;
-    border-radius: 50% !important;
-    border: 3.5px solid var(--fb-card) !important;
-    background: linear-gradient(135deg, #0f766e, #0d9488) !important;
-    color: #ffffff !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: clamp(1.9rem, 4.5vw, 2.8rem) !important;
-    font-weight: 800 !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
-    flex-shrink: 0 !important;
-}
-.profile-header-actions {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid var(--fb-card);
+    background: var(--fb-primary);
+    color: #fff;
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    object-fit: cover;
 }
-@media (max-width: 600px) {
-    .profile-header-actions .btn {
-        padding: 6px 12px !important;
-        font-size: 0.78rem !important;
-    }
+
+/* Buttons */
+.btn-fb-primary {
+    background: var(--fb-primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+.btn-fb-primary:hover {
+    background: var(--fb-primary-hover);
+}
+.btn-fb-outline {
+    background: none;
+    color: var(--fb-text);
+    border: 1px solid var(--fb-border);
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.btn-fb-outline:hover {
+    background: var(--fb-bg);
+    border-color: var(--fb-text-muted);
+}
+.btn-fb-danger {
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.82rem;
 }
 </style>
 """
 
+
+
 COMMUNITY_JS = """
 <script>
-function openComposerModal(mode) {
-    const m = document.getElementById('new-post-modal');
-    if (m) {
-        m.style.display = 'flex';
-        const urgCheck = document.getElementById('urgent-checkbox');
-        const urgVal = document.getElementById('comp-is-urgent');
-        const catVal = document.getElementById('comp-category');
-        const titleElem = document.getElementById('modal-title');
-        const demoBox = document.getElementById('clinical-fields-box');
-        
-        if (mode === 'urgent') {
-            if (urgCheck) urgCheck.checked = true;
-            if (urgVal) urgVal.value = '1';
-            if (catVal) catVal.value = 'urgent';
-            if (titleElem) titleElem.innerText = '🚨 نشر حالة طارئة ومستعجلة';
-            if (demoBox) demoBox.style.display = 'block';
-        } else if (mode === 'case') {
-            if (urgCheck) urgCheck.checked = false;
-            if (urgVal) urgVal.value = '0';
-            if (catVal) catVal.value = 'case_study';
-            if (titleElem) titleElem.innerText = '🩺 نشر حالة سريرية واستشارة';
-            if (demoBox) demoBox.style.display = 'block';
-        } else if (mode === 'video') {
-            if (urgCheck) urgCheck.checked = false;
-            if (urgVal) urgVal.value = '0';
-            if (catVal) catVal.value = 'videos';
-            if (titleElem) titleElem.innerText = '🎥 نشر فيديو جراحي وسريري';
-            if (demoBox) demoBox.style.display = 'none';
-        } else {
-            if (urgCheck) urgCheck.checked = false;
-            if (urgVal) urgVal.value = '0';
-            if (catVal) catVal.value = 'case_study';
-            if (titleElem) titleElem.innerText = '📝 إنشاء منشور عام في VetBook';
-            if (demoBox) demoBox.style.display = 'none';
-        }
-    }
+// ==============================================================================
+// VETBOOK CLIENT INTERACTIVITY & SOCIAL LOGIC (STRICT NO-MESSENGER, ZERO AI)
+// ==============================================================================
+
+function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'flex';
 }
 
-function closeComposerModal() {
-    const m = document.getElementById('new-post-modal');
-    if (m) m.style.display = 'none';
+function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
 }
 
-function openStoryModal() {
-    const m = document.getElementById('story-upload-modal');
-    if (m) m.style.display = 'flex';
-}
-
-let storyTimer = null;
-function openStoryViewer(author, src, caption) {
-    const m = document.getElementById('story-viewer-modal');
-    if (m) {
-        document.getElementById('story-author-tag').innerText = 'د. ' + author;
-        document.getElementById('story-img-elem').src = src;
-        document.getElementById('story-caption-elem').innerText = caption || '';
-        m.style.display = 'flex';
-
-        // Animated progress bar (5s duration)
-        const prog = document.getElementById('story-progress-bar');
-        if (prog) {
-            prog.style.width = '0%';
-            clearTimeout(storyTimer);
-            setTimeout(() => { prog.style.width = '100%'; }, 50);
-            storyTimer = setTimeout(() => { m.style.display = 'none'; }, 5100);
-        }
-    }
-}
-
-function sendStoryReaction(emoji) {
-    alert('تم إرسال تفاعل ' + emoji + ' مع القصة السريرية للزميل بنجاح!');
-}
-
+// Media Modal
 function openImageModal(src) {
     const m = document.getElementById('image-modal');
     const img = document.getElementById('image-modal-src');
@@ -1061,6 +1199,7 @@ function openImageModal(src) {
     }
 }
 
+// Reactions System
 function showReactionsPopup(postId) {
     const p = document.getElementById('reactions-popup-' + postId);
     if (p) p.style.display = 'flex';
@@ -1102,72 +1241,16 @@ async function setPostReaction(postId, rType) {
             if (countElem) countElem.innerText = data.likes_count;
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
-async function askVetMindAI(postId) {
-    const btn = event.currentTarget;
-    btn.disabled = true;
-    btn.innerText = '🤖 جاري التحليل...';
-    try {
-        const res = await fetch('/community/ai-consult/' + postId, { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('التحليل السريري: ' + (data.error || 'يرجى المحاولة لاحقاً'));
-            btn.disabled = false;
-            btn.innerText = '🤖 اسأل AI';
-        }
-    } catch (e) {
-        console.log(e);
-        btn.disabled = false;
-        btn.innerText = '🤖 اسأل AI';
-    }
-}
-
-async function togglePostBookmark(postId) {
-    const btn = document.getElementById('bookmark-btn-' + postId);
-    const textSpan = document.getElementById('bookmark-text-' + postId);
-    try {
-        const res = await fetch('/community/bookmark/' + postId, { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-            if (data.is_bookmarked) {
-                if (textSpan) textSpan.innerText = 'محفوظة 🔖';
-                if (btn) { btn.style.color = '#d97706'; btn.style.fontWeight = '800'; }
-            } else {
-                if (textSpan) textSpan.innerText = 'حفظ 🔖';
-                if (btn) { btn.style.color = 'var(--fb-text-muted)'; btn.style.fontWeight = '500'; }
-            }
-        }
-    } catch (e) {
-        console.log(e);
-    }
-}
-
-async function submitCommentForm(e, postId) {
-    e.preventDefault();
-    const input = document.getElementById('comment-input-' + postId);
-    const content = input.value.trim();
-    if (!content) return;
-
-    input.value = '';
-    try {
-        const formData = new FormData();
-        formData.append('content', content);
-        const res = await fetch('/community/comment/' + postId, {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
-        });
-        const data = await res.json();
-        if (data.success) {
-            location.reload();
-        }
-    } catch (err) {
-        console.log(err);
+// Comments & Nested Replies
+function focusCommentInput(postId) {
+    const inp = document.getElementById('comment-input-' + postId);
+    if (inp) {
+        inp.focus();
+        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 
@@ -1202,7 +1285,21 @@ async function submitReply(e, postId, parentId) {
             location.reload();
         }
     } catch (err) {
-        console.log(err);
+        console.error(err);
+    }
+}
+
+async function deleteComment(commentId) {
+    if (!confirm('هل تريد بالتأكيد حذف هذا الرأي أو التعليق السريري؟')) return;
+    try {
+        const res = await fetch('/community/comment/delete/' + commentId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const el = document.getElementById('comment-' + commentId);
+            if (el) el.remove();
+        }
+    } catch (e) {
+        console.error(e);
     }
 }
 
@@ -1215,75 +1312,249 @@ async function markBestDiagnosis(commentId, postId) {
             location.reload();
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
-function focusCommentInput(postId) {
-    const inp = document.getElementById('comment-input-' + postId);
-    if (inp) {
-        inp.focus();
-        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+// Post Actions: Edit, Delete, Share, Bookmark
+function openEditPostModal(postId) {
+    openModal('edit-post-modal-' + postId);
 }
 
-function sharePost(postId) {
+function deletePost(postId) {
+    if (!confirm('هل تريد بالتأكيد حذف هذه الحالة السريرية نهائياً من المنصة؟')) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/community/post/delete/' + postId;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+async function sharePost(postId) {
     const url = window.location.origin + '/community#post-' + postId;
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url);
-        alert('🔗 تم نسخ رابط الحالة بنجاح لمشاركتها مع الزملاء!');
-    } else {
-        prompt('انسخ رابط الحالة:', url);
     }
+    try {
+        await fetch('/community/post/share/' + postId, { method: 'POST' });
+        const countEl = document.getElementById('shares-count-' + postId);
+        if (countEl) {
+            let cur = parseInt(countEl.innerText) || 0;
+            countEl.innerText = (cur + 1) + ' مشاركة';
+        }
+    } catch (e) {}
+    alert('🔗 تم نسخ رابط الحالة بنجاح ونشرها بين الزملاء!');
 }
 
-async function toggleColleagueConnect(colleagueId, btn) {
+async function togglePostBookmark(postId) {
     try {
-        const res = await fetch('/community/connect/' + colleagueId, { method: 'POST' });
+        const res = await fetch('/community/bookmark/' + postId, { method: 'POST' });
         const data = await res.json();
-        if (data.success) {
-            if (data.connected) {
-                btn.innerHTML = '✔️ زميل مضاف';
-                btn.style.background = '#059669';
-                btn.style.color = '#ffffff';
+        const btn = document.getElementById('bookmark-btn-' + postId);
+        const txt = document.getElementById('bookmark-text-' + postId);
+        if (data.success && btn && txt) {
+            if (data.bookmarked) {
+                btn.style.color = '#d97706';
+                btn.style.fontWeight = '800';
+                txt.innerText = 'محفوظة 🔖';
             } else {
-                btn.innerHTML = '➕ إضافة زميل';
-                btn.style.background = 'none';
-                btn.style.color = '#0f766e';
+                btn.style.color = 'var(--fb-text-muted)';
+                btn.style.fontWeight = '400';
+                txt.innerText = 'حفظ 🔖';
             }
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
-async function toggleColleagueFollow(colleagueId, btn) {
+// Social Graph Actions (Friends & Follows)
+async function sendFriendRequest(targetId, btn) {
     try {
-        const res = await fetch('/community/follow/' + colleagueId, { method: 'POST' });
+        btn.disabled = true;
+        const res = await fetch('/community/friends/request/' + targetId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            btn.innerText = '⏳ تم إرسال الطلب';
+            btn.style.background = '#e2e8f0';
+            btn.style.color = '#475569';
+        } else {
+            alert(data.error || 'تعذر إرسال الطلب');
+            btn.disabled = false;
+        }
+    } catch (e) {
+        console.error(e);
+        btn.disabled = false;
+    }
+}
+
+async function acceptFriendRequest(requestId, btn) {
+    try {
+        btn.disabled = true;
+        const res = await fetch('/community/friends/accept/' + requestId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            btn.closest('.friend-request-row, .friend-card').remove();
+            alert('🎉 تم قبول طلب الصداقة وأصبح الزميل في شبكتك المهنية!');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function rejectFriendRequest(requestId, btn) {
+    try {
+        btn.disabled = true;
+        const res = await fetch('/community/friends/reject/' + requestId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            btn.closest('.friend-request-row, .friend-card').remove();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function cancelFriendRequest(targetId, btn) {
+    if (!confirm('هل تريد إلغاء طلب الصداقة المرسل؟')) return;
+    try {
+        const res = await fetch('/community/friends/cancel/' + targetId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function removeFriend(targetId) {
+    if (!confirm('هل تريد بالتأكيد إلغاء الصداقة مع هذا الزميل؟')) return;
+    try {
+        const res = await fetch('/community/friends/remove/' + targetId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function toggleFollow(targetId, btn) {
+    try {
+        const res = await fetch('/community/follow/' + targetId, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             if (data.following) {
-                btn.innerHTML = '🔕 إلغاء المتابعة';
+                btn.innerText = '🔕 إلغاء المتابعة';
+                btn.style.background = '#e2e8f0';
+                btn.style.color = '#334155';
             } else {
-                btn.innerHTML = '🔔 متابعة';
+                btn.innerText = '🔔 متابعة';
+                btn.style.background = 'var(--fb-primary)';
+                btn.style.color = '#ffffff';
             }
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
-async function toggleEventInterest(eventId, btnElem) {
+// Reporting & Moderation
+function openReportModal(targetType, targetId) {
+    document.getElementById('report-target-type').value = targetType;
+    document.getElementById('report-target-id').value = targetId;
+    openModal('report-modal');
+}
+
+async function submitReportForm(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    try {
+        const res = await fetch('/community/report', { method: 'POST', body: formData });
+        const data = await res.json();
+        closeModal('report-modal');
+        alert(data.message || 'تم تقديم البلاغ وسيقوم فريق الإشراف بمراجعته فوراً.');
+    } catch (err) {
+        alert('تعذر تقديم البلاغ حالياً.');
+    }
+}
+
+async function blockUser(userId) {
+    if (!confirm('هل تريد حظر هذا المستخدم؟ لن تظهر منشوراته أو تعليقاته في حسابك نهائياً.')) return;
+    try {
+        const res = await fetch('/community/block/' + userId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.blocked ? 'تم حظر المستخدم بنجاح.' : 'تم إلغاء الحظر.');
+            location.reload();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Pages & Groups & Events
+async function togglePageFollow(pageId, btn) {
+    try {
+        const res = await fetch('/community/pages/follow/' + pageId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            if (data.following) {
+                btn.innerText = '✔️ متابع';
+                btn.style.background = '#e2e8f0';
+                btn.style.color = '#334155';
+            } else {
+                btn.innerText = '➕ متابعة الصفحة';
+                btn.style.background = 'var(--fb-primary)';
+                btn.style.color = '#ffffff';
+            }
+            const countEl = document.getElementById('page-followers-' + pageId);
+            if (countEl) countEl.innerText = data.followers_count + ' متابع';
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function joinGroup(groupId, btn) {
+    try {
+        const res = await fetch('/community/groups/join/' + groupId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function leaveGroup(groupId, btn) {
+    if (!confirm('هل تريد مغادرة هذه المجموعة البيطرية؟')) return;
+    try {
+        const res = await fetch('/community/groups/leave/' + groupId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function toggleEventInterest(eventId, btn) {
     try {
         const res = await fetch('/community/events/interest/' + eventId, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-            btnElem.innerText = '⭐ سأحضر (' + data.interested_count + ')';
-            btnElem.style.background = '#0f766e';
-            btnElem.style.color = '#ffffff';
+            btn.innerText = '⭐ سأحضر (' + data.interested_count + ')';
+            btn.style.background = '#0f766e';
+            btn.style.color = '#ffffff';
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
@@ -1297,18 +1568,34 @@ async function votePoll(postId, optId) {
             location.reload();
         }
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }
 
-// Global Feed Broadcast & Local Storage Resilience
+// Notifications Actions
+async function markNotificationRead(notifId, url) {
+    try {
+        await fetch('/community/notifications/mark-read/' + notifId, { method: 'POST' });
+    } catch (e) {}
+    if (url) window.location.href = url;
+}
+
+async function markAllNotificationsRead() {
+    try {
+        await fetch('/community/notifications/mark-all-read', { method: 'POST' });
+        location.reload();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Offline Resilience & Auto Sync Check
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Detect if post was successfully published and broadcasted
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('posted') === '1') {
         const toast = document.createElement('div');
         toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f766e;color:#fff;padding:14px 24px;border-radius:12px;font-weight:700;box-shadow:0 10px 25px rgba(0,0,0,0.3);z-index:99999;display:flex;align-items:center;gap:10px;font-size:0.95rem;transition:all 0.4s ease;';
-        toast.innerHTML = '<span>🎉</span><span>تم حفظ ونشر حالتك وتعميمها بنجاح على كافة الأطباء المسجلين في المنصة!</span>';
+        toast.innerHTML = '<span>🎉</span><span>تم نشر حالتك وتعميمها بنجاح على كافة الأطباء المسجلين في المنصة!</span>';
         document.body.appendChild(toast);
         setTimeout(() => {
             toast.style.opacity = '0';
@@ -1321,7 +1608,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.replaceState({}, '', window.location.pathname + newSearch + window.location.hash);
     }
 
-    // 2. Intercept composer submission to preserve in localStorage backup
     const compForm = document.getElementById('composer-form');
     if (compForm) {
         compForm.addEventListener('submit', function() {
@@ -1332,6 +1618,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     content: formData.get('content') || '',
                     category: formData.get('category') || 'case_study',
                     is_urgent: formData.get('is_urgent') === '1' ? 1 : 0,
+                    privacy: formData.get('privacy') || 'public',
                     species: formData.get('species') || '',
                     breed: formData.get('breed') || '',
                     age: formData.get('age') || '',
@@ -1342,7 +1629,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
                 };
                 let saved = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
-                // Filter duplicates by title
                 saved = saved.filter(p => p.title !== postObj.title);
                 saved.unshift(postObj);
                 if (saved.length > 50) saved = saved.slice(0, 50);
@@ -1353,7 +1639,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. Client-side resilience check & auto-sync to server
     try {
         const localPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
         if (localPosts.length > 0) {
@@ -1361,15 +1646,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ posts: localPosts })
-            }).then(r => r.json()).then(res => {
-                if (res && res.synced > 0) {
-                    console.log('Synchronized ' + res.synced + ' offline posts with VetMind community cloud.');
-                }
-            }).catch(e => console.warn('Sync error:', e));
+            }).catch(() => {});
         }
-    } catch (err) {
-        console.warn('Auto sync check error:', err);
-    }
+    } catch (e) {}
 });
 </script>
 """
@@ -1426,12 +1705,12 @@ def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
         extra = cnt - 3
         return f"""
         <div class="fb-media-grid grid-4">
-            <div class="media-slot"><img src="/uploads/{img_list[0]}" onclick="openImageModal('/uploads/{img_list[0]}')" loading="lazy"></div>
-            <div class="media-slot"><img src="/uploads/{img_list[1]}" onclick="openImageModal('/uploads/{img_list[1]}')" loading="lazy"></div>
-            <div class="media-slot"><img src="/uploads/{img_list[2]}" onclick="openImageModal('/uploads/{img_list[2]}')" loading="lazy"></div>
-            <div class="media-slot" onclick="openImageModal('/uploads/{img_list[3]}')">
+            <div style="position: relative;"><img src="/uploads/{img_list[0]}" onclick="openImageModal('/uploads/{img_list[0]}')" loading="lazy"></div>
+            <div style="position: relative;"><img src="/uploads/{img_list[1]}" onclick="openImageModal('/uploads/{img_list[1]}')" loading="lazy"></div>
+            <div style="position: relative;"><img src="/uploads/{img_list[2]}" onclick="openImageModal('/uploads/{img_list[2]}')" loading="lazy"></div>
+            <div style="position: relative;" onclick="openImageModal('/uploads/{img_list[3]}')">
                 <img src="/uploads/{img_list[3]}" loading="lazy">
-                <div class="media-more-overlay">+{extra} صور إضافية</div>
+                {f'<div class="media-extra-overlay">+{extra}</div>' if extra > 0 else ''}
             </div>
         </div>
         """
@@ -1440,154 +1719,801 @@ def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
 @router.get("/community", response_class=HTMLResponse)
 async def community_hub(
     request: Request,
+    tab: str = "feed",
+    q: str = "",
     category: str = "all",
     species: str = "all",
-    q: str = "",
     sort: str = "smart",
-    tab: str = "feed",
-    group_id: int = 0
+    group_id: int = 0,
+    page_id: int = 0
 ):
     from app import get_current_user, get_user_lang, get_text, get_base_html
+    from vetbook_algorithms import (
+        calculate_edgerank_score,
+        get_trending_topics,
+        get_people_you_may_know,
+        get_recommended_groups
+    )
 
-    curr_user = get_current_user(request)
-    if not curr_user:
-        return RedirectResponse("/login?redirect=/community", status_code=303)
-
-    user = curr_user
+    user = get_current_user(request)
     lang = get_user_lang(request)
+    current_user_id = user["id"] if user else 4
+    is_admin = bool(user and (user.get("is_admin") or user.get("role") == "admin"))
 
     conn = get_db()
     c = conn.cursor()
+    sync_posts_from_backup_sync(conn)
 
-    # User Connected Colleagues map
-    user_connections = set()
-    try:
-        c.execute("SELECT colleague_id FROM community_connections WHERE user_id = ?", (user["id"],))
-        for r in c.fetchall():
-            user_connections.add(r[0])
-    except Exception:
-        pass
-
-    # User Bookmarks
-    user_bookmarks = set()
-    try:
-        c.execute("SELECT post_id FROM community_bookmarks WHERE user_id = ?", (user["id"],))
-        for r in c.fetchall():
-            user_bookmarks.add(r[0])
-    except Exception:
-        pass
-
-    # User Reactions
-    user_reactions = {}
-    try:
-        c.execute("SELECT post_id, reaction_type FROM community_likes WHERE user_id = ?", (user["id"],))
-        for r in c.fetchall():
-            user_reactions[r["post_id"]] = r["reaction_type"]
-    except Exception:
-        pass
-
-    # Algorithmic Recommendation Engines
-    pymk_colleagues = get_people_you_may_know(conn, user["id"], limit=5)
-    trending_topics = get_trending_topics(conn, hours=48, limit=6)
-    recommended_groups = get_recommended_groups(conn, user["id"], limit=5)
-
-    # Urgent cases for left sidebar
-    c.execute("SELECT id, title, species, author_name, created_at FROM community_posts WHERE is_urgent = 1 ORDER BY id DESC LIMIT 5")
-    urgent_cases = [dict(r) for r in c.fetchall()]
+    # Social graph helpers
+    friends_set = get_user_friends_ids(current_user_id, conn)
+    blocked_set = get_blocked_user_ids(current_user_id, conn)
+    unread_notifs_count = get_unread_notifications_count(current_user_id, conn)
+    pending_friends_count = get_incoming_friend_requests_count(current_user_id, conn)
 
     # Stories
-    c.execute("SELECT * FROM community_stories ORDER BY id DESC LIMIT 12")
-    raw_stories = [dict(r) for r in c.fetchall()]
+    c.execute("SELECT * FROM community_stories ORDER BY id DESC LIMIT 15")
+    stories = [dict(r) for r in c.fetchall()]
 
-    stories_cards = ""
-    for st in raw_stories:
-        stories_cards += f"""
-        <div class="fb-story-card" style="background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.8) 100%), url('/uploads/{st['media_url']}');" onclick="openStoryViewer('{st['author_name']}', '/uploads/{st['media_url']}', '{st.get('caption','')}')">
-            <div style="position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid #0f766e; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">
-                {st['author_name'][0]}
-            </div>
-            <div style="position: absolute; bottom: 8px; right: 8px; left: 8px; color: white; font-size: 0.78rem; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                د. {st['author_name']}
+    stories_html = """
+    <div class="stories-strip">
+        <div class="story-card" onclick="openModal('create-story-modal')" style="background: linear-gradient(135deg, #0f766e, #14b8a6); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 12px; text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 6px;">➕</div>
+            <div style="font-size: 0.8rem; font-weight: 800;">إضافة قصة سريرية (24h)</div>
+        </div>
+    """
+    for st in stories:
+        stories_html += f"""
+        <div class="story-card" onclick="openStoryViewer('{st['media_url']}', '{st['author_name']}', '{st['caption']}')">
+            <img src="/uploads/{st['media_url']}" alt="Story">
+            <div style="position: absolute; bottom: 8px; right: 8px; left: 8px; color: white; font-size: 0.78rem; font-weight: 800; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.3;">
+                {st['author_name'][:18]}
             </div>
         </div>
         """
+    stories_html += "</div>"
 
-    if not stories_cards:
-        demo_stories = [
-            ("د. تامر سعد", "bovine_cesarean", "ولادة قيصرية بقرة حلوب", "linear-gradient(135deg, #0f766e, #0d9488)"),
-            ("د. أحمد محمود", "equine_colic", "تشخيص مغص حاد بالحصان", "linear-gradient(135deg, #dc2626, #b91c1c)"),
-            ("د. سارة عادل", "ultrasound_scan", "فحص بالسونار لحمل قطة", "linear-gradient(135deg, #7c3aed, #6d28d9)"),
-            ("د. خالد إبراهيم", "orthopedic_fix", "تثبيت كسر عظم الفخذ", "linear-gradient(135deg, #ea580c, #c2410c)")
-        ]
-        for s_name, s_id, s_title, s_bg in demo_stories:
-            stories_cards += f"""
-            <div class="fb-story-card" style="background: {s_bg}; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; color: white;" onclick="alert('قصة سريرية: {s_title}')">
-                <div style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">
-                    {s_name[0]}
+    # Search Mode Check
+    if q and q.strip():
+        tab = "search"
+
+    # Tab Badges
+    notif_badge_html = f'<span class="vetbook-pill-badge">{unread_notifs_count}</span>' if unread_notifs_count > 0 else ""
+    friends_badge_html = f'<span class="vetbook-pill-badge">{pending_friends_count}</span>' if pending_friends_count > 0 else ""
+
+    # Sub-Navigation Strip (Facebook Tabs)
+    subnav_strip = f"""
+    <div class="vetbook-subnav-strip">
+        <a href="/community" class="vetbook-nav-pill {'active' if tab == 'feed' else ''}"><span>📰</span> <span>الموجز العام</span></a>
+        <a href="/community?tab=my_posts" class="vetbook-nav-pill {'active' if tab == 'my_posts' else ''}"><span>📢</span> <span>منشوراتي</span></a>
+        <a href="/community?tab=friends" class="vetbook-nav-pill {'active' if tab == 'friends' else ''}"><span>👥</span> <span>الأصدقاء والزملاء {friends_badge_html}</span></a>
+        <a href="/community?tab=pages" class="vetbook-nav-pill {'active' if tab == 'pages' else ''}"><span>🏢</span> <span>الصفحات البيطرية</span></a>
+        <a href="/community?tab=groups" class="vetbook-nav-pill {'active' if tab == 'groups' else ''}"><span>🐾</span> <span>المجموعات</span></a>
+        <a href="/community?tab=events" class="vetbook-nav-pill {'active' if tab == 'events' else ''}"><span>🎓</span> <span>الفعاليات</span></a>
+        <a href="/community?tab=notifications" class="vetbook-nav-pill {'active' if tab == 'notifications' else ''}"><span>🔔</span> <span>الإشعارات {notif_badge_html}</span></a>
+        <a href="/community?category=bookmarks" class="vetbook-nav-pill {'active' if (category == 'bookmarks' or tab == 'saved') else ''}"><span>🔖</span> <span>المحفوظات</span></a>
+        <a href="/community/profile/{current_user_id}" class="vetbook-nav-pill"><span>👤</span> <span>ملفي الشخصي</span></a>
+        {f'<a href="/community?tab=moderation" class="vetbook-nav-pill ' + ('active' if tab == 'moderation' else '') + '"><span>🛡️</span> <span>الإشراف</span></a>' if is_admin else ''}
+        
+        <form action="/community" method="GET" style="margin-right: auto; display: flex; align-items: center; position: relative;">
+            <input type="hidden" name="tab" value="search">
+            <span style="position: absolute; right: 12px; font-size: 0.9rem; pointer-events: none; color: var(--fb-text-muted);">🔍</span>
+            <input type="text" name="q" value="{q}" placeholder="بحث في VetBook..." class="vetbook-search-input">
+        </form>
+    </div>
+    """
+
+    # TAB 1: FRIENDS TAB (الأصدقاء والزملاء)
+    if tab == "friends":
+        # Incoming pending requests
+        c.execute("""
+        SELECT f.id as request_id, f.created_at, u.id as user_id, u.name, u.role, u.specialty, u.clinic_name, u.avatar_image, u.country
+        FROM community_friends f
+        JOIN users u ON f.sender_id = u.id
+        WHERE f.receiver_id = ? AND f.status = 'pending'
+        ORDER BY f.id DESC
+        """, (current_user_id,))
+        incoming_requests = [dict(r) for r in c.fetchall()]
+
+        # Outgoing sent requests
+        c.execute("""
+        SELECT f.id as request_id, f.created_at, u.id as user_id, u.name, u.role, u.specialty, u.clinic_name, u.avatar_image, u.country
+        FROM community_friends f
+        JOIN users u ON f.receiver_id = u.id
+        WHERE f.sender_id = ? AND f.status = 'pending'
+        ORDER BY f.id DESC
+        """, (current_user_id,))
+        outgoing_requests = [dict(r) for r in c.fetchall()]
+
+        # My Friends List
+        c.execute("""
+        SELECT u.id as user_id, u.name, u.role, u.specialty, u.clinic_name, u.avatar_image, u.country
+        FROM users u
+        WHERE u.id IN (
+            SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END
+            FROM community_friends
+            WHERE (sender_id = ? OR receiver_id = ?) AND status = 'accepted'
+        )
+        ORDER BY u.name ASC
+        """, (current_user_id, current_user_id, current_user_id))
+        friends_list = [dict(r) for r in c.fetchall()]
+
+        # Suggested Colleagues (PYMK)
+        c.execute("""
+        SELECT id, name, role, specialty, clinic_name, avatar_image, country
+        FROM users
+        WHERE id != ? AND id NOT IN (
+            SELECT receiver_id FROM community_friends WHERE sender_id = ?
+            UNION
+            SELECT sender_id FROM community_friends WHERE receiver_id = ?
+        )
+        LIMIT 8
+        """, (current_user_id, current_user_id, current_user_id))
+        suggested_doctors = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        incoming_html = ""
+        if incoming_requests:
+            for req in incoming_requests:
+                av = f'<img src="/uploads/{req["avatar_image"]}" class="friend-avatar-circle">' if req.get("avatar_image") else f'<div class="friend-avatar-circle">{req["name"][0]}</div>'
+                incoming_html += f"""
+                <div class="friend-card">
+                    {av}
+                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--fb-text); margin-bottom: 2px;">د. {req['name']}</div>
+                    <div style="font-size: 0.8rem; color: var(--fb-primary); font-weight: 700;">{req.get('specialty') or 'طبيب بيطري'}</div>
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px;">{req.get('clinic_name') or ''} • {req.get('country') or 'مصر'}</div>
+                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 14px;">
+                        <button type="button" onclick="acceptFriendRequest({req['request_id']}, this)" class="btn-fb-primary" style="flex: 1; justify-content: center;">قبول ✔️</button>
+                        <button type="button" onclick="rejectFriendRequest({req['request_id']}, this)" class="btn-fb-outline" style="flex: 1; justify-content: center;">رفض ✕</button>
+                    </div>
                 </div>
-                <div>
-                    <div style="font-size: 0.72rem; opacity: 0.9;">{s_name}</div>
-                    <div style="font-size: 0.78rem; font-weight: 800; line-height: 1.4; margin-top: 2px;">{s_title}</div>
+                """
+        else:
+            incoming_html = "<div style='color: var(--fb-text-muted); padding: 12px; font-size: 0.9rem;'>لا توجد طلبات صداقة واردة جديدة حالياً.</div>"
+
+        friends_cards_html = ""
+        if friends_list:
+            for fr in friends_list:
+                av = f'<img src="/uploads/{fr["avatar_image"]}" class="friend-avatar-circle">' if fr.get("avatar_image") else f'<div class="friend-avatar-circle">{fr["name"][0]}</div>'
+                friends_cards_html += f"""
+                <div class="friend-card">
+                    {av}
+                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--fb-text); margin-bottom: 2px;">د. {fr['name']}</div>
+                    <div style="font-size: 0.8rem; color: var(--fb-primary); font-weight: 700;">{fr.get('specialty') or 'طبيب بيطري'}</div>
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px;">{fr.get('clinic_name') or ''}</div>
+                    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 14px;">
+                        <a href="/community/profile/{fr['user_id']}" class="btn-fb-outline" style="flex: 1; justify-content: center; text-decoration: none;">عرض الملف 👤</a>
+                        <button type="button" onclick="removeFriend({fr['user_id']})" class="btn-fb-danger" style="padding: 6px 12px;" title="إلغاء الصداقة">🗑️</button>
+                    </div>
+                </div>
+                """
+        else:
+            friends_cards_html = "<div style='color: var(--fb-text-muted); padding: 12px; font-size: 0.9rem;'>لم تقم بإضافة زملاء وأصدقاء بعد. ابدأ بإرسال طلبات للزملاء المقترحين أدناه!</div>"
+
+        suggested_html = ""
+        for sug in suggested_doctors:
+            av = f'<img src="/uploads/{sug["avatar_image"]}" class="friend-avatar-circle">' if sug.get("avatar_image") else f'<div class="friend-avatar-circle">{sug["name"][0]}</div>'
+            suggested_html += f"""
+            <div class="friend-card">
+                {av}
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--fb-text); margin-bottom: 2px;">د. {sug['name']}</div>
+                <div style="font-size: 0.8rem; color: var(--fb-primary); font-weight: 700;">{sug.get('specialty') or 'طبيب بيطري'}</div>
+                <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px;">{sug.get('clinic_name') or ''} • {sug.get('country') or 'مصر'}</div>
+                <div style="margin-top: 14px;">
+                    <button type="button" onclick="sendFriendRequest({sug['id']}, this)" class="btn-fb-primary" style="width: 100%; justify-content: center;">➕ إضافة كصديق زميل</button>
                 </div>
             </div>
             """
 
-    # Ensure all persistent posts are synced into SQLite
-    sync_posts_from_backup_sync(conn)
+        tab_body = f"""
+        <div style="max-width: 1100px; margin: 20px auto; padding: 0 14px;">
+            <div class="fb-card" style="padding: 20px; margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; color: #0f766e; font-size: 1.3rem;">📩 طلبات الصداقة والزمالة الواردة ({len(incoming_requests)})</h2>
+                <div class="friend-card-grid">
+                    {incoming_html}
+                </div>
+            </div>
 
-    # Fetch and Score Posts
-    sql = "SELECT * FROM community_posts WHERE 1=1"
-    params = []
-    if tab == "my_posts" or category == "my_posts":
-        sql += " AND user_id = ?"
-        params.append(user["id"])
-    if group_id:
-        sql += " AND group_id = ?"
-        params.append(group_id)
-    if category != "all" and category != "bookmarks" and category != "my_posts":
-        if category == "urgent":
-            sql += " AND is_urgent = 1"
+            <div class="fb-card" style="padding: 20px; margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; color: var(--fb-text); font-size: 1.3rem;">👥 قائمة الأصدقاء والزملاء ({len(friends_list)})</h2>
+                <div class="friend-card-grid">
+                    {friends_cards_html}
+                </div>
+            </div>
+
+            <div class="fb-card" style="padding: 20px;">
+                <h2 style="margin: 0 0 16px 0; color: #ea580c; font-size: 1.3rem;">✨ أطباء وزملاء مقترحون للتواصل (People You May Know)</h2>
+                <div class="friend-card-grid">
+                    {suggested_html}
+                </div>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("الأصدقاء والزملاء | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 2: VETERINARY PAGES (الصفحات البيطرية والمؤسسات)
+    elif tab == "pages":
+        c.execute("""
+        SELECT p.*, 
+               EXISTS(SELECT 1 FROM community_page_followers pf WHERE pf.page_id = p.id AND pf.user_id = ?) as is_following
+        FROM community_pages p
+        ORDER BY p.followers_count DESC, p.id DESC
+        """, (current_user_id,))
+        pages_list = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        pages_cards_html = ""
+        for pg in pages_list:
+            cov = f'<img src="/uploads/{pg["cover_image"]}" style="width: 100%; height: 110px; object-fit: cover;">' if pg.get("cover_image") else '<div style="width: 100%; height: 110px; background: linear-gradient(135deg, #0f766e, #0d9488);"></div>'
+            av = f'<img src="/uploads/{pg["avatar_image"]}" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; object-fit: cover; margin-top: -30px; margin-right: 14px; background: white;">' if pg.get("avatar_image") else '<div style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; margin-top: -30px; margin-right: 14px;">🏥</div>'
+            fol_text = "✔️ متابع" if pg.get("is_following") else "➕ متابعة الصفحة"
+            fol_style = "background: #e2e8f0; color: #334155;" if pg.get("is_following") else "background: var(--fb-primary); color: #ffffff;"
+
+            pages_cards_html += f"""
+            <div class="page-card">
+                {cov}
+                <div style="padding: 0 16px 16px 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        {av}
+                        <button type="button" onclick="togglePageFollow({pg['id']}, this)" class="btn" style="border-radius: 20px; font-weight: 700; font-size: 0.8rem; padding: 6px 14px; border: none; cursor: pointer; {fol_style}">{fol_text}</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div style="font-weight: 800; font-size: 1.1rem; color: var(--fb-text); display: flex; align-items: center; gap: 6px;">
+                            <span>{pg['name']}</span>
+                            {'<span style="color: #059669; font-size: 0.88rem;" title="صفحة معتمدة وموثقة">✔️ موثقة</span>' if pg.get('is_verified') else ''}
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--fb-primary); font-weight: 700; margin-top: 2px;">{pg.get('city') or 'مصر'} • <span id="page-followers-{pg['id']}">{pg.get('followers_count', 0)} متابع</span></div>
+                        <p style="font-size: 0.85rem; color: var(--fb-text-muted); margin: 8px 0 12px 0; line-height: 1.5; height: 42px; overflow: hidden;">{pg.get('description','')[:120]}</p>
+                    </div>
+                    <div style="border-top: 1px solid var(--fb-border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                        <a href="/community?page_id={pg['id']}" style="color: #0f766e; text-decoration: none; font-weight: 700;">عرض منشورات الصفحة ←</a>
+                        <span style="color: var(--fb-text-muted);">📞 {pg.get('phone') or 'غير مدرج'}</span>
+                    </div>
+                </div>
+            </div>
+            """
+
+        tab_body = f"""
+        <div style="max-width: 1100px; margin: 20px auto; padding: 0 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 1.4rem; color: var(--fb-text);">🏢 الصفحات والمراكز والعيادات البيطرية</h1>
+                    <div style="font-size: 0.85rem; color: var(--fb-text-muted); margin-top: 4px;">تابع أحدث خدمات المستشفيات، العيادات التخصصية، ومختبرات التشخيص المعتمدة</div>
+                </div>
+                <button type="button" onclick="openModal('create-page-modal')" class="btn-fb-primary">➕ إنشاء صفحة بيطرية جديدة</button>
+            </div>
+            <div class="page-card-grid">
+                {pages_cards_html}
+            </div>
+        </div>
+
+        <!-- Create Page Modal -->
+        <div id="create-page-modal" class="fb-modal-overlay">
+            <div class="fb-modal-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🏢 إنشاء صفحة بيطرية جديدة</h2>
+                    <button type="button" onclick="closeModal('create-page-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+                </div>
+                <form action="/community/pages/create" method="POST" enctype="multipart/form-data">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">اسم المنشأة أو العيادة:</label>
+                        <input type="text" name="name" required placeholder="مثال: مستشفى النور للطب البيطري" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">التصنيف:</label>
+                            <select name="category" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                                <option value="clinic">عيادة بيطرية</option>
+                                <option value="hospital">مستشفى بيطري تخصصي</option>
+                                <option value="lab">مختبر تحاليل بيطرية</option>
+                                <option value="pharma">شركة أدوية ولقاحات</option>
+                                <option value="syndicate">نقابة / جمعية علمية</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">المدينة / المحافظة:</label>
+                            <input type="text" name="city" placeholder="مثال: القاهرة" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">رقم الهاتف / الواتساب:</label>
+                            <input type="text" name="phone" placeholder="01xxxxxxxxx" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">الموقع الإلكتروني:</label>
+                            <input type="url" name="website" placeholder="https://..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">نبذة عن الخدمات والإمكانيات الإكلينيكية:</label>
+                        <textarea name="description" rows="3" required placeholder="صف التخصصات والعمليات والأجهزة المتوفرة..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">شعار الصفحة (Avatar):</label>
+                            <input type="file" name="avatar_file" accept="image/*" style="width: 100%; font-size: 0.82rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">صورة الغلاف (Cover):</label>
+                            <input type="file" name="cover_file" accept="image/*" style="width: 100%; font-size: 0.82rem;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">🚀 نشر واعتماد الصفحة الآن</button>
+                </form>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("الصفحات البيطرية | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 3: GROUPS TAB (المجموعات التخصصية)
+    elif tab == "groups":
+        c.execute("""
+        SELECT g.*, 
+               EXISTS(SELECT 1 FROM community_group_members gm WHERE gm.group_id = g.id AND gm.user_id = ?) as is_member
+        FROM community_groups g
+        ORDER BY g.members_count DESC, g.id DESC
+        """, (current_user_id,))
+        groups_list = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        groups_cards_html = ""
+        for gp in groups_list:
+            btn_txt = "🚪 مغادرة" if gp.get("is_member") else "➕ انضمام للمجموعة"
+            btn_style = "background: #e2e8f0; color: #475569;" if gp.get("is_member") else "background: var(--fb-primary); color: #ffffff;"
+            action_fn = f"leaveGroup({gp['id']}, this)" if gp.get("is_member") else f"joinGroup({gp['id']}, this)"
+
+            groups_cards_html += f"""
+            <div class="group-card">
+                <div style="background: linear-gradient(135deg, rgba(15,118,110,0.1), rgba(20,184,166,0.15)); padding: 20px; text-align: center; border-bottom: 1px solid var(--fb-border);">
+                    <div style="font-size: 2.8rem; margin-bottom: 6px;">{gp.get('icon') or '🩺'}</div>
+                    <div style="font-weight: 800; font-size: 1.15rem; color: var(--fb-text);">{gp['name']}</div>
+                    <div style="font-size: 0.78rem; color: var(--fb-primary); font-weight: 700; margin-top: 4px;">👥 {gp.get('members_count', 1)} عضواً وطبيباً</div>
+                </div>
+                <div style="padding: 16px;">
+                    <p style="font-size: 0.85rem; color: var(--fb-text-muted); margin: 0 0 14px 0; line-height: 1.6; height: 50px; overflow: hidden;">{gp.get('description','')[:130]}</p>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" onclick="{action_fn}" class="btn" style="flex: 1; border-radius: 8px; font-weight: 700; font-size: 0.85rem; padding: 8px; border: none; cursor: pointer; {btn_style}">{btn_txt}</button>
+                        <a href="/community?group_id={gp['id']}" class="btn-fb-outline" style="padding: 8px 14px; text-decoration: none; font-size: 0.85rem;">تصفح الحالات ←</a>
+                    </div>
+                </div>
+            </div>
+            """
+
+        tab_body = f"""
+        <div style="max-width: 1100px; margin: 20px auto; padding: 0 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 1.4rem; color: var(--fb-text);">🐾 المجموعات والروابط التخصصية</h1>
+                    <div style="font-size: 0.85rem; color: var(--fb-text-muted); margin-top: 4px;">انضم إلى المجموعات الإكلينيكية لمناقشة الحالات المعقدة حسب تخصصك</div>
+                </div>
+                <button type="button" onclick="openModal('create-group-modal')" class="btn-fb-primary">➕ إنشاء مجموعة تخصصية جديدة</button>
+            </div>
+            <div class="group-card-grid">
+                {groups_cards_html}
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div id="create-group-modal" class="fb-modal-overlay">
+            <div class="fb-modal-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🐾 إنشاء مجموعة بيطرية تخصصية</h2>
+                    <button type="button" onclick="closeModal('create-group-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+                </div>
+                <form action="/community/groups/create" method="POST">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">اسم المجموعة:</label>
+                        <input type="text" name="name" required placeholder="مثال: رابطة جراحة ومناظير الخيول" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">الأيقونة التعبيرية:</label>
+                            <input type="text" name="icon" value="🩺" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text); text-align: center; font-size: 1.2rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">التخصص المستهدف:</label>
+                            <select name="category" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                                <option value="pets">حيوانات أليفة (كلاب وقطط)</option>
+                                <option value="bovine">مجترات وتناسل</option>
+                                <option value="equine">خيول وفروسية</option>
+                                <option value="poultry">دواجن وأوبئة</option>
+                                <option value="diagnostics">أشعة وسونار ومختبر</option>
+                                <option value="surgery">جراحة وتخدير</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">أهداف المجموعة ومواضيع النقاش:</label>
+                        <textarea name="description" rows="3" required placeholder="حدد أهداف وتوجهات المجموعة..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);"></textarea>
+                    </div>
+                    <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">🚀 تأسيس المجموعة وإطلاقها الآن</button>
+                </form>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("المجموعات التخصصية | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 4: EVENTS TAB (الفعاليات والمؤتمرات)
+    elif tab == "events":
+        c.execute("""
+        SELECT e.*,
+               EXISTS(SELECT 1 FROM community_event_attendees ea WHERE ea.event_id = e.id AND ea.user_id = ?) as is_interested
+        FROM community_events e
+        ORDER BY e.id DESC
+        """, (current_user_id,))
+        events_list = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        events_cards_html = ""
+        for ev in events_list:
+            btn_txt = "⭐ سأحضر (" + str(ev.get("interested_count", 0)) + ")" if ev.get("is_interested") else "⭐ تسجيل اهتمامي (" + str(ev.get("interested_count", 0)) + ")"
+            btn_style = "background: #0f766e; color: #ffffff;" if ev.get("is_interested") else "background: var(--fb-card); color: var(--fb-text); border: 1px solid var(--fb-border);"
+
+            events_cards_html += f"""
+            <div class="fb-card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="flex: 1; min-width: 280px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 1.5rem;">🎓</span>
+                        <h3 style="margin: 0; color: #0f766e; font-size: 1.15rem;">{ev['title']}</h3>
+                    </div>
+                    <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--fb-text); line-height: 1.6;">{ev.get('description','')}</p>
+                    <div style="font-size: 0.8rem; color: var(--fb-text-muted); display: flex; gap: 14px; flex-wrap: wrap;">
+                        <span>📅 <strong>الموعد:</strong> {ev['date_time']}</span>
+                        <span>📍 <strong>المكان / الرابط:</strong> {ev['location']}</span>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" onclick="toggleEventInterest({ev['id']}, this)" class="btn" style="border-radius: 20px; font-weight: 800; font-size: 0.85rem; padding: 10px 18px; cursor: pointer; {btn_style}">{btn_txt}</button>
+                </div>
+            </div>
+            """
+
+        tab_body = f"""
+        <div style="max-width: 1000px; margin: 20px auto; padding: 0 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 1.4rem; color: var(--fb-text);">🎓 المؤتمرات والفعاليات وورش العمل السريرية</h1>
+                    <div style="font-size: 0.85rem; color: var(--fb-text-muted); margin-top: 4px;">تابع مواعيد أهم الويبينارات والدورات والمؤتمرات البيطرية الإقليمية والدولية</div>
+                </div>
+                <button type="button" onclick="openModal('create-event-modal')" class="btn-fb-primary">➕ إضافة فعالية بيطرية جديدة</button>
+            </div>
+            {events_cards_html}
+        </div>
+
+        <!-- Create Event Modal -->
+        <div id="create-event-modal" class="fb-modal-overlay">
+            <div class="fb-modal-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                    <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🎓 إضافة فعالية أو مؤتمر بيطري</h2>
+                    <button type="button" onclick="closeModal('create-event-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+                </div>
+                <form action="/community/events/create" method="POST">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">عنوان الفعالية / الويبينار:</label>
+                        <input type="text" name="title" required placeholder="مثال: ويبينار مستجدات التخدير في الحيوانات الأليفة" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">الموعد والتاريخ:</label>
+                        <input type="text" name="date_time" required placeholder="مثال: الجمعة 20 نوفمبر • 07:00 مساءً" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">مكان الانعقاد أو رابط الحضور (Zoom / القاعة):</label>
+                        <input type="text" name="location" required placeholder="مثال: Zoom Webinar أو قاعة مؤتمرات كلية الطب البيطري" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">وصف الفعالية والمحاور والمحاضرين:</label>
+                        <textarea name="description" rows="3" required placeholder="اكتب تفاصيل المحاور وأسماء المتحدثين..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);"></textarea>
+                    </div>
+                    <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">🚀 نشر الفعالية في المجتمع</button>
+                </form>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("الفعاليات والمؤتمرات | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 5: NOTIFICATIONS TAB (الإشعارات)
+    elif tab == "notifications":
+        c.execute("""
+        SELECT * FROM community_notifications
+        WHERE user_id = ?
+        ORDER BY id DESC
+        LIMIT 60
+        """, (current_user_id,))
+        notifications_list = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        notifs_items_html = ""
+        if notifications_list:
+            for nt in notifications_list:
+                unread_cls = "unread" if nt.get("is_read") == 0 else ""
+                dot = '<div class="notif-unread-dot"></div>' if nt.get("is_read") == 0 else ""
+                av = f'<img src="/uploads/{nt["actor_avatar"]}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">' if nt.get("actor_avatar") else f'<div style="width: 44px; height: 44px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">{nt.get("actor_name", "د")[0]}</div>'
+                target_url = f"/community#post-{nt['post_id']}" if nt.get("post_id") else f"/community/profile/{nt['actor_id']}"
+
+                notifs_items_html += f"""
+                <div class="notif-item {unread_cls}" onclick="markNotificationRead({nt['id']}, '{target_url}')" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        {av}
+                        <div>
+                            <div style="font-size: 0.92rem; color: var(--fb-text); line-height: 1.5;">
+                                <strong>د. {nt.get('actor_name','زميل')}</strong> {nt.get('message','')}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 2px;">
+                                🕒 {nt.get('created_at','')[:16]}
+                            </div>
+                        </div>
+                    </div>
+                    {dot}
+                </div>
+                """
         else:
-            sql += " AND category = ?"
-            params.append(category)
-    if species != "all":
-        sql += " AND species = ?"
-        params.append(species)
-    if q.strip():
-        search_kw = f"%{q.strip()}%"
-        sql += " AND (title LIKE ? OR content LIKE ? OR symptoms LIKE ? OR species LIKE ?)"
-        params.extend([search_kw, search_kw, search_kw, search_kw])
+            notifs_items_html = "<div style='padding: 30px; text-align: center; color: var(--fb-text-muted);'>صندوق الإشعارات فارغ حالياً. ستظهر هنا تفاعلات زملائك وطلبات الصداقة.</div>"
 
-    sql += " ORDER BY id DESC LIMIT 100"
-    c.execute(sql, params)
+        tab_body = f"""
+        <div style="max-width: 760px; margin: 20px auto; padding: 0 14px;">
+            <div class="fb-card">
+                <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
+                    <h1 style="margin: 0; font-size: 1.3rem; color: var(--fb-text);">🔔 الإشعارات والتنبيهات السريرية</h1>
+                    <button type="button" onclick="markAllNotificationsRead()" class="btn-fb-outline" style="font-size: 0.8rem; padding: 6px 12px;">✔️ تعليم الكل كمقروء</button>
+                </div>
+                <div>
+                    {notifs_items_html}
+                </div>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("الإشعارات | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 6: SEARCH TAB (البحث الشامل في VetBook)
+    elif tab == "search":
+        search_query = q.strip()
+        search_like = f"%{search_query}%"
+
+        # 1. Matching Doctors
+        c.execute("""
+        SELECT id, name, role, specialty, clinic_name, city, country, avatar_image
+        FROM users
+        WHERE name LIKE ? OR specialty LIKE ? OR clinic_name LIKE ? OR city LIKE ?
+        LIMIT 10
+        """, (search_like, search_like, search_like, search_like))
+        matching_doctors = [dict(r) for r in c.fetchall()]
+
+        # 2. Matching Posts
+        c.execute("""
+        SELECT id, title, content, author_name, species, breed, symptoms, is_urgent, created_at, likes_count, comments_count
+        FROM community_posts
+        WHERE (title LIKE ? OR content LIKE ? OR symptoms LIKE ? OR species LIKE ? OR breed LIKE ?)
+          AND (privacy = 'public' OR user_id = ?)
+        LIMIT 15
+        """, (search_like, search_like, search_like, search_like, search_like, current_user_id))
+        matching_posts = [dict(r) for r in c.fetchall()]
+
+        # 3. Matching Pages
+        c.execute("""
+        SELECT id, name, category, city, followers_count, description
+        FROM community_pages
+        WHERE name LIKE ? OR description LIKE ? OR city LIKE ?
+        LIMIT 8
+        """, (search_like, search_like, search_like))
+        matching_pages = [dict(r) for r in c.fetchall()]
+
+        # 4. Matching Groups
+        c.execute("""
+        SELECT id, name, icon, category, members_count, description
+        FROM community_groups
+        WHERE name LIKE ? OR description LIKE ?
+        LIMIT 8
+        """, (search_like, search_like))
+        matching_groups = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        doctors_res_html = ""
+        if matching_doctors:
+            for doc in matching_doctors:
+                av = f'<img src="/uploads/{doc["avatar_image"]}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">' if doc.get("avatar_image") else f'<div style="width: 50px; height: 50px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">{doc["name"][0]}</div>'
+                doctors_res_html += f"""
+                <div class="fb-card" style="padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        {av}
+                        <div>
+                            <a href="/community/profile/{doc['id']}" style="font-weight: 800; font-size: 1.05rem; color: #0f766e; text-decoration: none;">د. {doc['name']}</a>
+                            <div style="font-size: 0.8rem; color: var(--fb-text-muted);">{doc.get('specialty') or 'طبيب بيطري'} • {doc.get('clinic_name') or ''} • {doc.get('city') or 'مصر'}</div>
+                        </div>
+                    </div>
+                    <a href="/community/profile/{doc['id']}" class="btn-fb-outline" style="font-size: 0.8rem; padding: 6px 12px;">الملف الشخصي</a>
+                </div>
+                """
+        else:
+            doctors_res_html = "<div style='color: var(--fb-text-muted); font-size: 0.88rem; padding: 8px;'>لا يوجد أطباء يطابقون عبارة البحث.</div>"
+
+        posts_res_html = ""
+        if matching_posts:
+            for pst in matching_posts:
+                urg = '<span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;">🚨 عاجلة</span>' if pst.get("is_urgent") else ""
+                posts_res_html += f"""
+                <div class="fb-card" style="padding: 16px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <a href="/community#post-{pst['id']}" style="font-weight: 800; font-size: 1.05rem; color: var(--fb-text); text-decoration: none;">{pst['title']}</a>
+                        {urg}
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--fb-text-muted); margin: 0 0 8px 0; line-height: 1.5;">{pst['content'][:180]}...</p>
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); display: flex; justify-content: space-between;">
+                        <span>د. {pst.get('author_name','طبيب')} • 🐾 {pst.get('species','')} • 🕒 {pst.get('created_at','')[:16]}</span>
+                        <a href="/community#post-{pst['id']}" style="color: #0f766e; font-weight: 700; text-decoration: none;">فتح الحالة والمناقشة ←</a>
+                    </div>
+                </div>
+                """
+        else:
+            posts_res_html = "<div style='color: var(--fb-text-muted); font-size: 0.88rem; padding: 8px;'>لا توجد منشورات سريرية تطابق البحث.</div>"
+
+        tab_body = f"""
+        <div style="max-width: 900px; margin: 20px auto; padding: 0 14px;">
+            <div style="margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 1.4rem; color: var(--fb-text);">🔍 نتائج البحث عن: <span style="color: #0f766e;">"{search_query}"</span></h1>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <h3 style="color: #0f766e; margin-bottom: 12px; font-size: 1.15rem;">👤 الأطباء والزملاء ({len(matching_doctors)})</h3>
+                {doctors_res_html}
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <h3 style="color: #0f766e; margin-bottom: 12px; font-size: 1.15rem;">📰 الحالات والمنشورات السريرية ({len(matching_posts)})</h3>
+                {posts_res_html}
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html(f"نتائج البحث: {search_query} | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 7: ADMIN MODERATION TAB (الإشراف والرقابة)
+    elif tab == "moderation":
+        if not is_admin:
+            conn.close()
+            return RedirectResponse("/community", status_code=303)
+
+        c.execute("""
+        SELECT r.*, u.name as reporter_name
+        FROM community_reports r
+        LEFT JOIN users u ON r.reporter_id = u.id
+        ORDER BY r.status = 'pending' DESC, r.id DESC
+        LIMIT 50
+        """)
+        reports_list = [dict(r) for r in c.fetchall()]
+        conn.close()
+
+        reports_rows_html = ""
+        for rep in reports_list:
+            status_badge = '<span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 800;">قيد المراجعة</span>' if rep.get("status") == "pending" else '<span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 800;">تم الحسم</span>'
+            del_fn = f"deletePost({rep['target_id']})" if rep.get("target_type") == "post" else f"deleteComment({rep['target_id']})"
+
+            reports_rows_html += f"""
+            <tr style="border-bottom: 1px solid var(--fb-border);">
+                <td style="padding: 12px; font-weight: 700;">#{rep['id']}</td>
+                <td style="padding: 12px;">د. {rep.get('reporter_name') or 'طبيب'}</td>
+                <td style="padding: 12px;"><span style="font-weight: 800; color: #0f766e;">{rep['target_type']} #{rep['target_id']}</span></td>
+                <td style="padding: 12px; color: #dc2626; font-weight: 700;">{rep['reason']}</td>
+                <td style="padding: 12px; font-size: 0.85rem;">{rep.get('details') or '-'}</td>
+                <td style="padding: 12px;">{status_badge}</td>
+                <td style="padding: 12px; font-size: 0.75rem; color: var(--fb-text-muted);">{rep['created_at'][:16]}</td>
+                <td style="padding: 12px; white-space: nowrap;">
+                    <button type="button" onclick="{del_fn}" class="btn-fb-danger" style="padding: 4px 10px; font-size: 0.75rem;">🗑️ حذف المحتوى</button>
+                    <form action="/community/reports/dismiss/{rep['id']}" method="POST" style="display: inline-block; margin: 0 4px;">
+                        <button type="submit" class="btn-fb-outline" style="padding: 4px 10px; font-size: 0.75rem;">✔️ تجاهل</button>
+                    </form>
+                </td>
+            </tr>
+            """
+
+        tab_body = f"""
+        <div style="max-width: 1200px; margin: 20px auto; padding: 0 14px;">
+            <div class="fb-card" style="padding: 24px;">
+                <div style="margin-bottom: 20px;">
+                    <h1 style="margin: 0; font-size: 1.4rem; color: #0f766e;">🛡️ لوحة الإشراف والرقابة السريرية (Admin Moderation Panel)</h1>
+                    <div style="font-size: 0.85rem; color: var(--fb-text-muted); margin-top: 4px;">مراجعة بلاغات الأطباء حول المحتوى المضلل أو المخالف لأخلاقيات المهنة البيطرية</div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: right;">
+                        <thead>
+                            <tr style="background: var(--fb-bg); border-bottom: 2px solid var(--fb-border);">
+                                <th style="padding: 10px;">المعرف</th>
+                                <th style="padding: 10px;">المُبلّغ</th>
+                                <th style="padding: 10px;">الهدف</th>
+                                <th style="padding: 10px;">السبب</th>
+                                <th style="padding: 10px;">التفاصيل</th>
+                                <th style="padding: 10px;">الحالة</th>
+                                <th style="padding: 10px;">التاريخ</th>
+                                <th style="padding: 10px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reports_rows_html if reports_rows_html else '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--fb-text-muted);">لا توجد بلاغات معلقة حالياً. المنصة نظيفة تماماً!</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        """
+        body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{tab_body}</div>{COMMUNITY_JS}"
+        return HTMLResponse(content=get_base_html("لوحة الإشراف | VetBook", body, user, lang), media_type="text/html; charset=utf-8")
+
+    # TAB 0: MAIN FEED (الموجز العام والمنشورات السريرية)
+    # Fetch Feed Posts respecting Privacy & Block Filters
+    query = """
+    SELECT p.*,
+           (SELECT COUNT(*) FROM community_comments c WHERE c.post_id = p.id) as real_comments_count
+    FROM community_posts p
+    WHERE 1=1
+    """
+    params = []
+
+    # Blocked Users Filter
+    if blocked_set:
+        placeholders = ",".join("?" for _ in blocked_set)
+        query += f" AND p.user_id NOT IN ({placeholders})"
+        params.extend(list(blocked_set))
+
+    # Category Filter
+    if category == "bookmarks":
+        query += """
+        AND p.id IN (SELECT post_id FROM community_bookmarks WHERE user_id = ?)
+        """
+        params.append(current_user_id)
+    elif category == "urgent":
+        query += " AND p.is_urgent = 1"
+    elif category != "all":
+        query += " AND p.category = ?"
+        params.append(category)
+
+    # Species Filter
+    if species != "all":
+        query += " AND p.species = ?"
+        params.append(species)
+
+    # Group Filter
+    if group_id > 0:
+        query += " AND p.group_id = ?"
+        params.append(group_id)
+
+    # Page Filter
+    if page_id > 0:
+        query += " AND p.page_id = ?"
+        params.append(page_id)
+
+    # Tab: My Posts Filter
+    if tab == "my_posts":
+        query += " AND p.user_id = ?"
+        params.append(current_user_id)
+
+    c.execute(query, params)
     raw_posts = [dict(r) for r in c.fetchall()]
 
-    if category == "bookmarks" or tab == "saved":
-        raw_posts = [p for p in raw_posts if p["id"] in user_bookmarks]
+    # Filter by Privacy Rules: public / friends / only_me
+    raw_posts = [p for p in raw_posts if can_view_post(p, current_user_id, friends_set, is_admin)]
 
-    # Pre-fetch latest comment timestamps for comment-bump ranking
-    post_latest_comments = {}
-    try:
-        c.execute("SELECT post_id, MAX(created_at) FROM community_comments GROUP BY post_id")
-        for r in c.fetchall():
-            post_latest_comments[r[0]] = r[1]
-    except Exception:
-        pass
+    # Fetch User Likes and Bookmarks
+    c.execute("SELECT post_id, reaction_type FROM community_likes WHERE user_id = ?", (current_user_id,))
+    user_reactions = {r[0]: r[1] for r in c.fetchall()}
 
-    # Score posts with EdgeRank
-    for p in raw_posts:
-        p["is_author_connected"] = p["user_id"] in user_connections
-        p["bookmarks_count"] = 1 if p["id"] in user_bookmarks else 0
-        latest_c_time = post_latest_comments.get(p["id"])
-        p["edgerank_score"] = calculate_edgerank_score(p, user, latest_c_time)
+    c.execute("SELECT post_id FROM community_bookmarks WHERE user_id = ?", (current_user_id,))
+    user_bookmarks = set(r[0] for r in c.fetchall())
 
-    # Sort based on selector (Guarantees doctor's newly created posts are prioritized at the top)
+    # Sorting with Algorithmic Relevance (EdgeRank)
     if sort == "smart":
-        raw_posts.sort(key=lambda x: (
-            x.get("is_pinned", 0),
-            1 if x.get("user_id") == user["id"] else 0,
-            x.get("edgerank_score", 0),
-            x["id"]
+        viewer_meta = {
+            "id": current_user_id,
+            "specialty": user.get("specialty", "") if user else "",
+            "role": user.get("role", "") if user else ""
+        }
+        raw_posts.sort(key=lambda p: (
+            p.get("is_pinned", 0),
+            calculate_edgerank_score(p, viewer_meta)
         ), reverse=True)
     elif sort == "recent":
         raw_posts.sort(key=lambda x: (x.get("is_pinned", 0), x["id"]), reverse=True)
@@ -1596,7 +2522,7 @@ async def community_hub(
     elif sort == "trending":
         raw_posts.sort(key=lambda x: (x.get("virality_score", 0), x.get("likes_count", 0)), reverse=True)
 
-    # Fetch comments for posts
+    # Fetch Comments for posts
     post_ids = [p["id"] for p in raw_posts]
     comments_by_post = {}
     if post_ids:
@@ -1612,6 +2538,7 @@ async def community_hub(
         is_urgent = p.get("is_urgent", 0)
         post_reaction = user_reactions.get(post_id)
         is_bookmarked = post_id in user_bookmarks
+        is_author = (p.get("user_id") == current_user_id)
 
         react_info = REACTIONS.get(post_reaction, {"label": "إعجاب", "icon": "👍", "color": "var(--fb-text-muted)"})
         react_active_style = f"color: {react_info['color']}; font-weight: 800;" if post_reaction else "color: var(--fb-text-muted);"
@@ -1625,15 +2552,15 @@ async def community_hub(
             card_class += " urgent-post-card"
             urgent_banner = """
             <div class="urgent-banner-row">
-                <div class="urgent-banner-left">
-                    <span style="font-size: 1.15rem; animation: pulse 1s infinite;">🚨</span>
-                    <span>حالة سريرية عاجلة بحاجة لاستشارة فورية (URGENT CASE)</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">🚨</span>
+                    <span>استشارة سريرية عاجلة بحاجة لرأي تشخيصي فوري (URGENT CASE)</span>
                 </div>
                 <span class="urgent-badge">أولوية قصوى</span>
             </div>
             """
 
-        # Demographics
+        # Demographics Grid
         demographics_html = ""
         if p.get("species") or p.get("symptoms") or p.get("breed"):
             spec_name = SPECIES_MAP.get(p.get("species"), p.get("species") or "فصيلة غير محددة")
@@ -1641,9 +2568,9 @@ async def community_hub(
             <div class="case-demographics-grid">
                 <div>🐾 <strong>الفصيلة:</strong> {spec_name}</div>
                 {f"<div>🧬 <strong>السلالة:</strong> {p['breed']}</div>" if p.get('breed') else ""}
-                {f"<div>⚖️ <strong>الوزن/العمر:</strong> {p.get('weight','')} كجم • {p.get('age','')}</div>" if (p.get('weight') or p.get('age')) else ""}
+                {f"<div>⚖️ <strong>العمر/الوزن:</strong> {p.get('age','')} • {p.get('weight','')} كجم</div>" if (p.get('weight') or p.get('age')) else ""}
                 {f"<div>⚧ <strong>الجنس:</strong> {p['gender']}</div>" if p.get('gender') else ""}
-                {f"<div style='grid-column: 1 / -1;'>🌡️ <strong>الأعراض الحيوية:</strong> {p['symptoms']}</div>" if p.get('symptoms') else ""}
+                {f"<div style='grid-column: 1 / -1;'>🌡️ <strong>الأعراض والعلامات الحيوية:</strong> {p['symptoms']}</div>" if p.get('symptoms') else ""}
                 {f"<div style='grid-column: 1 / -1; color: #7c2d12;'>💊 <strong>الأدوية المسبقة:</strong> {p['medications']}</div>" if p.get('medications') else ""}
             </div>
             """
@@ -1670,43 +2597,25 @@ async def community_hub(
                 for opt in options:
                     pct = int((opt.get("votes", 0) / max(1, total_votes)) * 100)
                     opts_html += f"""
-                    <div class="poll-option-bar" onclick="votePoll({post_id}, {opt['id']})" style="background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; cursor: pointer; position: relative; overflow: hidden;">
-                        <div class="poll-progress-fill" style="position: absolute; top: 0; right: 0; bottom: 0; width: {pct}%; background: rgba(15,118,110,0.15);"></div>
-                        <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; font-weight: 700; font-size: 0.85rem;">
+                    <div onclick="votePoll({post_id}, {opt['id']})" style="margin-bottom: 8px; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top:0; right:0; bottom:0; width: {pct}%; background: rgba(15,118,110,0.15);"></div>
+                        <div style="position: relative; display: flex; justify-content: space-between; font-weight: 700; font-size: 0.86rem; color: var(--fb-text);">
                             <span>{opt['text']}</span>
                             <span>{pct}% ({opt.get('votes', 0)})</span>
                         </div>
                     </div>
                     """
                 poll_html = f"""
-                <div style="background: var(--fb-card); border: 1px solid var(--fb-border); border-radius: 12px; padding: 14px; margin: 12px 0;">
-                    <div style="font-weight: 800; font-size: 0.95rem; color: #0f766e; margin-bottom: 10px;">📊 استطلاع رأي طبي: {q_text}</div>
+                <div style="background: var(--fb-card); border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px; margin: 12px 0;">
+                    <div style="font-weight: 800; font-size: 0.95rem; color: #0f766e; margin-bottom: 10px;">📊 استطلاع الرأي السريري: {q_text}</div>
                     {opts_html}
-                    <div style="font-size: 0.74rem; color: var(--fb-text-muted); margin-top: 6px;">إجمالي الأصوات: {total_votes} طبيباً</div>
+                    <div style="font-size: 0.74rem; color: var(--fb-text-muted);">إجمالي الأصوات: {total_votes} طبيباً</div>
                 </div>
                 """
             except Exception:
                 pass
 
-        # AI Analysis Card
-        ai_card_html = ""
-        if p.get("ai_analysis"):
-            ai_card_html = f"""
-            <div class="ai-consult-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%); border: 1.5px solid #6ee7b7; border-radius: 14px; padding: 14px 18px; margin: 12px 0;" id="ai-box-{post_id}">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #0f766e;">
-                        <span style="font-size: 1.3rem;">🤖</span>
-                        <span>التحليل السريري الذكي (VetMind AI Differential Diagnosis):</span>
-                    </div>
-                    <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;">معتمد ذكياً</span>
-                </div>
-                <div style="font-size: 0.9rem; line-height: 1.75; color: var(--fb-text); white-space: pre-line;">
-                    {p['ai_analysis']}
-                </div>
-            </div>
-            """
-
-        # Comments
+        # Threaded Comments & Nested Replies
         comments_raw = comments_by_post.get(post_id, [])
         top_comments = [cm for cm in comments_raw if not cm.get("parent_comment_id") or cm.get("parent_comment_id") == 0]
         replies_map = {}
@@ -1719,11 +2628,8 @@ async def community_hub(
         for cm in top_comments:
             cm_id = cm["id"]
             is_best = cm.get("is_best_answer", 0)
-            is_ai = cm.get("is_ai_comment", 0)
             bubble_class = "fb-comment-bubble" + (" best-answer-bubble" if is_best else "")
-
             best_badge = '<span style="background: #10b981; color: white; padding: 1px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: 800;">🏆 أفضل تشخيص معتمد ✅</span>' if is_best else ""
-            ai_badge = '<span style="background: #10b981; color: white; padding: 1px 6px; border-radius: 8px; font-size: 0.68rem; font-weight: 800;">🤖 AI مساعد</span>' if is_ai else ""
             author_badge = '<span style="background: #e0e7ff; color: #3730a3; padding: 1px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: 700;">👑 صاحب الحالة</span>' if cm.get("user_id") == p["user_id"] else ""
 
             mark_best_btn = ""
@@ -1734,21 +2640,33 @@ async def community_hub(
                 </button>
                 """
 
+            del_cm_btn = ""
+            if user and (user["id"] == cm.get("user_id") or user["id"] == p["user_id"] or is_admin):
+                del_cm_btn = f"""
+                <button type="button" onclick="deleteComment({cm_id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.74rem;">
+                    🗑️ حذف
+                </button>
+                """
+
+            # Render Nested Replies for this comment
+            replies_list = replies_map.get(cm_id, [])
             replies_html = ""
-            for rep in replies_map.get(cm_id, []):
-                rep_badge = '<span style="background: #e0e7ff; color: #3730a3; padding: 1px 5px; border-radius: 8px; font-size: 0.68rem; font-weight: 700;">👑 صاحب الحالة</span>' if rep.get("user_id") == p["user_id"] else ""
+            for rep in replies_list:
+                rep_id = rep["id"]
+                rep_del = f'<button type="button" onclick="deleteComment({rep_id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.72rem;">🗑️ حذف</button>' if (user and (user["id"] == rep.get("user_id") or user["id"] == p["user_id"] or is_admin)) else ""
                 replies_html += f"""
-                <div style="margin-top: 8px; display: flex; gap: 8px; align-items: flex-start;">
-                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">
+                <div style="margin-top: 8px; display: flex; gap: 8px; align-items: flex-start;" id="comment-{rep_id}">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0;">
                         {rep['author_name'][0]}
                     </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="fb-comment-bubble">
-                            <div style="font-weight: 700; font-size: 0.82rem; color: #0f766e;">د. {rep['author_name']} {rep_badge}</div>
-                            <div style="margin-top: 3px; line-height: 1.6;">{rep['content']}</div>
+                    <div style="flex: 1;">
+                        <div class="fb-comment-bubble" style="padding: 8px 12px; font-size: 0.84rem;">
+                            <a href="/community/profile/{rep['user_id']}" style="font-weight: 800; color: #0f766e; text-decoration: none;">د. {rep['author_name']}</a>
+                            <div style="margin-top: 3px;">{rep['content']}</div>
                         </div>
-                        <div style="font-size: 0.68rem; color: var(--fb-text-muted); margin-top: 2px; margin-right: 8px;">
-                            {rep['created_at']}
+                        <div style="font-size: 0.72rem; color: var(--fb-text-muted); margin-top: 2px; display: flex; gap: 10px;">
+                            <span>{rep['created_at'][:16]}</span>
+                            {rep_del}
                         </div>
                     </div>
                 </div>
@@ -1756,550 +2674,477 @@ async def community_hub(
 
             comments_html += f"""
             <div style="margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;" id="comment-{cm_id}">
-                <div style="width: 34px; height: 34px; border-radius: 50%; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 800; flex-shrink: 0;">
                     {cm['author_name'][0]}
                 </div>
-                <div style="flex: 1; min-width: 0;">
+                <div style="flex: 1;">
                     <div class="{bubble_class}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;">
-                            <div>
-                                <strong style="font-size: 0.88rem; color: #0f766e;">د. {cm['author_name']}</strong> {author_badge} {ai_badge}
-                                <span style="font-size: 0.72rem; color: var(--fb-text-muted); margin-right: 4px;">({cm.get('author_specialty') or 'طبيب بيطري'})</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <a href="/community/profile/{cm['user_id']}" style="font-weight: 800; color: #0f766e; text-decoration: none; font-size: 0.88rem;">د. {cm['author_name']}</a>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                {author_badge}
+                                {best_badge}
                             </div>
-                            {best_badge}
                         </div>
-                        <div style="line-height: 1.6;">{cm['content']}</div>
+                        <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-bottom: 6px;">{cm.get('author_specialty') or 'طبيب بيطري'} • {cm.get('author_country') or 'مصر'}</div>
+                        <div style="font-size: 0.88rem; line-height: 1.6;">{cm['content']}</div>
                     </div>
-                    <div style="display: flex; gap: 12px; font-size: 0.74rem; color: var(--fb-text-muted); margin-top: 3px; margin-right: 10px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" onclick="toggleReplyBox({cm_id})" style="background: none; border: none; font-weight: 700; color: #0f766e; cursor: pointer; padding: 0;">رد ↩️</button>
+
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 4px; display: flex; gap: 12px; align-items: center;">
+                        <span>{cm['created_at'][:16]}</span>
+                        <button type="button" onclick="toggleReplyBox({cm_id})" style="background: none; border: none; color: #0f766e; font-weight: 700; cursor: pointer; font-size: 0.75rem;">💬 رد</button>
                         {mark_best_btn}
-                        <span>{cm['created_at']}</span>
+                        {del_cm_btn}
                     </div>
 
-                    <div style="margin-right: 16px;">
+                    <!-- Nested Replies Container -->
+                    <div class="nested-reply-box">
                         {replies_html}
-                    </div>
-
-                    <div id="reply-box-{cm_id}" style="display: none; margin-top: 8px; margin-right: 16px;">
-                        <form onsubmit="submitReply(event, {post_id}, {cm_id})" style="display: flex; gap: 8px; align-items: center;">
-                            <input type="text" id="reply-input-{cm_id}" required placeholder="اكتب ردك على د. {cm['author_name']}..." style="flex: 1; padding: 8px 14px; border: 1px solid var(--fb-border); border-radius: 20px; font-size: 0.82rem; background: var(--fb-bg); color: var(--fb-text);">
-                            <button type="submit" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.78rem; border-radius: 20px;">رد ↩️</button>
-                        </form>
+                        <!-- Inline Reply Input -->
+                        <div id="reply-box-{cm_id}" style="display: none; margin-top: 8px;">
+                            <form onsubmit="submitReply(event, {post_id}, {cm_id})" style="display: flex; gap: 8px;">
+                                <input type="text" id="reply-input-{cm_id}" required placeholder="اكتب رداً على استشارة د. {cm['author_name']}..." style="flex: 1; padding: 6px 12px; border: 1px solid var(--fb-border); border-radius: 20px; font-size: 0.82rem; background: var(--fb-card); color: var(--fb-text);">
+                                <button type="submit" class="btn-fb-primary" style="padding: 6px 14px; font-size: 0.8rem; border-radius: 20px;">إرسال</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
             """
 
-        post_badges = ""
-        if p.get("is_pinned"):
-            post_badges += '<span style="background: #fef08a; color: #854d0e; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">📌 مثبت</span>'
-        if p.get("is_boosted"):
-            post_badges += '<span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">🚀 مروج</span>'
-        if is_urgent:
-            post_badges += '<span style="background: #fee2e2; color: #dc2626; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">🚨 طارئ</span>'
-        post_badges += '<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">📢 منشور عام موجه لكافة الأطباء</span>'
-        if user and p.get("user_id") == user["id"]:
-            post_badges += '<span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">👑 منشوري</span>'
+        # Audience Privacy Badge
+        post_privacy = p.get("privacy", "public")
+        if post_privacy == "friends":
+            privacy_badge = '<span style="font-size: 0.72rem; color: var(--fb-text-muted); background: var(--fb-bg); padding: 1px 6px; border-radius: 10px;">👥 الأصدقاء فقط</span>'
+        elif post_privacy == "only_me":
+            privacy_badge = '<span style="font-size: 0.72rem; color: var(--fb-text-muted); background: var(--fb-bg); padding: 1px 6px; border-radius: 10px;">🔒 أنا فقط</span>'
+        else:
+            privacy_badge = '<span style="font-size: 0.72rem; color: var(--fb-text-muted); background: var(--fb-bg); padding: 1px 6px; border-radius: 10px;">🌐 عام</span>'
 
-        cat_badge = CATEGORIES.get(p["category"], {"name": p["category"], "color": "#0f766e", "icon": "📄"})
-
-        delete_btn = ""
-        if user and (user.get("is_admin") or user["id"] == p["user_id"]):
-            delete_btn = f"""
-            <form action="/community/post/delete/{post_id}" method="POST" style="margin: 0;" onsubmit="return confirm('هل تريد بالتأكيد حذف هذا المنشور السريري؟');">
-                <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.85rem; padding: 2px;" title="حذف المنشور">🗑️</button>
-            </form>
-            """
+        # Edit and Delete buttons for author/admin
+        edit_action_btn = f'<button type="button" onclick="openEditPostModal({post_id})" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 0.8rem; font-weight: 700;">✏️ تعديل</button>' if (is_author or is_admin) else ''
+        delete_action_btn = f'<button type="button" onclick="deletePost({post_id})" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.8rem; font-weight: 700;">🗑️ حذف</button>' if (is_author or is_admin) else ''
+        report_action_btn = f'<button type="button" onclick="openReportModal(\'post\', {post_id})" style="background: none; border: none; color: var(--fb-text-muted); cursor: pointer; font-size: 0.8rem;">🚩 إبلاغ</button>'
 
         posts_cards_html += f"""
-        <div class="{card_class}" id="post-{post_id}" style="margin-bottom: 16px;">
+        <div class="{card_class}" id="post-{post_id}" style="padding: 16px; margin-bottom: 16px;">
             {urgent_banner}
-            <div class="fb-card-content" style="padding: 16px;">
-                <!-- Post Header -->
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <a href="/community/profile/{p['user_id']}" style="text-decoration: none;">
-                            <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 2px 6px rgba(15,118,110,0.25);">
-                                {p['author_name'][0] if p['author_name'] else 'V'}
-                            </div>
-                        </a>
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                <a href="/community/profile/{p['user_id']}" style="font-weight: 700; font-size: 0.98rem; color: var(--fb-text); text-decoration: none;">د. {p['author_name']}</a>
-                                <span title="طبيب بيطري موثق ومعتمد">🩺</span>
-                                {post_badges}
-                            </div>
-                            <div style="font-size: 0.74rem; color: var(--fb-text-muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
-                                <span>{p.get('author_specialty') or 'طب وجراحة الحيوان'}</span> •
-                                <span>{p.get('author_country') or 'مصر'}</span> •
-                                <span>{p['created_at']}</span> •
-                                <span>🌐</span>
-                            </div>
+
+            <!-- Header Row -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <a href="/community/profile/{p['user_id']}" style="text-decoration: none;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800;">
+                            {p['author_name'][0]}
                         </div>
-                    </div>
-                    
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="background: {cat_badge['color']}15; color: {cat_badge['color']}; padding: 3px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 700;">
-                            {cat_badge['icon']} {cat_badge['name']}
-                        </span>
-                        {delete_btn}
+                    </a>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <a href="/community/profile/{p['user_id']}" style="font-weight: 800; font-size: 0.98rem; color: var(--fb-text); text-decoration: none;">د. {p['author_name']}</a>
+                            <span style="font-size: 0.85rem; color: #059669;" title="طبيب موثق">🩺</span>
+                            {f'<span style="background: #fef3c7; color: #b45309; font-size: 0.68rem; font-weight: 800; padding: 1px 6px; border-radius: 8px;">👑 منشوري</span>' if is_author else ''}
+                            {privacy_badge}
+                            {f'<span style="font-size: 0.70rem; color: var(--fb-text-muted);">(تم التعديل)</span>' if p.get('is_edited') else ''}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 2px;">
+                            {p.get('author_specialty','طب وجراحة الحيوان')} • {p.get('author_country','مصر')} • 🕒 {p['created_at'][:16]}
+                        </div>
                     </div>
                 </div>
 
-                <!-- Post Title & Content -->
-                <h3 style="margin: 0 0 8px 0; font-size: 1.15rem; color: var(--fb-text); line-height: 1.45; word-break: normal; overflow-wrap: break-word;">{p['title']}</h3>
-                <div style="font-size: 0.95rem; color: var(--fb-text); line-height: 1.75; word-break: normal; overflow-wrap: break-word; white-space: pre-line;">{p['content']}</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    {edit_action_btn}
+                    {delete_action_btn}
+                    {report_action_btn}
+                </div>
+            </div>
 
-                {demographics_html}
-                {media_html}
-                {poll_html}
-                {ai_card_html}
+            <!-- Title & Body -->
+            <div style="margin-bottom: 12px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 1.18rem; color: #0f766e; line-height: 1.45;">{p['title']}</h3>
+                <div style="font-size: 0.95rem; color: var(--fb-text); line-height: 1.75; white-space: pre-line; word-break: break-word;">{p['content']}</div>
+            </div>
 
-                <!-- Post Reactions Summary -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--fb-border); font-size: 0.8rem; color: var(--fb-text-muted); margin-top: 8px; flex-wrap: wrap; gap: 6px;">
-                    <div style="display: flex; align-items: center; gap: 5px;" id="likes-count-box-{post_id}">
-                        <span>👍❤️💡</span>
-                        <strong style="margin-right: 4px;" id="likes-count-{post_id}">{p['likes_count']}</strong>
-                        <span>تفاعلاً</span>
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span id="comments-count-{post_id}">{p['comments_count']} تعليقاً</span> •
-                        <span>{p.get('shares_count', 0)} مشاركة</span> •
-                        <span>{p.get('views_count', 1)} مشاهدة</span>
-                    </div>
+            {demographics_html}
+            {media_html}
+            {poll_html}
+
+            <!-- Post Counters -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1px solid var(--fb-border); border-bottom: 1px solid var(--fb-border); font-size: 0.78rem; color: var(--fb-text-muted); margin-top: 12px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span>👍 ❤️ 💡</span>
+                    <span id="likes-count-{post_id}">{p.get('likes_count', 0)}</span>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <span>{len(comments_raw)} تعليقاً ورأياً</span>
+                    <span id="shares-count-{post_id}">{p.get('shares_count', 0)} مشاركة</span>
+                </div>
+            </div>
+
+            <!-- Post Action Buttons (STRICT ZERO AI, NO MESSENGER) -->
+            <div style="display: flex; position: relative; margin-top: 6px; border-bottom: 1px solid var(--fb-border); padding-bottom: 6px;">
+                <!-- Reactions Popup Box -->
+                <div class="reactions-popup-box" id="reactions-popup-{post_id}" onmouseleave="hideReactionsPopup({post_id})">
+                    <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'like')" title="إعجاب">👍</button>
+                    <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'vital')" title="حالة سريرية مهمة">❤️</button>
+                    <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'insight')" title="تشخيص دقيق">💡</button>
+                    <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'healing')" title="شفاء ودعم">🐾</button>
+                    <button type="button" class="reaction-emoji-btn" onclick="setPostReaction({post_id}, 'followup')" title="متابعة">🤔</button>
                 </div>
 
-                <!-- Facebook Action Bar -->
-                <div class="fb-action-bar">
-                    <!-- Reactions Trigger & Popup -->
-                    <div class="reaction-wrapper" onmouseenter="showReactionsPopup({post_id})" onmouseleave="hideReactionsPopup({post_id})">
-                        <div class="fb-reactions-popup" id="reactions-popup-{post_id}">
-                            <button type="button" class="reaction-item-btn" onclick="setPostReaction({post_id}, 'like')" title="إعجاب">👍</button>
-                            <button type="button" class="reaction-item-btn" onclick="setPostReaction({post_id}, 'vital')" title="حالة مهمة">❤️</button>
-                            <button type="button" class="reaction-item-btn" onclick="setPostReaction({post_id}, 'insight')" title="تشخيص دقيق">💡</button>
-                            <button type="button" class="reaction-item-btn" onclick="setPostReaction({post_id}, 'followup')" title="بحاجة لمتابعة">🤔</button>
-                            <button type="button" class="reaction-item-btn" onclick="setPostReaction({post_id}, 'healing')" title="شفاء ودعم">🐾</button>
-                        </div>
-                        <button type="button" onclick="setPostReaction({post_id}, '{post_reaction or 'like'}')" id="react-btn-{post_id}" class="btn fb-action-btn" style="background: none; border: none; {react_active_style}">
-                            <span id="react-icon-{post_id}">{react_info['icon']}</span>
-                            <span id="react-label-{post_id}">{react_info['label']}</span>
-                        </button>
-                    </div>
-
-                    <!-- Comment Button -->
-                    <button type="button" onclick="focusCommentInput({post_id})" class="btn fb-action-btn" style="background: none; border: none; color: var(--fb-text-muted);">
-                        <span>💬</span>
-                        <span>تعليق</span>
-                    </button>
-
-                    <!-- Ask VetMind AI -->
-                    <button type="button" onclick="askVetMindAI({post_id})" class="btn fb-action-btn" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #10b981; color: #065f46; font-weight: 800; border-radius: 20px;">
-                        <span>🤖</span>
-                        <span>اسأل AI</span>
-                    </button>
-
-                    <!-- Share -->
-                    <button type="button" onclick="sharePost({post_id})" class="btn fb-action-btn" style="background: none; border: none; color: var(--fb-text-muted);">
-                        <span>↪️</span>
-                        <span>مشاركة</span>
-                    </button>
-
-                    <!-- Bookmark -->
-                    <button type="button" onclick="togglePostBookmark({post_id})" id="bookmark-btn-{post_id}" class="btn fb-action-btn" style="background: none; border: none; {bookmark_style}">
-                        <span id="bookmark-icon-{post_id}">🔖</span>
-                        <span id="bookmark-text-{post_id}">{bookmark_label}</span>
+                <!-- React Trigger Button -->
+                <div style="flex: 1;" onmouseenter="showReactionsPopup({post_id})">
+                    <button type="button" onclick="setPostReaction({post_id}, 'like')" id="react-btn-{post_id}" class="fb-action-btn" style="width: 100%; {react_active_style}">
+                        <span id="react-icon-{post_id}">{react_info['icon']}</span>
+                        <span id="react-label-{post_id}">{react_info['label']}</span>
                     </button>
                 </div>
 
-                <!-- Comments Container -->
-                <div style="margin-top: 14px;" id="comments-section-{post_id}">
-                    <form onsubmit="submitCommentForm(event, {post_id})" style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px;">
-                        <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0;">
-                            {user.get('name', 'طبيب')[0]}
+                <!-- Comment Button -->
+                <button type="button" onclick="focusCommentInput({post_id})" class="fb-action-btn">
+                    <span>💬</span>
+                    <span>تعليق</span>
+                </button>
+
+                <!-- Share Button -->
+                <button type="button" onclick="sharePost({post_id})" class="fb-action-btn">
+                    <span>↪️</span>
+                    <span>مشاركة</span>
+                </button>
+
+                <!-- Bookmark Button -->
+                <button type="button" onclick="togglePostBookmark({post_id})" id="bookmark-btn-{post_id}" class="fb-action-btn" style="{bookmark_style}">
+                    <span id="bookmark-icon-{post_id}">🔖</span>
+                    <span id="bookmark-text-{post_id}">{bookmark_label}</span>
+                </button>
+            </div>
+
+            <!-- Comments Section -->
+            <div style="margin-top: 14px;" id="comments-section-{post_id}">
+                {comments_html}
+
+                <!-- Add Comment Form -->
+                <form action="/community/comment/{post_id}" method="POST" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                    <input type="text" name="content" id="comment-input-{post_id}" required placeholder="اكتب تشخيصك التفريقي أو رأيك السريري..." style="flex: 1; padding: 10px 14px; border: 1px solid var(--fb-border); border-radius: 20px; font-size: 0.88rem; background: var(--fb-bg); color: var(--fb-text);">
+                    <button type="submit" class="btn-fb-primary" style="border-radius: 20px; padding: 8px 16px;">إرسال</button>
+                </form>
+            </div>
+
+            <!-- Edit Post Modal -->
+            <div id="edit-post-modal-{post_id}" class="fb-modal-overlay">
+                <div class="fb-modal-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                        <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">✏️ تعديل الحالة السريرية</h2>
+                        <button type="button" onclick="closeModal('edit-post-modal-{post_id}')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+                    </div>
+                    <form action="/community/post/edit/{post_id}" method="POST">
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">عنوان الحالة:</label>
+                            <input type="text" name="title" value="{p['title']}" required style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
                         </div>
-                        <div style="flex: 1; display: flex; align-items: center; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 25px; padding: 4px 14px;">
-                            <input type="text" id="comment-input-{post_id}" required placeholder="اكتب تشخيصك أو رأيك السريري في هذه الحالة..." style="flex: 1; border: none; background: transparent; padding: 8px 0; font-size: 0.88rem; color: var(--fb-text); outline: none;">
-                            <button type="submit" style="background: #0f766e; border: none; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem;">
-                                ⬆️
-                            </button>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">جمهور المنشور (الخصوصية):</label>
+                            <select name="privacy" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                                <option value="public" {'selected' if post_privacy == 'public' else ''}>🌐 عام (كافة الأطباء)</option>
+                                <option value="friends" {'selected' if post_privacy == 'friends' else ''}>👥 الأصدقاء والزملاء فقط</option>
+                                <option value="only_me" {'selected' if post_privacy == 'only_me' else ''}>🔒 أنا فقط (سجل خاص)</option>
+                            </select>
                         </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                            <div>
+                                <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">السلالة (Breed):</label>
+                                <input type="text" name="breed" value="{p.get('breed','')}" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">العلامات والأعراض الحيوية:</label>
+                                <input type="text" name="symptoms" value="{p.get('symptoms','')}" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">تفاصيل الحالة والفحص الإكلينيكي:</label>
+                            <textarea name="content" rows="4" required style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text); line-height: 1.6;">{p['content']}</textarea>
+                        </div>
+                        <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">💾 حفظ التعديلات الآن</button>
                     </form>
-
-                    <div id="comments-list-{post_id}">
-                        {comments_html if comments_html else "<div style='color: var(--fb-text-muted); font-size: 0.82rem; text-align: center; padding: 8px;' id='no-comments-" + str(post_id) + "'>كن أول من يشارك بتشخيص أو رأي سريري في هذه الحالة 🩺</div>"}
-                    </div>
                 </div>
             </div>
         </div>
         """
 
-    conn.close()
-
-    # Build Right Column
-    user_avatar = user.get('name', 'طبيب')[0]
-    right_col_html = f"""
-    <div class="fb-right-col fb-sticky-sidebar">
-        <!-- Logged-in Doctor Quick Card -->
-        <div class="fb-card" style="padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; box-shadow: 0 4px 10px rgba(15,118,110,0.25);">
-                    {user_avatar}
-                </div>
-                <div style="overflow: hidden;">
-                    <div style="font-weight: 800; font-size: 0.98rem; color: var(--fb-text); white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">د. {user.get('name', 'طبيب')}</div>
-                    <div style="font-size: 0.75rem; color: #059669; font-weight: 700;">طبيب بيطري معتمد 🩺</div>
-                    <div style="font-size: 0.72rem; color: var(--fb-text-muted);">{user.get('clinic_name') or 'عيادة بيطرية'}</div>
-                </div>
-            </div>
-            <a href="/community/profile/{user['id']}" class="btn btn-outline" style="width: 100%; justify-content: center; font-size: 0.82rem; border-radius: 20px; font-weight: 700; text-decoration: none;">👤 عرض ملفي الشخصي والسمعة</a>
-        </div>
-
-        <!-- Quick Sub-Navigation -->
-        <div class="fb-card" style="padding: 12px;">
-            <div style="font-weight: 800; font-size: 0.86rem; color: #0f766e; margin-bottom: 8px; padding-right: 6px;">🧭 تصفح سريع:</div>
-            <a href="/community" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text); font-weight: 700; font-size: 0.88rem;"><span>📰</span> <span>آخر الأخبار والحالات</span></a>
-            <a href="/community?sort=smart" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #0f766e; font-weight: 800; font-size: 0.88rem;"><span>✨</span> <span>خوارزمية الأكثر صلة</span></a>
-            <a href="/community?category=urgent" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #dc2626; font-weight: 800; font-size: 0.88rem;"><span>🚨</span> <span>الحالات الطارئة الحرجة</span></a>
-            <a href="/community?category=videos" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text); font-weight: 700; font-size: 0.88rem;"><span>🎥</span> <span>فيديوهات الجراحة</span></a>
-            <a href="/community?category=bookmarks" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text); font-weight: 700; font-size: 0.88rem;"><span>🔖</span> <span>الحالات المحفوظة للرجوع إليها</span></a>
-        </div>
-
-        <!-- Groups Widget -->
-        <div class="fb-card" style="padding: 14px;">
-            <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                <span>👥</span> <span>المجموعات التخصصية</span>
-            </div>
-            {"".join([f'<a href="/community?group_id={g["id"]}" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text);"><div style="display: flex; align-items: center; gap: 8px; overflow: hidden;"><span style="font-size: 1.2rem;">{g.get("icon", "🩺")}</span><div style="overflow: hidden;"><div style="font-weight: 700; font-size: 0.82rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{g["name"]}</div><div style="font-size: 0.70rem; color: var(--fb-text-muted);">{g.get("members_count", 1)} طبيباً</div></div></div><span style="font-size: 0.72rem; color: #0f766e; font-weight: 800;">تصفح ⬅️</span></a>' for g in recommended_groups])}
-        </div>
-    </div>
-    """
-
-    # Build Left Column (Urgent Cases Radar + Trending Topics + People You May Know)
-    urgent_items_html = "".join([f'<a href="/community#post-{uc["id"]}" style="display: block; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text); background: var(--fb-bg); border-right: 3px solid #dc2626; margin-bottom: 6px;"><div style="font-weight: 800; font-size: 0.82rem; color: #991b1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🚨 {uc["title"]}</div><div style="font-size: 0.7rem; color: var(--fb-text-muted); display: flex; justify-content: space-between; margin-top: 2px;"><span>د. {uc["author_name"]}</span><span>{uc.get("created_at","")[:10]}</span></div></a>' for uc in urgent_cases])
-
-    trending_items_html = "".join([f'<a href="/community?q={t_item["query"]}" class="trending-pill"><span>🔥</span><span>{t_item["tag"]}</span><span style="font-size: 0.7rem; opacity: 0.7;">({t_item["posts_approx"]})</span></a>' for t_item in trending_topics])
-
-    pymk_items_html = ""
-    for cand in pymk_colleagues:
-        is_conn = cand["id"] in user_connections
-        btn_text = "✔️ زميل" if is_conn else "➕ إضافة زميل"
-        btn_style = "background: #059669; color: white;" if is_conn else "background: none; color: #0f766e; border: 1px solid #0f766e;"
-        pymk_items_html += f"""
-        <div class="pymk-card">
-            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">
-                    {cand['name'][0]}
-                </div>
-                <div style="min-width: 0; overflow: hidden;">
-                    <a href="/community/profile/{cand['id']}" style="font-weight: 700; font-size: 0.82rem; color: var(--fb-text); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">د. {cand['name']}</a>
-                    <div style="font-size: 0.68rem; color: #059669; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{cand.get('pymk_reason', '')}</div>
-                </div>
-            </div>
-            <button type="button" onclick="toggleColleagueConnect({cand['id']}, this)" style="padding: 4px 10px; border-radius: 14px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; {btn_style}">
-                {btn_text}
-            </button>
+    if not posts_cards_html:
+        posts_cards_html = """
+        <div class="fb-card" style="padding: 40px 20px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🩺</div>
+            <h3 style="margin: 0; color: var(--fb-text); font-size: 1.2rem;">لا توجد منشورات سريرية في هذا القسم حالياً</h3>
+            <p style="color: var(--fb-text-muted); font-size: 0.9rem; margin-top: 6px;">كن أول من يشارك حالة سريرية لتبادل الخبرة التشخيصية مع زملائك!</p>
+            <button type="button" onclick="openModal('composer-modal')" class="btn-fb-primary" style="margin-top: 10px;">➕ نشر حالة سريرية جديدة</button>
         </div>
         """
-
-    left_col_html = f"""
-    <div class="fb-left-col fb-sticky-sidebar">
-        <!-- Urgent Cases Radar -->
-        <div class="fb-card" style="padding: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <div style="font-weight: 800; font-size: 0.88rem; color: #dc2626; display: flex; align-items: center; gap: 6px;">
-                    <span>🚨</span> <span>رادار الحالات الطارئة</span>
-                </div>
-                <span style="background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 8px; font-size: 0.68rem; font-weight: 800;">مباشر</span>
-            </div>
-            {urgent_items_html if urgent_items_html else "<div style='color: var(--fb-text-muted); font-size: 0.78rem;'>لا توجد حالات طارئة غير محلولة حالياً.</div>"}
-        </div>
-
-        <!-- Trending in VetBook -->
-        <div class="fb-card" style="padding: 14px;">
-            <div style="font-weight: 800; font-size: 0.88rem; color: #ea580c; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                <span>🔥</span> <span>الرائج الآن في VetBook</span>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                {trending_items_html}
-            </div>
-        </div>
-
-        <!-- People You May Know (PYMK) -->
-        <div class="fb-card" style="padding: 14px;">
-            <div style="font-weight: 800; font-size: 0.88rem; color: var(--fb-text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                <span>🤝</span> <span>أطباء وزملاء قد تعرفهم</span>
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                {pymk_items_html if pymk_items_html else "<div style='color: var(--fb-text-muted); font-size: 0.78rem;'>تم الاتصال بكافة الأطباء المقترحين.</div>"}
-            </div>
-        </div>
-    </div>
-    """
-
-    # Sub-Navigation Strip (Facebook tabs)
-    subnav_strip = f"""
-    <div class="vetbook-subnav-strip">
-        <a href="/community" class="vetbook-nav-pill {'active' if tab == 'feed' else ''}"><span>📰</span> <span>آخر الأخبار</span></a>
-        <a href="/community?tab=my_posts" class="vetbook-nav-pill {'active' if tab == 'my_posts' else ''}"><span>📢</span> <span>منشوراتي وحالاتي</span></a>
-        <a href="/community?tab=groups" class="vetbook-nav-pill {'active' if tab == 'groups' else ''}"><span>👥</span> <span>المجموعات التخصصية</span></a>
-        <a href="/community?tab=network" class="vetbook-nav-pill {'active' if tab == 'network' else ''}"><span>🤝</span> <span>شبكة الزملاء (PYMK)</span></a>
-        <a href="/community?tab=events" class="vetbook-nav-pill {'active' if tab == 'events' else ''}"><span>🎓</span> <span>الفعاليات والمؤتمرات</span></a>
-        <a href="/community?category=bookmarks" class="vetbook-nav-pill {'active' if (category == 'bookmarks' or tab == 'saved') else ''}"><span>🔖</span> <span>الحالات المحفوظة</span></a>
-        <a href="/community/profile/{user['id']}" class="vetbook-nav-pill"><span>👤</span> <span>ملفي الشخصي</span></a>
-    </div>
-    """
 
     # Species Filter Strip
     species_strip = "".join([f'<a href="/community?species={sp_k}&category={category}&sort={sort}" style="padding: 5px 14px; border-radius: 20px; font-size: 0.80rem; text-decoration: none; font-weight: 700; background: {"#0f766e" if species == sp_k else "var(--fb-card)"}; color: {"white" if species == sp_k else "var(--fb-text)"}; border: 1px solid var(--fb-border); white-space: nowrap;">{sp_name}</a>' for sp_k, sp_name in SPECIES_MAP.items()])
 
-    # Feed Sort Pills
-    sort_pills = f"""
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-        <div class="sort-pills-scroll">
-            <a href="/community?sort=smart&category={category}&species={species}" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; text-decoration: none; font-weight: 800; background: {'#0f766e' if sort == 'smart' else 'var(--fb-card)'}; color: {'white' if sort == 'smart' else 'var(--fb-text)'}; border: 1px solid var(--fb-border);">✨ الأكثر صلة لك (الخوارزمية الذكية)</a>
-            <a href="/community?sort=recent&category={category}&species={species}" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; text-decoration: none; font-weight: 700; background: {'#0f766e' if sort == 'recent' else 'var(--fb-card)'}; color: {'white' if sort == 'recent' else 'var(--fb-text)'}; border: 1px solid var(--fb-border);">🕒 الأحدث نشراً</a>
-            <a href="/community?category=urgent&species={species}" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; text-decoration: none; font-weight: 700; background: {'#dc2626' if category == 'urgent' else 'var(--fb-card)'}; color: {'white' if category == 'urgent' else '#dc2626'}; border: 1px solid {'#dc2626' if category == 'urgent' else 'var(--fb-border)'};">🚨 الحالات الطارئة</a>
-            <a href="/community?sort=trending&category={category}&species={species}" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; text-decoration: none; font-weight: 700; background: {'#ea580c' if sort == 'trending' else 'var(--fb-card)'}; color: {'white' if sort == 'trending' else 'var(--fb-text)'}; border: 1px solid var(--fb-border);">🔥 الأكثر رواجاً</a>
+    # Right Sidebar Widgets (Trending & Urgent & Groups)
+    c.execute("SELECT id, title, is_urgent, created_at FROM community_posts WHERE is_urgent = 1 ORDER BY id DESC LIMIT 4")
+    urgent_cases = [dict(r) for r in c.fetchall()]
+
+    c.execute("SELECT id, name, category, members_count FROM community_groups ORDER BY members_count DESC LIMIT 4")
+    sidebar_groups = [dict(r) for r in c.fetchall()]
+
+    c.execute("SELECT id, name, category, followers_count FROM community_pages ORDER BY followers_count DESC LIMIT 4")
+    sidebar_pages = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    urgent_sidebar_html = "".join([f'<a href="/community#post-{uc["id"]}" style="display: block; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; text-decoration: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 0.82rem; font-weight: 700; line-height: 1.4;">🚨 {uc["title"][:50]}...</a>' for uc in urgent_cases]) if urgent_cases else "<div style='font-size: 0.78rem; color: var(--fb-text-muted);'>لا توجد حالات طارئة حالياً.</div>"
+    groups_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem;"><a href="/community?group_id={sg["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🐾 {sg["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sg["members_count"]} عضواً</span></div>' for sg in sidebar_groups])
+    pages_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem;"><a href="/community?page_id={sp["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🏥 {sp["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sp["followers_count"]} متابع</span></div>' for sp in sidebar_pages])
+
+    feed_layout = f"""
+    <div class="fb-main-container">
+        <!-- Left Sidebar (Shortcuts & Quick Filters) -->
+        <div class="fb-sidebar-col">
+            <div class="fb-card" style="padding: 16px;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 12px;">📁 تصنيفات الحالات</div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <a href="/community" style="padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; color: var(--fb-text); background: {'rgba(15,118,110,0.1)' if category == 'all' else 'none'};">🌐 كافة الحالات والمنشورات</a>
+                    <a href="/community?category=urgent" style="padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; color: #dc2626; background: {'#fee2e2' if category == 'urgent' else 'none'};">🚨 حالات طارئة حرجة</a>
+                    <a href="/community?category=case_study" style="padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; color: var(--fb-text); background: {'rgba(15,118,110,0.1)' if category == 'case_study' else 'none'};">🩺 استشارات إكلينيكية</a>
+                    <a href="/community?category=poll" style="padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; color: var(--fb-text); background: {'rgba(15,118,110,0.1)' if category == 'poll' else 'none'};">📊 استطلاعات رأي تشخيصية</a>
+                    <a href="/community?category=bookmarks" style="padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem; color: #d97706; background: {'#fef3c7' if category == 'bookmarks' else 'none'};">🔖 الحالات المحفوظة</a>
+                </div>
+            </div>
+
+            <div class="fb-card" style="padding: 16px;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 12px;">🐾 المجموعات النشطة</div>
+                {groups_sidebar_html}
+                <a href="/community?tab=groups" style="display: block; font-size: 0.8rem; color: #0f766e; font-weight: 700; text-decoration: none; margin-top: 10px;">عرض كافة المجموعات ←</a>
+            </div>
         </div>
-        <div style="font-size: 0.78rem; color: var(--fb-text-muted); font-weight: 700;">
-            إجمالي: {len(raw_posts)} حالة
+
+        <!-- Center Column (Composer & Feed Stream) -->
+        <div style="min-width: 0;">
+            <!-- Stories Strip -->
+            {stories_html}
+
+            <!-- Facebook-Style Quick Composer Box -->
+            <div class="fb-card" style="padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800;">
+                        {user.get('name','ط')[0] if user else 'ط'}
+                    </div>
+                    <div onclick="openModal('composer-modal')" style="flex: 1; background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 24px; padding: 10px 16px; color: var(--fb-text-muted); cursor: pointer; font-size: 0.92rem;">
+                        ما هي الحالة السريرية أو الاستشارة التي تريد طرحها اليوم يا دكتور؟
+                    </div>
+                </div>
+                <div style="display: flex; border-top: 1px solid var(--fb-border); padding-top: 10px; gap: 8px;">
+                    <button type="button" onclick="openModal('composer-modal')" class="fb-action-btn">
+                        <span>📷</span> <span>صور وأشعة</span>
+                    </button>
+                    <button type="button" onclick="openModal('composer-modal')" class="fb-action-btn">
+                        <span>🚨</span> <span>حالة طارئة</span>
+                    </button>
+                    <button type="button" onclick="openModal('composer-modal')" class="fb-action-btn">
+                        <span>📊</span> <span>استطلاع رأي</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Species Filter Strip -->
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 14px; scrollbar-width: none;">
+                {species_strip}
+            </div>
+
+            <!-- Stream of Post Cards -->
+            <div id="posts-stream">
+                {posts_cards_html}
+            </div>
+        </div>
+
+        <!-- Right Sidebar (Urgent & Pages) -->
+        <div class="fb-sidebar-col">
+            <div class="fb-card" style="padding: 16px;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: #dc2626; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>🚨</span> <span>حالات سريرية عاجلة (Live Triage)</span>
+                </div>
+                {urgent_sidebar_html}
+            </div>
+
+            <div class="fb-card" style="padding: 16px;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>🏢</span> <span>مراكز وعيادات موثقة</span>
+                </div>
+                {pages_sidebar_html}
+                <a href="/community?tab=pages" style="display: block; font-size: 0.8rem; color: #0f766e; font-weight: 700; text-decoration: none; margin-top: 10px;">استكشاف كافة الصفحات ←</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Modal (Full Feature Composer) -->
+    <div id="composer-modal" class="fb-modal-overlay">
+        <div class="fb-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">🩺 نشر استشارة / حالة سريرية جديدة</h2>
+                <button type="button" onclick="closeModal('composer-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+            </div>
+
+            <form action="/community/post" method="POST" enctype="multipart/form-data" id="composer-form">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">عنوان الحالة أو الاستشارة:</label>
+                    <input type="text" name="title" required placeholder="مثال: اشتباه التهاب صفاق معدي (FIP) في قط شيرازي عمره 8 شهور" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">جمهور المنشور (الخصوصية):</label>
+                        <select name="privacy" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                            <option value="public">🌐 عام (كافة الأطباء والمستخدمين)</option>
+                            <option value="friends">👥 الأصدقاء والزملاء المتصلين فقط</option>
+                            <option value="only_me">🔒 أنا فقط (سجل سريري شخصي)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">أولوية الحالة:</label>
+                        <select name="is_urgent" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                            <option value="0">استشارة عادية / تبادل خبرة</option>
+                            <option value="1">🚨 حالة طارئة حرجة (Urgent Priority)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Clinical Demographics -->
+                <div style="background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                    <div style="font-weight: 800; font-size: 0.85rem; color: #0f766e; margin-bottom: 8px;">📋 البيانات السريرية والديموغرافية:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">الفصيلة:</label>
+                            <select name="species" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                                <option value="pets">حيوانات أليفة (كلاب وقطط)</option>
+                                <option value="bovine">مجترات (أبقار وجاموس)</option>
+                                <option value="equine">خيول وبغال</option>
+                                <option value="ovine">أغنام وماعز</option>
+                                <option value="poultry">دواجن وطيور</option>
+                                <option value="wild">برية وغريبة</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">السلالة (Breed):</label>
+                            <input type="text" name="breed" placeholder="شيرازي، هولشتاين..." style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">العمر:</label>
+                            <input type="text" name="age" placeholder="سنتان / 6 شهور" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">الوزن (كجم):</label>
+                            <input type="text" name="weight" placeholder="4.5" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">الجنس:</label>
+                            <select name="gender" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                                <option value="ذكر">ذكر</option>
+                                <option value="أنثى">أنثى</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">الأعراض والعلامات الحيوية:</label>
+                        <input type="text" name="symptoms" placeholder="حرارة 40.2، خمول حاد، استسقاء بطني..." style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 2px;">الأدوية المعطاة مسبقاً:</label>
+                        <input type="text" name="medications" placeholder="أوكسيتتراسيكلين، فلونيكسين..." style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">تفاصيل الفحص السريري والاستشارة:</label>
+                    <textarea name="content" required rows="4" placeholder="اكتب وصفاً وافياً للحالة والتاريخ المرضي والتشخيص المقترح..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text); line-height: 1.6;"></textarea>
+                </div>
+
+                <!-- Multiple Media Upload -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">📷 إرفاق صور / أشعة (يمكن اختيار عدة صور):</label>
+                        <input type="file" name="media_files" multiple accept="image/*,video/*" style="width: 100%; font-size: 0.82rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">🎥 أو رابط فيديو يوتيوب:</label>
+                        <input type="url" name="youtube_url" placeholder="https://youtube.com/watch?v=..." style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 1rem;">🚀 نشر الحالة السريرية وتعميمها الآن</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Story Modal -->
+    <div id="create-story-modal" class="fb-modal-overlay">
+        <div class="fb-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">📸 نشر قصة سريرية سريعة (Story)</h2>
+                <button type="button" onclick="closeModal('create-story-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+            </div>
+            <form action="/community/story/create" method="POST" enctype="multipart/form-data">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">اختر صورة أو فيديو الحالة:</label>
+                    <input type="file" name="story_media" required accept="image/*,video/*" style="width: 100%; font-size: 0.85rem;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">تعليق أو سؤال سريع على القصة:</label>
+                    <input type="text" name="caption" placeholder="مثال: من يتعرف على هذه الآفة في الأذن؟" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                </div>
+                <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">نشر القصة السريرية (تختفي بعد 24 ساعة)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Reporting Modal -->
+    <div id="report-modal" class="fb-modal-overlay">
+        <div class="fb-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: #dc2626;">🚩 إبلاغ عن محتوى أو مخالفة مهنية</h2>
+                <button type="button" onclick="closeModal('report-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+            </div>
+            <form onsubmit="submitReportForm(event)">
+                <input type="hidden" name="target_type" id="report-target-type" value="post">
+                <input type="hidden" name="target_id" id="report-target-id" value="0">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">سبب البلاغ:</label>
+                    <select name="reason" required style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                        <option value="معلومات طبية خاطئة أو بروتوكول دوائي خطير">معلومات طبية خاطئة أو بروتوكول دوائي خطير</option>
+                        <option value="محتوى غير لائق أو مخالف لأخلاقيات المهنة البيطرية">محتوى غير لائق أو مخالف لأخلاقيات المهنة البيطرية</option>
+                        <option value="إساءة أو تنمر أو مضايقة لزميل">إساءة أو تنمر أو مضايقة لزميل</option>
+                        <option value="إعلانات تجارية مضللة أو سبام">إعلانات تجارية مضللة أو سبام</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">تفاصيل إضافية لمساعدة المشرفين:</label>
+                    <textarea name="details" rows="3" placeholder="وضح باختصار وجه المخالفة..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);"></textarea>
+                </div>
+                <button type="submit" class="btn-fb-danger" style="width: 100%; justify-content: center; padding: 12px;">إرسال البلاغ لفريق الإشراف</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="image-modal" class="fb-modal-overlay" onclick="closeModal('image-modal')">
+        <div style="max-width: 90vw; max-height: 90vh;">
+            <img src="" id="image-modal-src" style="max-width: 100%; max-height: 90vh; border-radius: 8px; object-fit: contain;">
         </div>
     </div>
     """
 
-    body = f"""
-    {COMMUNITY_CSS}
-    <div class="fb-app-wrapper">
-        {subnav_strip}
+    body = f"{COMMUNITY_CSS}<div class='fb-app-wrapper'>{subnav_strip}{feed_layout}</div>{COMMUNITY_JS}"
+    return HTMLResponse(content=get_base_html("VetBook - شبكة الأطباء البيطريين", body, user, lang), media_type="text/html; charset=utf-8")
 
-        <div class="fb-container">
-            <!-- RIGHT SIDEBAR (RTL: Right side) -->
-            {right_col_html}
 
-            <!-- CENTER MAIN FEED -->
-            <div class="fb-main-feed" style="min-width: 0;">
-                <!-- Stories Bar -->
-                <div class="fb-card" style="padding: 12px; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; display: flex; align-items: center; gap: 6px;">
-                            <span>📸</span> <span>القصص اليومية وحالات العيادة السريعة</span>
-                        </div>
-                    </div>
-                    <div class="fb-stories-strip">
-                        <div class="fb-story-card fb-story-create-card" onclick="openStoryModal()">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #0f766e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 4px 10px rgba(15,118,110,0.3);">
-                                ➕
-                            </div>
-                            <span style="font-size: 0.78rem; font-weight: 800; color: #0f766e; margin-top: 8px;">إضافة قصة عيادتك</span>
-                        </div>
-                        {stories_cards}
-                    </div>
-                </div>
 
-                <!-- Rich Post Composer Box -->
-                <div class="fb-card fb-composer-box">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; flex-shrink: 0;">
-                            {user_avatar}
-                        </div>
-                        <button type="button" onclick="openComposerModal('case')" class="fb-composer-input">
-                            بم تفكر يا دكتور {user.get('name','')}؟ شارك حالة سريرية، استشارة، أو تجربة دوائية...
-                        </button>
-                    </div>
-                    <div style="border-top: 1px solid var(--fb-border); padding-top: 10px; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 6px;">
-                        <button type="button" onclick="openComposerModal('case')" class="btn" style="background: none; border: none; color: #0f766e; font-weight: 800; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1.25rem;">🩺</span>
-                            <span>نشر حالة سريرية</span>
-                        </button>
-                        <button type="button" onclick="openComposerModal('urgent')" class="btn" style="background: none; border: none; color: #dc2626; font-weight: 800; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1.25rem;">🚨</span>
-                            <span>حالة طارئة حرجة</span>
-                        </button>
-                        <button type="button" onclick="openComposerModal('video')" class="btn" style="background: none; border: none; color: #0284c7; font-weight: 800; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1.25rem;">🎥</span>
-                            <span>فيديو جراحي</span>
-                        </button>
-                        <button type="button" onclick="openComposerModal('general')" class="btn" style="background: none; border: none; color: #7c3aed; font-weight: 800; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1.25rem;">📝</span>
-                            <span>منشور عام</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Species Filter Strip -->
-                <div class="species-strip-container">
-                    {species_strip}
-                </div>
-
-                <!-- Feed Sort Control -->
-                {sort_pills}
-
-                <!-- Posts Stream -->
-                <div id="posts-stream">
-                    {posts_cards_html if posts_cards_html else "<div class='fb-card' style='padding: 40px 20px; text-align: center;'><div style='font-size: 3rem;'>🩺</div><h3>لا توجد منشورات مطابقة لهذا الفلتر</h3><p style='color: var(--fb-text-muted);'>كن أول من يشارك حالة سريرية أو استشارة مع الزملاء</p></div>"}
-                </div>
-            </div>
-
-            <!-- LEFT SIDEBAR (Desktop: Left side) -->
-            {left_col_html}
-        </div>
-
-        <!-- Rich Post Composer Modal -->
-        <div id="new-post-modal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1100; align-items: center; justify-content: center; padding: 14px;">
-            <div style="background: var(--fb-card); border-radius: 18px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--fb-border); padding: 22px; position: relative;">
-                <button type="button" onclick="closeComposerModal()" style="position: absolute; top: 16px; left: 16px; background: var(--fb-bg); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; color: var(--fb-text);">✕</button>
-                <div style="text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px;">
-                    <h2 style="margin: 0; font-size: 1.3rem; color: #0f766e;" id="modal-title">🩺 إنشاء منشور / استشارة سريرية</h2>
-                </div>
-
-                <form action="/community/post" method="POST" enctype="multipart/form-data" id="composer-form">
-                    <input type="hidden" name="is_urgent" id="comp-is-urgent" value="0">
-                    <input type="hidden" name="category" id="comp-category" value="case_study">
-
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.88rem;">📌 عنوان الحالة أو الاستشارة:</label>
-                        <input type="text" name="title" required placeholder="مثال: اشتباه التهاب بريتون معدي في قط شيرازي عمره 8 شهور" style="width: 100%; padding: 10px 14px; border: 1px solid var(--fb-border); border-radius: 10px; font-size: 0.95rem; background: var(--fb-bg); color: var(--fb-text);">
-                    </div>
-
-                    <!-- Clinical Demographics Inputs -->
-                    <div id="clinical-fields-box" style="background: var(--fb-bg); border: 1px solid var(--fb-border); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
-                        <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 10px;">📋 البيانات السريرية والديموغرافية للحالة:</div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">🐾 الفصيلة:</label>
-                                <select name="species" id="comp-species" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                                    <option value="pets">🐕 حيوانات أليفة (كلاب وقطط)</option>
-                                    <option value="bovine">🐄 مجترات (أبقار وجاموس)</option>
-                                    <option value="equine">🐎 خيول وبغال</option>
-                                    <option value="ovine">🐑 أغنام وماعز</option>
-                                    <option value="poultry">🐔 دواجن وطيور</option>
-                                    <option value="wild">🦅 برية وغريبة</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">🧬 السلالة (Breed):</label>
-                                <input type="text" name="breed" placeholder="مثال: شيرازي، هولشتاين، عربي أصيل" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">⏳ العمر:</label>
-                                <input type="text" name="age" placeholder="مثال: سنتان أو 6 شهور" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">⚖️ الوزن (كجم):</label>
-                                <input type="text" name="weight" placeholder="مثال: 4.5 أو 450" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">⚧ الجنس:</label>
-                                <select name="gender" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                                    <option value="ذكر">ذكر (Male)</option>
-                                    <option value="أنثى">أنثى (Female)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 10px;">
-                            <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">🌡️ الأعراض السريرية والعلامات الحيوية:</label>
-                            <input type="text" name="symptoms" placeholder="مثال: حرارة 40.2، خمول حاد، استسقاء بطني" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                        </div>
-
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">💊 الأدوية والبروتوكولات المعطاة سابقاً:</label>
-                            <input type="text" name="medications" placeholder="مثال: أوكسيتتراسيكلين، فلونيكسين" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-card); color: var(--fb-text);">
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.88rem;">📝 الشرح والتقرير السريري وتفاصيل الاستشارة:</label>
-                        <textarea name="content" required rows="4" placeholder="اكتب وصفاً وافياً للحالة السريرية، الفحص الموضعي، والتاريخ المرضي وموضوع استشارة الزملاء..." style="width: 100%; padding: 12px; border: 1px solid var(--fb-border); border-radius: 10px; font-size: 0.95rem; background: var(--fb-bg); color: var(--fb-text); line-height: 1.6;"></textarea>
-                    </div>
-
-                    <!-- Media Attachment -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
-                        <div>
-                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">📷 إرفاق صور / أشعة / فيديو:</label>
-                            <input type="file" name="media_file" accept="image/*,video/*" style="width: 100%; padding: 6px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.82rem; background: var(--fb-bg);">
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">🎥 أو رابط فيديو يوتيوب:</label>
-                            <input type="url" name="youtube_url" placeholder="https://youtube.com/watch?v=..." style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.85rem; background: var(--fb-bg); color: var(--fb-text);">
-                        </div>
-                    </div>
-
-                    <!-- Urgent Toggle Button -->
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 1.3rem;">🚨</span>
-                            <div>
-                                <strong style="color: #991b1b; font-size: 0.88rem;">تحديد كـ "حالة طارئة وعاجلة"</strong>
-                                <div style="font-size: 0.74rem; color: #b91c1c;">تظهر ببروز في صدارة الشبكة لتنبيه الزملاء بالمساعدة الفورية</div>
-                            </div>
-                        </div>
-                        <input type="checkbox" id="urgent-checkbox" onchange="document.getElementById('comp-is-urgent').value = this.checked ? '1' : '0'" style="width: 20px; height: 20px; accent-color: #dc2626; cursor: pointer;">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1.05rem; font-weight: 800; border-radius: 10px; justify-content: center;">
-                        🚀 نشر ومشاركة الحالة مع مجتمع الأطباء
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Story Upload Modal -->
-        <div id="story-upload-modal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1100; align-items: center; justify-content: center; padding: 14px;">
-            <div style="background: var(--fb-card); border-radius: 18px; max-width: 440px; width: 100%; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--fb-border); position: relative;">
-                <button type="button" onclick="document.getElementById('story-upload-modal').style.display='none'" style="position: absolute; top: 14px; left: 14px; background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
-                <h3 style="margin: 0 0 14px 0; color: #0f766e; text-align: center;">📸 إضافة قصة عيادة يومية (24 ساعة)</h3>
-                <form action="/community/story/create" method="POST" enctype="multipart/form-data">
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">اختر صورة أو لقطة فيديو قصيرة:</label>
-                        <input type="file" name="story_media" required accept="image/*,video/*" style="width: 100%; padding: 8px; border: 1px solid var(--fb-border); border-radius: 8px;">
-                    </div>
-                    <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">تعليق أو نصيحة سريعة:</label>
-                        <input type="text" name="caption" placeholder="مثال: لقطة من استئصال ورم خبيث صباح اليوم بنجاح..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; font-size: 0.9rem;">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; justify-content: center; font-weight: 800;">
-                        📤 نشر القصة للزملاء
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Fullscreen Story Viewer Modal (Strict No-DM Policy) -->
-        <div id="story-viewer-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 1200; align-items: center; justify-content: center; flex-direction: column;">
-            <div style="position: absolute; top: 12px; left: 12px; right: 12px; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
-                <div id="story-progress-bar" style="height: 100%; width: 0%; background: #ffffff; transition: width 5s linear;"></div>
-            </div>
-            <button type="button" onclick="document.getElementById('story-viewer-modal').style.display='none'" style="position: absolute; top: 22px; left: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer;">✕</button>
-            <div style="position: relative; max-width: 420px; width: 100%; max-height: 80vh; text-align: center; padding: 0 10px;">
-                <div id="story-author-tag" style="position: absolute; top: 14px; right: 24px; background: rgba(0,0,0,0.6); color: white; padding: 4px 14px; border-radius: 20px; font-weight: 800; font-size: 0.88rem;"></div>
-                <img id="story-img-elem" src="" style="max-width: 100%; max-height: 65vh; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-                <div id="story-caption-elem" style="color: white; font-size: 1rem; font-weight: 700; margin-top: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.85); line-height: 1.6;"></div>
-                <!-- Public Quick Reactions Bar (Zero DM) -->
-                <div style="display: flex; justify-content: center; gap: 14px; margin-top: 16px;">
-                    <button type="button" onclick="sendStoryReaction('❤️')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 6px 12px; border-radius: 20px; cursor: pointer;">❤️</button>
-                    <button type="button" onclick="sendStoryReaction('👏')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 6px 12px; border-radius: 20px; cursor: pointer;">👏</button>
-                    <button type="button" onclick="sendStoryReaction('💡')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 6px 12px; border-radius: 20px; cursor: pointer;">💡</button>
-                    <button type="button" onclick="sendStoryReaction('🔥')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 6px 12px; border-radius: 20px; cursor: pointer;">🔥</button>
-                    <button type="button" onclick="sendStoryReaction('🐾')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 6px 12px; border-radius: 20px; cursor: pointer;">🐾</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Image Lightbox Modal -->
-        <div id="image-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1200; align-items: center; justify-content: center;" onclick="this.style.display='none'">
-            <img id="image-modal-src" src="" style="max-width: 95%; max-height: 90vh; border-radius: 10px; object-fit: contain;">
-        </div>
-    </div>
-
-    {COMMUNITY_JS}
-    """
-    return HTMLResponse(content=get_base_html("VetBook | ملتقى الأطباء البيطريين", body, user, lang), media_type="text/html; charset=utf-8")
-
+# ==============================================================================
+# ACTION ROUTES: POSTS, COMMENTS, REACTIONS, SHARING, REPORTING, SOCIAL GRAPH
+# ==============================================================================
 
 @router.post("/community/post")
 async def community_create_post(
@@ -2308,6 +3153,7 @@ async def community_create_post(
     content: str = Form(...),
     category: str = Form("case_study"),
     is_urgent: int = Form(0),
+    privacy: str = Form("public"),
     species: str = Form(""),
     breed: str = Form(""),
     age: str = Form(""),
@@ -2315,267 +3161,258 @@ async def community_create_post(
     gender: str = Form(""),
     symptoms: str = Form(""),
     medications: str = Form(""),
-    media_file: UploadFile = File(None),
+    group_id: int = Form(0),
+    page_id: int = Form(0),
     youtube_url: str = Form(""),
-    group_id: int = Form(0)
+    media_files: list[UploadFile] = File(None)
 ):
     from app import get_current_user
 
     user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/login?redirect=/community", status_code=303)
+    author_id = user["id"] if user else 4
+    author_name = user.get("name", "طبيب بيطري") if user else "طبيب بيطري"
+    author_spec = user.get("specialty") or user.get("role") or "طب وجراحة الحيوان"
+    author_country = user.get("country", "مصر") if user else "مصر"
 
-    saved_img_name = None
-    saved_video_name = None
+    primary_img = None
+    extra_imgs = []
+    saved_video = None
     media_type = "text"
-    has_media = False
 
-    if media_file and media_file.filename:
-        filename_lower = media_file.filename.lower()
-        ext = os.path.splitext(media_file.filename)[1] or ".jpg"
-        ts = int(datetime.now().timestamp())
-        
-        video_exts = [".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv"]
-        if any(filename_lower.endswith(ve) for ve in video_exts):
-            media_type = "video"
-            saved_video_name = f"video_{ts}_{user['id']}{ext}"
-            full_dest = os.path.join(UPLOAD_DIR, saved_video_name)
-            try:
-                with open(full_dest, "wb") as buf:
-                    shutil.copyfileobj(media_file.file, buf)
-                has_media = True
-            except Exception:
-                saved_video_name = None
-                media_type = "text"
-        else:
-            media_type = "image"
-            saved_img_name = f"post_{ts}_{user['id']}{ext}"
-            full_dest = os.path.join(UPLOAD_DIR, saved_img_name)
-            try:
-                with open(full_dest, "wb") as buf:
-                    shutil.copyfileobj(media_file.file, buf)
-                has_media = True
-            except Exception:
-                saved_img_name = None
-                media_type = "text"
+    if youtube_url and youtube_url.strip():
+        saved_video = extract_youtube_embed(youtube_url.strip())
+        media_type = "video"
 
-    if not saved_video_name and not saved_img_name and youtube_url and youtube_url.strip():
-        embed = extract_youtube_embed(youtube_url)
-        if embed:
-            media_type = "youtube"
-            saved_video_name = embed
-            has_media = True
+    if media_files:
+        for mf in media_files:
+            if mf and mf.filename:
+                ext = os.path.splitext(mf.filename)[1].lower()
+                if ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                    fname = f"post_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext}"
+                    try:
+                        with open(os.path.join(UPLOAD_DIR, fname), "wb") as buf:
+                            shutil.copyfileobj(mf.file, buf)
+                        if not primary_img:
+                            primary_img = fname
+                            media_type = "image"
+                        else:
+                            extra_imgs.append(fname)
+                    except Exception:
+                        pass
+                elif ext in [".mp4", ".webm", ".mov"] and not saved_video:
+                    fname = f"vid_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:6]}{ext}"
+                    try:
+                        with open(os.path.join(UPLOAD_DIR, fname), "wb") as buf:
+                            shutil.copyfileobj(mf.file, buf)
+                        saved_video = fname
+                        media_type = "video"
+                    except Exception:
+                        pass
 
-    has_details = bool(species or symptoms or breed)
-    eval_res = evaluate_clinical_content(title, content, has_media, bool(is_urgent), has_details)
+    eval_res = evaluate_clinical_content(title, content, bool(primary_img or saved_video), bool(is_urgent), bool(species or symptoms))
     quality_score = eval_res["score"]
 
     conn = get_db()
     c = conn.cursor()
-    now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("""
     INSERT INTO community_posts (
         user_id, author_name, author_specialty, author_country,
-        category, title, content, is_urgent, species, breed, age, weight,
-        gender, symptoms, medications, group_id, image_path, video_path,
+        category, title, content, is_urgent, privacy, species, breed, age, weight,
+        gender, symptoms, medications, group_id, page_id, image_path, extra_images, video_path,
         media_type, quality_score, virality_score, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
     """, (
-        user["id"],
-        user.get("name", "طبيب بيطري"),
-        user.get("clinic_name", "طب وجراحة الحيوان"),
-        user.get("country", "مصر"),
-        category,
-        title.strip(),
-        content.strip(),
-        is_urgent,
-        species.strip(),
-        breed.strip(),
-        age.strip(),
-        weight.strip(),
-        gender.strip(),
-        symptoms.strip(),
-        medications.strip(),
-        group_id,
-        saved_img_name,
-        saved_video_name,
-        media_type,
-        quality_score,
-        now_ts
+        author_id, author_name, author_spec, author_country,
+        category, title.strip(), content.strip(), is_urgent, privacy, species, breed, age, weight,
+        gender, symptoms, medications, group_id, page_id, primary_img, ",".join(extra_imgs), saved_video,
+        media_type, quality_score, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ))
     post_id = c.lastrowid
-    conn.commit()
 
-    # 1. Platform-Wide Broadcast Notification to ALL registered doctors
+    # Broadcast notification to all colleagues
     try:
-        author_name = user.get("name", "طبيب بيطري")
         c.execute("""
         INSERT INTO broadcast_notifications (title, message, target_country, badge_type, created_at)
-        VALUES (?, ?, 'all', 'community', ?)
+        VALUES (?, ?, 'الكل', 'clinical_case', ?)
         """, (
-            f"📢 منشور وحالة جديدة من د. {author_name}",
-            f"{title.strip()[:100]}",
-            now_ts
+            f"📢 حالة ومنشور سريري جديد من د. {author_name}",
+            f"{title[:90]} - متاح الآن للمناقشة وتبادل الرأي في شبكة VetBook",
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
-        conn.commit()
     except Exception:
         pass
+
+    conn.commit()
     conn.close()
 
-    # 2. Multi-Layer JSON Persistence (Survives Serverless Container Recycles)
     post_record = {
         "id": post_id,
-        "user_id": user["id"],
-        "author_name": user.get("name", "طبيب بيطري"),
-        "author_specialty": user.get("clinic_name", "طب وجراحة الحيوان"),
-        "author_country": user.get("country", "مصر"),
+        "user_id": author_id,
+        "author_name": author_name,
+        "author_specialty": author_spec,
+        "author_country": author_country,
         "category": category,
         "title": title.strip(),
         "content": content.strip(),
         "is_urgent": is_urgent,
-        "species": species.strip(),
-        "breed": breed.strip(),
-        "age": age.strip(),
-        "weight": weight.strip(),
-        "gender": gender.strip(),
-        "symptoms": symptoms.strip(),
-        "medications": medications.strip(),
+        "privacy": privacy,
+        "species": species,
+        "breed": breed,
+        "age": age,
+        "weight": weight,
+        "gender": gender,
+        "symptoms": symptoms,
+        "medications": medications,
         "group_id": group_id,
-        "image_path": saved_img_name,
-        "video_path": saved_video_name,
+        "page_id": page_id,
+        "image_path": primary_img,
+        "extra_images": ",".join(extra_imgs),
+        "video_path": saved_video,
         "media_type": media_type,
         "quality_score": quality_score,
-        "virality_score": 5.0,
-        "created_at": now_ts
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     save_post_to_backup_sync(post_record)
 
     return RedirectResponse(f"/community?posted=1#post-{post_id}", status_code=303)
 
 
-@router.post("/api/community/sync-posts")
-async def api_community_sync_posts(request: Request):
-    """
-    Client-Server Two-Way Sync Endpoint:
-    Guarantees that posts created by doctors in localStorage are permanently synced to the database.
-    """
+@router.post("/community/post/edit/{post_id}")
+async def community_edit_post(
+    request: Request,
+    post_id: int,
+    title: str = Form(...),
+    content: str = Form(...),
+    privacy: str = Form("public"),
+    breed: str = Form(""),
+    symptoms: str = Form("")
+):
     from app import get_current_user
     user = get_current_user(request)
-    try:
-        body = await request.json()
-        client_posts = body.get("posts", [])
-        if not client_posts:
-            return JSONResponse({"status": "empty", "synced": 0})
+    if not user:
+        return RedirectResponse("/community", status_code=303)
 
-        conn = get_db()
-        c = conn.cursor()
-        c.execute("SELECT title, created_at FROM community_posts")
-        existing_keys = set((r[0], r[1]) for r in c.fetchall())
-
-        synced_count = 0
-        for p in client_posts:
-            key = (p.get("title"), p.get("created_at"))
-            if key not in existing_keys and p.get("title") and p.get("content"):
-                c.execute("""
-                INSERT INTO community_posts (
-                    user_id, author_name, author_specialty, author_country,
-                    category, title, content, is_urgent, species, breed, age, weight,
-                    gender, symptoms, medications, group_id, image_path, video_path,
-                    media_type, quality_score, virality_score, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
-                """, (
-                    p.get("user_id", user["id"] if user else 4),
-                    p.get("author_name", user.get("name", "طبيب بيطري") if user else "طبيب بيطري"),
-                    p.get("author_specialty", "طب وجراحة الحيوان"),
-                    p.get("author_country", "مصر"),
-                    p.get("category", "case_study"),
-                    p.get("title", ""),
-                    p.get("content", ""),
-                    p.get("is_urgent", 0),
-                    p.get("species", ""),
-                    p.get("breed", ""),
-                    p.get("age", ""),
-                    p.get("weight", ""),
-                    p.get("gender", ""),
-                    p.get("symptoms", ""),
-                    p.get("medications", ""),
-                    p.get("group_id", 0),
-                    p.get("image_path"),
-                    p.get("video_path"),
-                    p.get("media_type", "text"),
-                    p.get("quality_score", 10),
-                    p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                ))
-                existing_keys.add(key)
-                save_post_to_backup_sync(p)
-                synced_count += 1
-
-        conn.commit()
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT user_id FROM community_posts WHERE id = ?", (post_id,))
+    row = c.fetchone()
+    if not row or (row["user_id"] != user["id"] and not user.get("is_admin") and user.get("role") != "admin"):
         conn.close()
-        return JSONResponse({"status": "success", "synced": synced_count})
-    except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+        return RedirectResponse("/community", status_code=303)
+
+    c.execute("""
+    UPDATE community_posts
+    SET title = ?, content = ?, privacy = ?, breed = ?, symptoms = ?, is_edited = 1, updated_at = ?
+    WHERE id = ?
+    """, (title.strip(), content.strip(), privacy, breed.strip(), symptoms.strip(), datetime.now().strftime("%Y-%m-%d %H:%M:%S"), post_id))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(f"/community#post-{post_id}", status_code=303)
+
+
+@router.post("/community/post/delete/{post_id}")
+async def community_delete_post(request: Request, post_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/community", status_code=303)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT user_id FROM community_posts WHERE id = ?", (post_id,))
+    p = c.fetchone()
+    if p and (user.get("is_admin") or user.get("role") == "admin" or user["id"] == p["user_id"]):
+        c.execute("DELETE FROM community_posts WHERE id = ?", (post_id,))
+        c.execute("DELETE FROM community_comments WHERE post_id = ?", (post_id,))
+        c.execute("DELETE FROM community_likes WHERE post_id = ?", (post_id,))
+        c.execute("DELETE FROM community_bookmarks WHERE post_id = ?", (post_id,))
+        conn.commit()
+
+    conn.close()
+    return RedirectResponse("/community", status_code=303)
+
+
+@router.post("/community/post/share/{post_id}")
+async def community_share_post(request: Request, post_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    current_user_id = user["id"] if user else 4
+    actor_name = user.get("name", "طبيب زميل") if user else "طبيب زميل"
+    actor_avatar = user.get("avatar_image", "") if user else ""
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE community_posts SET shares_count = shares_count + 1 WHERE id = ?", (post_id,))
+    c.execute("SELECT user_id, title FROM community_posts WHERE id = ?", (post_id,))
+    p = c.fetchone()
+    if p and p["user_id"] != current_user_id:
+        create_notification(
+            conn,
+            user_id=p["user_id"],
+            actor_id=current_user_id,
+            actor_name=actor_name,
+            actor_avatar=actor_avatar,
+            action_type="post_share",
+            message="قام بمشاركة حالتك السريرية مع زملائه في الشبكة",
+            post_id=post_id
+        )
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
 
 
 @router.post("/community/like/{post_id}")
 async def community_toggle_like(request: Request, post_id: int, reaction: str = Form("like")):
     from app import get_current_user
-
     user = get_current_user(request)
-    if not user:
-        if request.headers.get("Accept") == "application/json":
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
-        return RedirectResponse("/login?redirect=/community", status_code=303)
-
-    clean_react = reaction.strip().lower()
-    if clean_react not in REACTIONS:
-        clean_react = "like"
+    user_id = user["id"] if user else 4
+    actor_name = user.get("name", "طبيب زميل") if user else "طبيب زميل"
+    actor_avatar = user.get("avatar_image", "") if user else ""
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id, reaction_type FROM community_likes WHERE post_id = ? AND user_id = ?", (post_id, user["id"]))
+    c.execute("SELECT id, reaction_type FROM community_likes WHERE post_id = ? AND user_id = ?", (post_id, user_id))
     existing = c.fetchone()
 
-    is_liked = True
+    liked = True
     if existing:
-        if existing["reaction_type"] == clean_react:
+        if existing["reaction_type"] == reaction:
             c.execute("DELETE FROM community_likes WHERE id = ?", (existing["id"],))
-            c.execute("UPDATE community_posts SET likes_count = MAX(0, likes_count - 1) WHERE id = ?", (post_id,))
-            is_liked = False
+            liked = False
         else:
-            c.execute("UPDATE community_likes SET reaction_type = ? WHERE id = ?", (clean_react, existing["id"]))
+            c.execute("UPDATE community_likes SET reaction_type = ? WHERE id = ?", (reaction, existing["id"]))
     else:
         c.execute("INSERT INTO community_likes (post_id, user_id, reaction_type, created_at) VALUES (?, ?, ?, ?)",
-                  (post_id, user["id"], clean_react, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        c.execute("UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ?", (post_id,))
+                  (post_id, user_id, reaction, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
-    # Update specialized reactions count
-    c.execute("SELECT COUNT(*) FROM community_likes WHERE post_id = ? AND reaction_type != 'like'", (post_id,))
-    spec_cnt = c.fetchone()[0]
-    c.execute("UPDATE community_posts SET specialized_reactions_count = ? WHERE id = ?", (spec_cnt, post_id))
+    # Update counters
+    c.execute("SELECT count(*) FROM community_likes WHERE post_id = ?", (post_id,))
+    likes_count = c.fetchone()[0]
+    c.execute("UPDATE community_posts SET likes_count = ? WHERE id = ?", (likes_count, post_id))
 
-    c.execute("SELECT * FROM community_posts WHERE id = ?", (post_id,))
-    p = c.fetchone()
-    v_score = 1.0
-    likes_count = 0
-    if p:
-        v_score = compute_virality_score(dict(p))
-        likes_count = p["likes_count"]
-        c.execute("UPDATE community_posts SET virality_score = ? WHERE id = ?", (v_score, post_id))
+    # Send notification if new reaction
+    if liked:
+        c.execute("SELECT user_id, title FROM community_posts WHERE id = ?", (post_id,))
+        p = c.fetchone()
+        if p and p["user_id"] != user_id:
+            r_label = REACTIONS.get(reaction, {}).get("label", "إعجاب")
+            r_icon = REACTIONS.get(reaction, {}).get("icon", "👍")
+            create_notification(
+                conn,
+                user_id=p["user_id"],
+                actor_id=user_id,
+                actor_name=actor_name,
+                actor_avatar=actor_avatar,
+                action_type="post_reaction",
+                message=f"تفاعل ({r_icon} {r_label}) مع استشارتك السريرية",
+                post_id=post_id
+            )
 
     conn.commit()
     conn.close()
 
-    if request.headers.get("Accept") == "application/json":
-        return JSONResponse({
-            "success": True,
-            "is_liked": is_liked,
-            "reaction": clean_react,
-            "likes_count": likes_count,
-            "virality_score": v_score
-        })
-
-    return RedirectResponse(f"/community#post-{post_id}", status_code=303)
+    return JSONResponse({"success": True, "liked": liked, "likes_count": likes_count, "reaction": reaction})
 
 
 @router.post("/community/comment/{post_id}")
@@ -2586,160 +3423,160 @@ async def community_add_comment(
     parent_id: int = Form(0)
 ):
     from app import get_current_user
-
     user = get_current_user(request)
-    if not user or not content.strip():
-        if request.headers.get("Accept") == "application/json":
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
-        return RedirectResponse("/login?redirect=/community", status_code=303)
-
-    is_detailed = 1 if len(content.strip()) >= 40 else 0
+    user_id = user["id"] if user else 4
+    author_name = user.get("name", "طبيب بيطري") if user else "طبيب بيطري"
+    author_spec = user.get("specialty") or user.get("role") or "طب وجراحة الحيوان"
+    author_country = user.get("country", "مصر") if user else "مصر"
+    actor_avatar = user.get("avatar_image", "") if user else ""
 
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-    INSERT INTO community_comments (post_id, user_id, author_name, author_specialty, author_country, parent_comment_id, content, created_at)
+    INSERT INTO community_comments (post_id, user_id, author_name, author_specialty, author_country, content, parent_comment_id, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        post_id,
-        user["id"],
-        user.get("name", "طبيب بيطري"),
-        user.get("clinic_name", "طبيب بيطري"),
-        user.get("country", "مصر"),
-        parent_id,
-        content.strip(),
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
+    """, (post_id, user_id, author_name, author_spec, author_country, content.strip(), parent_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    cm_id = c.lastrowid
 
+    # Update comments counter on post
     c.execute("UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = ?", (post_id,))
-    if is_detailed:
-        c.execute("UPDATE community_posts SET detailed_comments_count = detailed_comments_count + 1 WHERE id = ?", (post_id,))
+
+    # Notification handling
+    if parent_id and parent_id > 0:
+        c.execute("SELECT user_id FROM community_comments WHERE id = ?", (parent_id,))
+        parent_cm = c.fetchone()
+        if parent_cm and parent_cm["user_id"] != user_id:
+            create_notification(
+                conn,
+                user_id=parent_cm["user_id"],
+                actor_id=user_id,
+                actor_name=author_name,
+                actor_avatar=actor_avatar,
+                action_type="comment_reply",
+                message="رد على رأيك السريري في المناقشة",
+                post_id=post_id,
+                comment_id=cm_id
+            )
+    else:
+        c.execute("SELECT user_id, title FROM community_posts WHERE id = ?", (post_id,))
+        p = c.fetchone()
+        if p and p["user_id"] != user_id:
+            create_notification(
+                conn,
+                user_id=p["user_id"],
+                actor_id=user_id,
+                actor_name=author_name,
+                actor_avatar=actor_avatar,
+                action_type="post_comment",
+                message="أضاف تشخيصاً ورأياً سريرياً على حالتك",
+                post_id=post_id,
+                comment_id=cm_id
+            )
 
     conn.commit()
     conn.close()
 
-    if request.headers.get("Accept") == "application/json":
-        return JSONResponse({"success": True})
-
+    if request.headers.get("accept") == "application/json":
+        return JSONResponse({"success": True, "comment_id": cm_id})
     return RedirectResponse(f"/community#post-{post_id}", status_code=303)
 
 
-@router.post("/community/comment/best/{comment_id}")
-async def community_mark_best_answer(request: Request, comment_id: int):
+@router.post("/community/comment/delete/{comment_id}")
+async def community_delete_comment(request: Request, comment_id: int):
     from app import get_current_user
-
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM community_comments WHERE id = ?", (comment_id,))
+    c.execute("""
+    SELECT c.user_id, c.post_id, p.user_id as post_author_id
+    FROM community_comments c
+    JOIN community_posts p ON c.post_id = p.id
+    WHERE c.id = ?
+    """, (comment_id,))
     cm = c.fetchone()
     if not cm:
         conn.close()
         return JSONResponse({"error": "not found"}, status_code=404)
 
-    post_id = cm["post_id"]
-    c.execute("SELECT * FROM community_posts WHERE id = ?", (post_id,))
-    p = c.fetchone()
-    if not p or p["user_id"] != user["id"]:
+    if user["id"] == cm["user_id"] or user["id"] == cm["post_author_id"] or user.get("is_admin") or user.get("role") == "admin":
+        c.execute("DELETE FROM community_comments WHERE id = ? OR parent_comment_id = ?", (comment_id, comment_id))
+        c.execute("UPDATE community_posts SET comments_count = (SELECT count(*) FROM community_comments WHERE post_id = ?) WHERE id = ?", (cm["post_id"], cm["post_id"]))
+        conn.commit()
         conn.close()
-        return JSONResponse({"error": "forbidden"}, status_code=403)
+        return JSONResponse({"success": True})
 
-    # Mark as best diagnosis
-    c.execute("UPDATE community_comments SET is_best_answer = 0 WHERE post_id = ?", (post_id,))
-    c.execute("UPDATE community_comments SET is_best_answer = 1 WHERE id = ?", (comment_id,))
-    c.execute("UPDATE community_posts SET has_best_answer = 1 WHERE id = ?", (post_id,))
-
-    # Award +50 reputation points to author of best answer
-    commenter_id = cm["user_id"]
-    if commenter_id and commenter_id > 0:
-        c.execute("UPDATE users SET reputation_score = reputation_score + 50 WHERE id = ?", (commenter_id,))
-
-    conn.commit()
     conn.close()
-
-    return JSONResponse({"success": True})
-
-
-@router.post("/community/ai-consult/{post_id}")
-async def community_ai_consult(request: Request, post_id: int):
-    from app import get_current_user, ask_ai_chat, get_effective_groq_api_key
-
-    user = get_current_user(request)
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM community_posts WHERE id = ?", (post_id,))
-    post = c.fetchone()
-    if not post:
-        conn.close()
-        return JSONResponse({"error": "not found"}, status_code=404)
-
-    if post["ai_analysis"]:
-        conn.close()
-        return JSONResponse({"success": True, "analysis": post["ai_analysis"]})
-
-    p_dict = dict(post)
-    case_context = f"""
-    عنوان الحالة: {p_dict.get('title')}
-    الفصيلة: {p_dict.get('species')} | السلالة: {p_dict.get('breed')} | العمر: {p_dict.get('age')} | الوزن: {p_dict.get('weight')} كجم
-    الأعراض السريرية: {p_dict.get('symptoms')}
-    الأدوية المعطاة سابقاً: {p_dict.get('medications')}
-    تفاصيل الفحص: {p_dict.get('content')}
-    """
-
-    prompt = f"""
-    بصفتك الذكاء الاصطناعي السريري المتقدم لمنصة VetMind AI، قدم تحليلاً طبياً موجزاً واحترافياً للزملاء الأطباء:
-    {case_context}
-
-    التشخيصات التفريقية (Top Differential Diagnoses)
-    الفحوصات المقترحة (Diagnostic Workup)
-    البروتوكول العلاجي المقترح (Treatment Plan)
-    """
-
-    api_key = get_effective_groq_api_key(request)
-    ai_response = ask_ai_chat(api_key, prompt, [], p_dict.get("image_path"), "ar", "مصر")
-
-    c.execute("UPDATE community_posts SET ai_analysis = ? WHERE id = ?", (ai_response, post_id))
-    c.execute("""
-    INSERT INTO community_comments (post_id, user_id, author_name, author_specialty, author_country, content, is_ai_comment, created_at)
-    VALUES (?, 0, 'VetMind AI المساعد السريري', 'ذكاء اصطناعي سريري معتمد', 'سحابي', ?, 1, ?)
-    """, (post_id, ai_response, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
-    conn.commit()
-    conn.close()
-
-    return JSONResponse({"success": True, "analysis": ai_response})
+    return JSONResponse({"error": "forbidden"}, status_code=403)
 
 
-@router.post("/community/bookmark/{post_id}")
-async def community_toggle_bookmark(request: Request, post_id: int):
+@router.post("/community/comment/best/{comment_id}")
+async def community_mark_best_comment(request: Request, comment_id: int):
     from app import get_current_user
-
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id FROM community_bookmarks WHERE post_id = ? AND user_id = ?", (post_id, user["id"]))
-    existing = c.fetchone()
+    c.execute("""
+    SELECT c.id, c.user_id, c.post_id, p.user_id as post_author_id
+    FROM community_comments c
+    JOIN community_posts p ON c.post_id = p.id
+    WHERE c.id = ?
+    """, (comment_id,))
+    row = c.fetchone()
+    if not row or row["post_author_id"] != user["id"]:
+        conn.close()
+        return JSONResponse({"error": "unauthorized"}, status_code=403)
 
-    is_bookmarked = True
-    if existing:
-        c.execute("DELETE FROM community_bookmarks WHERE id = ?", (existing["id"],))
-        c.execute("UPDATE community_posts SET bookmarks_count = MAX(0, bookmarks_count - 1) WHERE id = ?", (post_id,))
-        is_bookmarked = False
-    else:
-        c.execute("INSERT INTO community_bookmarks (post_id, user_id, created_at) VALUES (?, ?, ?)",
-                  (post_id, user["id"], datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        c.execute("UPDATE community_posts SET bookmarks_count = bookmarks_count + 1 WHERE id = ?", (post_id,))
+    c.execute("UPDATE community_comments SET is_best_answer = 0 WHERE post_id = ?", (row["post_id"],))
+    c.execute("UPDATE community_comments SET is_best_answer = 1 WHERE id = ?", (comment_id,))
+    c.execute("UPDATE community_posts SET has_best_answer = 1 WHERE id = ?", (row["post_id"],))
+    c.execute("UPDATE users SET reputation_score = reputation_score + 50 WHERE id = ?", (row["user_id"],))
+
+    # Send Notification to Doctor
+    create_notification(
+        conn,
+        user_id=row["user_id"],
+        actor_id=user["id"],
+        actor_name=user.get("name", "طبيب زميل"),
+        actor_avatar=user.get("avatar_image", ""),
+        action_type="best_diagnosis",
+        message="اعتمد تشخيصك السريري كـ 'أفضل تشخيص معتمد' ومنحك +50 نقطة سمعة! 🏆",
+        post_id=row["post_id"],
+        comment_id=comment_id
+    )
 
     conn.commit()
     conn.close()
+    return JSONResponse({"success": True})
 
-    return JSONResponse({"success": True, "is_bookmarked": is_bookmarked})
+
+@router.post("/community/bookmark/{post_id}")
+async def community_toggle_bookmark(request: Request, post_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_bookmarks WHERE user_id = ? AND post_id = ?", (user_id, post_id))
+    b = c.fetchone()
+
+    bookmarked = True
+    if b:
+        c.execute("DELETE FROM community_bookmarks WHERE id = ?", (b["id"],))
+        bookmarked = False
+    else:
+        c.execute("INSERT INTO community_bookmarks (user_id, post_id, created_at) VALUES (?, ?, ?)",
+                  (user_id, post_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "bookmarked": bookmarked})
 
 
 @router.post("/community/poll/vote/{post_id}")
@@ -2750,32 +3587,32 @@ async def community_vote_poll(request: Request, post_id: int, opt_id: int = Form
     row = c.fetchone()
     if not row or not row["poll_data"]:
         conn.close()
-        return JSONResponse({"error": "no poll"}, status_code=404)
+        return JSONResponse({"error": "poll not found"}, status_code=404)
 
     try:
-        p_data = json.loads(row["poll_data"])
-        for opt in p_data.get("options", []):
+        data = json.loads(row["poll_data"])
+        options = data.get("options", [])
+        for opt in options:
             if opt["id"] == opt_id:
                 opt["votes"] = opt.get("votes", 0) + 1
-                break
-        c.execute("UPDATE community_posts SET poll_data = ? WHERE id = ?", (json.dumps(p_data, ensure_ascii=False), post_id))
+        new_poll = json.dumps(data)
+        c.execute("UPDATE community_posts SET poll_data = ? WHERE id = ?", (new_poll, post_id))
         conn.commit()
-    except Exception:
-        conn.rollback()
-    finally:
+    except Exception as e:
         conn.close()
+        return JSONResponse({"error": str(e)}, status_code=500)
 
+    conn.close()
     return JSONResponse({"success": True})
 
 
 @router.post("/community/story/create")
 async def community_create_story(
     request: Request,
-    caption: str = Form(""),
-    story_media: UploadFile = File(...)
+    story_media: UploadFile = File(...),
+    caption: str = Form("")
 ):
     from app import get_current_user
-
     user = get_current_user(request)
     if not user or not story_media or not story_media.filename:
         return RedirectResponse("/community", status_code=303)
@@ -2802,94 +3639,476 @@ async def community_create_story(
     ))
     conn.commit()
     conn.close()
-
     return RedirectResponse("/community", status_code=303)
 
 
-@router.post("/community/post/delete/{post_id}")
-async def community_delete_post(request: Request, post_id: int):
+# ==============================================================================
+# SOCIAL GRAPH: FRIENDS, FOLLOWS, BLOCKS & REPORTS
+# ==============================================================================
+
+@router.post("/community/friends/request/{target_id}")
+async def community_send_friend_request(request: Request, target_id: int):
     from app import get_current_user
-
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/community", status_code=303)
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT user_id FROM community_posts WHERE id = ?", (post_id,))
-    p = c.fetchone()
-    if p and (user.get("is_admin") or user["id"] == p["user_id"]):
-        c.execute("DELETE FROM community_posts WHERE id = ?", (post_id,))
-        c.execute("DELETE FROM community_comments WHERE post_id = ?", (post_id,))
-        c.execute("DELETE FROM community_likes WHERE post_id = ?", (post_id,))
-        c.execute("DELETE FROM community_bookmarks WHERE post_id = ?", (post_id,))
-        conn.commit()
-
-    conn.close()
-    return RedirectResponse("/community", status_code=303)
-
-
-@router.post("/community/connect/{colleague_id}")
-async def community_toggle_connect(request: Request, colleague_id: int):
-    """Adds or removes a colleague connection (Replaces private DM with public professional connections)."""
-    from app import get_current_user
-
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
+    if user["id"] == target_id:
+        return JSONResponse({"error": "cannot friend self"}, status_code=400)
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id FROM community_connections WHERE user_id = ? AND colleague_id = ?", (user["id"], colleague_id))
+    c.execute("""
+    SELECT id, status FROM community_friends
+    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+    """, (user["id"], target_id, target_id, user["id"]))
     existing = c.fetchone()
-
-    connected = True
     if existing:
-        c.execute("DELETE FROM community_connections WHERE id = ?", (existing["id"],))
-        connected = False
-    else:
-        c.execute("INSERT INTO community_connections (user_id, colleague_id, status, created_at) VALUES (?, ?, 'connected', ?)",
-                  (user["id"], colleague_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.close()
+        return JSONResponse({"error": "طلب صداقة أو صلة موجودة مسبقاً"}, status_code=400)
+
+    c.execute("""
+    INSERT INTO community_friends (sender_id, receiver_id, status, created_at)
+    VALUES (?, ?, 'pending', ?)
+    """, (user["id"], target_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    # Notify target
+    create_notification(
+        conn,
+        user_id=target_id,
+        actor_id=user["id"],
+        actor_name=user.get("name", "طبيب زميل"),
+        actor_avatar=user.get("avatar_image", ""),
+        action_type="friend_request",
+        message="أرسل لك طلب صداقة وزمالة مهنية"
+    )
 
     conn.commit()
     conn.close()
+    return JSONResponse({"success": True})
 
-    return JSONResponse({"success": True, "connected": connected})
 
-
-@router.post("/community/follow/{colleague_id}")
-async def community_toggle_follow(request: Request, colleague_id: int):
+@router.post("/community/friends/accept/{request_id}")
+async def community_accept_friend_request(request: Request, request_id: int):
     from app import get_current_user
-
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id FROM community_connections WHERE user_id = ? AND colleague_id = ?", (user["id"], colleague_id))
+    c.execute("SELECT id, sender_id, receiver_id FROM community_friends WHERE id = ?", (request_id,))
+    row = c.fetchone()
+    if not row or row["receiver_id"] != user["id"]:
+        conn.close()
+        return JSONResponse({"error": "unauthorized or not found"}, status_code=403)
+
+    c.execute("UPDATE community_friends SET status = 'accepted', updated_at = ? WHERE id = ?",
+              (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), request_id))
+
+    # Notify sender
+    create_notification(
+        conn,
+        user_id=row["sender_id"],
+        actor_id=user["id"],
+        actor_name=user.get("name", "طبيب زميل"),
+        actor_avatar=user.get("avatar_image", ""),
+        action_type="friend_accepted",
+        message="قبل طلب صداقتك وأصبح زميلاً في شبكتك المهنية"
+    )
+
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/friends/reject/{request_id}")
+async def community_reject_friend_request(request: Request, request_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM community_friends WHERE id = ? AND receiver_id = ?", (request_id, user["id"]))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/friends/cancel/{target_id}")
+async def community_cancel_friend_request(request: Request, target_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM community_friends WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'", (user["id"], target_id))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/friends/remove/{target_id}")
+async def community_remove_friend(request: Request, target_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    DELETE FROM community_friends
+    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+    """, (user["id"], target_id, target_id, user["id"]))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/follow/{target_id}")
+async def community_toggle_follow(request: Request, target_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_follows WHERE follower_id = ? AND following_id = ?", (user["id"], target_id))
     existing = c.fetchone()
 
     following = True
     if existing:
-        c.execute("DELETE FROM community_connections WHERE id = ?", (existing["id"],))
+        c.execute("DELETE FROM community_follows WHERE id = ?", (existing["id"],))
         following = False
     else:
-        c.execute("INSERT INTO community_connections (user_id, colleague_id, status, created_at) VALUES (?, ?, 'following', ?)",
-                  (user["id"], colleague_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        c.execute("INSERT INTO community_follows (follower_id, following_id, created_at) VALUES (?, ?, ?)",
+                  (user["id"], target_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        create_notification(
+            conn,
+            user_id=target_id,
+            actor_id=user["id"],
+            actor_name=user.get("name", "طبيب زميل"),
+            actor_avatar=user.get("avatar_image", ""),
+            action_type="follow",
+            message="بدأ بمتابعة منشوراتك وحالاتك السريرية"
+        )
 
     conn.commit()
     conn.close()
-
     return JSONResponse({"success": True, "following": following})
 
 
+@router.post("/community/block/{target_id}")
+async def community_toggle_block(request: Request, target_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_blocks WHERE blocker_id = ? AND blocked_id = ?", (user["id"], target_id))
+    existing = c.fetchone()
+
+    blocked = True
+    if existing:
+        c.execute("DELETE FROM community_blocks WHERE id = ?", (existing["id"],))
+        blocked = False
+    else:
+        c.execute("INSERT INTO community_blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)",
+                  (user["id"], target_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        # Clean up any friendship
+        c.execute("""
+        DELETE FROM community_friends
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        """, (user["id"], target_id, target_id, user["id"]))
+
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "blocked": blocked})
+
+
+@router.post("/community/report")
+async def community_submit_report(
+    request: Request,
+    target_type: str = Form(...),
+    target_id: int = Form(...),
+    reason: str = Form(...),
+    details: str = Form("")
+):
+    from app import get_current_user
+    user = get_current_user(request)
+    reporter_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO community_reports (reporter_id, target_type, target_id, reason, details, status, created_at)
+    VALUES (?, ?, ?, ?, ?, 'pending', ?)
+    """, (reporter_id, target_type, target_id, reason.strip(), details.strip(), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "message": "تم تقديم البلاغ بنجاح وسيتم تدقيقه بواسطة فريق الإشراف."})
+
+
+@router.post("/community/reports/dismiss/{report_id}")
+async def admin_dismiss_report(request: Request, report_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user or (not user.get("is_admin") and user.get("role") != "admin"):
+        return RedirectResponse("/community", status_code=303)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE community_reports SET status = 'dismissed' WHERE id = ?", (report_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse("/community?tab=moderation", status_code=303)
+
+
+# ==============================================================================
+# PAGES & GROUPS & EVENTS ACTION ROUTES
+# ==============================================================================
+
+@router.post("/community/pages/create")
+async def community_create_page(
+    request: Request,
+    name: str = Form(...),
+    category: str = Form("clinic"),
+    description: str = Form(...),
+    phone: str = Form(""),
+    email: str = Form(""),
+    website: str = Form(""),
+    city: str = Form(""),
+    avatar_file: UploadFile = File(None),
+    cover_file: UploadFile = File(None)
+):
+    from app import get_current_user
+    user = get_current_user(request)
+    owner_id = user["id"] if user else 1
+
+    avatar_name = ""
+    cover_name = ""
+    if avatar_file and avatar_file.filename:
+        ext = os.path.splitext(avatar_file.filename)[1].lower()
+        avatar_name = f"page_av_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:4]}{ext}"
+        try:
+            with open(os.path.join(UPLOAD_DIR, avatar_name), "wb") as f:
+                shutil.copyfileobj(avatar_file.file, f)
+        except Exception:
+            pass
+
+    if cover_file and cover_file.filename:
+        ext = os.path.splitext(cover_file.filename)[1].lower()
+        cover_name = f"page_cov_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:4]}{ext}"
+        try:
+            with open(os.path.join(UPLOAD_DIR, cover_name), "wb") as f:
+                shutil.copyfileobj(cover_file.file, f)
+        except Exception:
+            pass
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO community_pages (name, category, description, phone, email, website, city, avatar_image, cover_image, is_verified, followers_count, owner_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
+    """, (name.strip(), category, description.strip(), phone.strip(), email.strip(), website.strip(), city.strip(), avatar_name, cover_name, owner_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/community?tab=pages", status_code=303)
+
+
+@router.post("/community/pages/follow/{page_id}")
+async def community_toggle_page_follow(request: Request, page_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_page_followers WHERE page_id = ? AND user_id = ?", (page_id, user_id))
+    existing = c.fetchone()
+
+    following = True
+    if existing:
+        c.execute("DELETE FROM community_page_followers WHERE id = ?", (existing["id"],))
+        c.execute("UPDATE community_pages SET followers_count = MAX(0, followers_count - 1) WHERE id = ?", (page_id,))
+        following = False
+    else:
+        c.execute("INSERT INTO community_page_followers (page_id, user_id, created_at) VALUES (?, ?, ?)",
+                  (page_id, user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        c.execute("UPDATE community_pages SET followers_count = followers_count + 1 WHERE id = ?", (page_id,))
+
+    c.execute("SELECT followers_count FROM community_pages WHERE id = ?", (page_id,))
+    fol_count = c.fetchone()[0]
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "following": following, "followers_count": fol_count})
+
+
+@router.post("/community/groups/create")
+async def community_create_group(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(...),
+    icon: str = Form("🩺"),
+    category: str = Form("general")
+):
+    from app import get_current_user
+    user = get_current_user(request)
+    creator_id = user["id"] if user else 1
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO community_groups (name, description, icon, category, members_count, created_by, created_at)
+    VALUES (?, ?, ?, ?, 1, ?, ?)
+    """, (name.strip(), description.strip(), icon.strip(), category, creator_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    gid = c.lastrowid
+    c.execute("""
+    INSERT INTO community_group_members (group_id, user_id, role, joined_at)
+    VALUES (?, ?, 'admin', ?)
+    """, (gid, creator_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/community?tab=groups", status_code=303)
+
+
+@router.post("/community/groups/join/{group_id}")
+async def community_join_group(request: Request, group_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_group_members WHERE group_id = ? AND user_id = ?", (group_id, user_id))
+    if not c.fetchone():
+        c.execute("INSERT INTO community_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'member', ?)",
+                  (group_id, user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        c.execute("UPDATE community_groups SET members_count = members_count + 1 WHERE id = ?", (group_id,))
+        conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/groups/leave/{group_id}")
+async def community_leave_group(request: Request, group_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM community_group_members WHERE group_id = ? AND user_id = ?", (group_id, user_id))
+    c.execute("UPDATE community_groups SET members_count = MAX(1, members_count - 1) WHERE id = ?", (group_id,))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/events/create")
+async def community_create_event(
+    request: Request,
+    title: str = Form(...),
+    date_time: str = Form(...),
+    location: str = Form(...),
+    description: str = Form("")
+):
+    from app import get_current_user
+    user = get_current_user(request)
+    creator_id = user["id"] if user else 1
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO community_events (title, date_time, location, description, interested_count, created_by, created_at)
+    VALUES (?, ?, ?, ?, 1, ?, ?)
+    """, (title.strip(), date_time.strip(), location.strip(), description.strip(), creator_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/community?tab=events", status_code=303)
+
+
+@router.post("/community/events/interest/{event_id}")
+async def community_toggle_event_interest(request: Request, event_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_event_attendees WHERE event_id = ? AND user_id = ?", (event_id, user_id))
+    existing = c.fetchone()
+
+    if existing:
+        c.execute("DELETE FROM community_event_attendees WHERE id = ?", (existing["id"],))
+        c.execute("UPDATE community_events SET interested_count = MAX(0, interested_count - 1) WHERE id = ?", (event_id,))
+    else:
+        c.execute("INSERT INTO community_event_attendees (event_id, user_id, status, created_at) VALUES (?, ?, 'interested', ?)",
+                  (event_id, user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        c.execute("UPDATE community_events SET interested_count = interested_count + 1 WHERE id = ?", (event_id,))
+
+    c.execute("SELECT interested_count FROM community_events WHERE id = ?", (event_id,))
+    cnt = c.fetchone()[0]
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "interested_count": cnt})
+
+
+# ==============================================================================
+# NOTIFICATIONS ACTION ROUTES
+# ==============================================================================
+
+@router.post("/community/notifications/mark-read/{notif_id}")
+async def community_mark_notif_read(request: Request, notif_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE community_notifications SET is_read = 1 WHERE id = ? AND user_id = ?", (notif_id, user["id"]))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+@router.post("/community/notifications/mark-all-read")
+async def community_mark_all_notifs_read(request: Request):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE community_notifications SET is_read = 1 WHERE user_id = ?", (user["id"],))
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True})
+
+
+# ==============================================================================
+# USER PROFILE & PROFILE EDITING ROUTES
+# ==============================================================================
+
 @router.get("/community/profile/{user_id}", response_class=HTMLResponse)
 async def community_doctor_profile(request: Request, user_id: int):
-    from app import get_current_user, get_user_lang, get_text, get_base_html
+    from app import get_current_user, get_user_lang, get_base_html
 
     curr_user = get_current_user(request)
     lang = get_user_lang(request)
+    viewer_id = curr_user["id"] if curr_user else 4
 
     conn = get_db()
     c = conn.cursor()
@@ -2905,41 +4124,88 @@ async def community_doctor_profile(request: Request, user_id: int):
     c.execute("SELECT * FROM community_posts WHERE user_id = ? ORDER BY id DESC", (user_id,))
     doctor_posts = [dict(r) for r in c.fetchall()]
 
-    # Stats
-    cases_count = len(doctor_posts)
+    # Doctor friends count
+    friends_set = get_user_friends_ids(user_id, conn)
+    friends_count = len(friends_set)
+
+    # Followers count
+    c.execute("SELECT COUNT(*) FROM community_follows WHERE following_id = ?", (user_id,))
+    followers_count = c.fetchone()[0]
+
+    # Best Answers count & Reputation
     c.execute("SELECT COUNT(*) FROM community_comments WHERE user_id = ? AND is_best_answer = 1", (user_id,))
     best_answers_count = c.fetchone()[0]
     reputation = t_dict.get("reputation_score", 100) + (best_answers_count * 50)
 
-    # Connection status
-    is_connected = False
-    if curr_user:
-        c.execute("SELECT id FROM community_connections WHERE user_id = ? AND colleague_id = ?", (curr_user["id"], user_id))
-        is_connected = bool(c.fetchone())
+    # Relationship info between viewer and profile owner
+    rel = get_friendship_info(viewer_id, user_id, conn)
+
+    # Following status
+    c.execute("SELECT id FROM community_follows WHERE follower_id = ? AND following_id = ?", (viewer_id, user_id))
+    is_following = bool(c.fetchone())
 
     conn.close()
 
-    connect_btn_text = "✔️ زميل في الشبكة" if is_connected else "➕ إضافة كزميل"
-    connect_btn_style = "background: #059669; color: white;" if is_connected else "background: #0f766e; color: white;"
+    # Relationship Action Buttons (Facebook UX)
+    action_buttons_html = ""
+    if viewer_id == user_id:
+        action_buttons_html = """
+        <button type="button" onclick="openModal('edit-profile-modal')" class="btn-fb-primary">✏️ تعديل الملف الشخصي</button>
+        """
+    else:
+        if rel["status"] == "friends":
+            friend_btn = f'<button type="button" onclick="removeFriend({user_id})" class="btn-fb-outline">✔️ صديق (إلغاء)</button>'
+        elif rel["status"] == "outgoing_pending":
+            friend_btn = f'<button type="button" onclick="cancelFriendRequest({user_id}, this)" class="btn-fb-outline" style="background: #e2e8f0;">⏳ طلب معلق (إلغاء)</button>'
+        elif rel["status"] == "incoming_pending":
+            friend_btn = f'<button type="button" onclick="acceptFriendRequest({rel["request_id"]}, this)" class="btn-fb-primary">📩 قبول طلب الصداقة</button>'
+        else:
+            friend_btn = f'<button type="button" onclick="sendFriendRequest({user_id}, this)" class="btn-fb-primary">➕ إضافة كصديق زميل</button>'
 
-    cover_bg = "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)"
+        fol_text = "🔕 إلغاء المتابعة" if is_following else "🔔 متابعة"
+        fol_style = "background: #e2e8f0; color: #334155;" if is_following else "background: var(--fb-primary); color: #ffffff;"
+        follow_btn = f'<button type="button" onclick="toggleFollow({user_id}, this)" class="btn" style="border-radius: 10px; font-weight: 700; font-size: 0.88rem; padding: 9px 18px; border: none; cursor: pointer; {fol_style}">{fol_text}</button>'
+
+        action_buttons_html = f"""
+        {friend_btn}
+        {follow_btn}
+        <button type="button" onclick="blockUser({user_id})" class="btn-fb-danger" title="حظر المستخدم">🚫 حظر</button>
+        """
+
+    cov_style = f"background-image: url('/uploads/{t_dict['cover_photo']}');" if t_dict.get("cover_photo") else "background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);"
+    av_html = f'<img src="/uploads/{t_dict["avatar_image"]}" class="profile-header-avatar">' if t_dict.get("avatar_image") else f'<div class="profile-header-avatar">{t_dict["name"][0]}</div>'
+
+    posts_list_html = ""
+    if doctor_posts:
+        for dp in doctor_posts:
+            posts_list_html += f"""
+            <div class="fb-card" style="padding: 16px; margin-bottom: 14px;">
+                <a href="/community#post-{dp['id']}" style="text-decoration: none; color: inherit;">
+                    <h4 style="margin: 0 0 6px 0; color: #0f766e; font-size: 1.1rem; line-height: 1.45;">{dp['title']}</h4>
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--fb-text); line-height: 1.7; overflow-wrap: break-word;">{dp['content'][:220]}...</p>
+                    <div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 8px;">
+                        ⏱️ {dp['created_at']} • 👍 {dp.get('likes_count', 0)} تفاعل • 💬 {dp.get('comments_count', 0)} تعليق
+                    </div>
+                </a>
+            </div>
+            """
+    else:
+        posts_list_html = "<div class='fb-card' style='padding: 24px; text-align: center; color: var(--fb-text-muted);'>لم يقم هذا الطبيب بنشر حالات سريرية بعد.</div>"
+
     body = f"""
     {COMMUNITY_CSS}
     <div class="fb-app-wrapper" style="padding-top: 14px;">
-        <div style="max-width: 960px; margin: 0 auto; padding: 0 12px;">
-            <!-- Facebook-style Profile Header Card (STRICT NO-MESSENGER) -->
+        <div style="max-width: 980px; margin: 0 auto; padding: 0 14px;">
+            <!-- Profile Header Card (STRICT NO-MESSENGER) -->
             <div class="fb-card" style="margin-bottom: 20px;">
-                <div class="fb-profile-cover" style="background: {cover_bg};"></div>
+                <div class="fb-profile-cover" style="{cov_style}"></div>
                 
                 <div class="fb-profile-header-body">
                     <div class="profile-header-avatar-row">
-                        <div class="profile-header-avatar">
-                            {t_dict['name'][0]}
-                        </div>
-                        <div class="profile-header-actions">
-                            {f'<button type="button" onclick="toggleColleagueConnect({user_id}, this)" class="btn" style="padding: 8px 16px; border-radius: 20px; font-weight: 700; {connect_btn_style}">{connect_btn_text}</button>' if (curr_user and curr_user['id'] != user_id) else ''}
-                            <button type="button" onclick="alert('تم نسخ رابط الملف الشخصي!')" class="btn btn-outline" style="padding: 8px 16px; border-radius: 20px; font-weight: 700;">🔗 مشاركة الملف</button>
-                            <a href="/community" class="btn btn-outline" style="padding: 8px 16px; border-radius: 20px;">⬅️ العودة للشبكة</a>
+                        {av_html}
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {action_buttons_html}
+                            <a href="/community" class="btn-fb-outline">⬅️ العودة للشبكة</a>
                         </div>
                     </div>
 
@@ -2949,59 +4215,243 @@ async def community_doctor_profile(request: Request, user_id: int):
                         <span style="background: #ecfdf5; color: #047857; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 800; border: 1px solid #6ee7b7;">طبيب موثق</span>
                     </h1>
 
-                    <div style="font-size: 0.95rem; color: var(--fb-text-muted); margin-top: 4px;">
-                        {t_dict.get('clinic_name') or 'مركز طب وجراحة الحيوان المتقدم'} • {t_dict.get('country') or 'مصر'}
+                    <div style="font-size: 0.95rem; color: var(--fb-text-muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <span><strong>التخصص:</strong> {t_dict.get('specialty') or 'طب وجراحة الحيوان'}</span> •
+                        <span>🏢 {t_dict.get('clinic_name') or t_dict.get('work_place') or 'مركز طب وجراحة الحيوان'}</span> •
+                        <span>📍 {t_dict.get('city') or ''} {t_dict.get('country') or 'مصر'}</span>
                     </div>
 
                     <p style="color: var(--fb-text); font-size: 0.92rem; margin: 12px 0; line-height: 1.75; overflow-wrap: break-word;">
                         {t_dict.get('bio') or 'طبيب بيطري ممارس متخصص في التشخيص الإكلينيكي والجراحة ورعاية الحيوانات، عضو شبكة VetMind AI للتبادل العلمي.'}
                     </p>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; border-top: 1px solid var(--fb-border); padding-top: 16px; margin-top: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; border-top: 1px solid var(--fb-border); padding-top: 16px; margin-top: 14px;">
                         <div style="background: var(--fb-bg); padding: 10px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #0f766e;">{cases_count}</div>
-                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">حالة سريرية منشورة</div>
+                            <div style="font-size: 1.35rem; font-weight: 800; color: #0f766e;">{len(doctor_posts)}</div>
+                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">حالة سريرية</div>
                         </div>
                         <div style="background: var(--fb-bg); padding: 10px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #059669;">{best_answers_count}</div>
-                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">تشخيصات معتمدة 🏆</div>
+                            <div style="font-size: 1.35rem; font-weight: 800; color: #059669;">{friends_count}</div>
+                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">أصدقاء وزملاء</div>
                         </div>
                         <div style="background: var(--fb-bg); padding: 10px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: #ea580c;">{reputation}</div>
-                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">نقاط السمعة العلمية 🎖️</div>
+                            <div style="font-size: 1.35rem; font-weight: 800; color: #0284c7;">{followers_count}</div>
+                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">متابعون</div>
+                        </div>
+                        <div style="background: var(--fb-bg); padding: 10px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 1.35rem; font-weight: 800; color: #ea580c;">{reputation}</div>
+                            <div style="font-size: 0.75rem; color: var(--fb-text-muted);">نقاط السمعة 🎖️</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Doctor Posts Stream -->
-            <h3 style="color: var(--fb-text); margin-bottom: 14px; line-height: 1.45;">📋 الحالات والمنشورات السريرية للدكتور {t_dict['name']}:</h3>
-            {"".join([f'<div class="fb-card" style="padding: 16px; margin-bottom: 14px;"><a href="/community#post-{dp["id"]}" style="text-decoration: none; color: inherit;"><h4 style="margin: 0 0 6px 0; color: #0f766e; font-size: 1.1rem; line-height: 1.45;">{dp["title"]}</h4><p style="margin: 0; font-size: 0.9rem; color: var(--fb-text); line-height: 1.75; overflow-wrap: break-word;">{dp["content"][:240]}...</p><div style="font-size: 0.75rem; color: var(--fb-text-muted); margin-top: 8px;">⏱️ {dp["created_at"]} • 🔥 {dp.get("likes_count", 0)} تفاعل • 💬 {dp.get("comments_count", 0)} رد</div></a></div>' for dp in doctor_posts]) if doctor_posts else "<div class='fb-card' style='padding: 24px; text-align: center; color: var(--fb-text-muted);'>لم يقم هذا الطبيب بنشر حالات بعد.</div>"}
+            <!-- Posts List -->
+            <h3 style="color: var(--fb-text); margin-bottom: 14px;">📋 الحالات والمنشورات السريرية المنشورة:</h3>
+            {posts_list_html}
         </div>
     </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="fb-modal-overlay">
+        <div class="fb-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; margin-bottom: 16px;">
+                <h2 style="margin: 0; font-size: 1.25rem; color: #0f766e;">✏️ تعديل الملف الشخصي والمعلومات المهنية</h2>
+                <button type="button" onclick="closeModal('edit-profile-modal')" style="background: none; border: none; font-size: 1.4rem; cursor: pointer;">✕</button>
+            </div>
+            <form action="/community/profile/edit" method="POST" enctype="multipart/form-data">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">الاسم الكامل:</label>
+                    <input type="text" name="name" value="{t_dict['name']}" required style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">الدور المهني:</label>
+                        <select name="role" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                            <option value="طبيب بيطري" {'selected' if t_dict.get('role') == 'طبيب بيطري' else ''}>طبيب بيطري ممارس</option>
+                            <option value="أخصائي جراحة وتخدير" {'selected' if t_dict.get('role') == 'أخصائي جراحة وتخدير' else ''}>أخصائي جراحة وتخدير</option>
+                            <option value="استشاري تناسليات وولادة" {'selected' if t_dict.get('role') == 'استشاري تناسليات وولادة' else ''}>استشاري تناسليات وولادة</option>
+                            <option value="صاحب عيادة / مركز بيطري" {'selected' if t_dict.get('role') == 'صاحب عيادة / مركز بيطري' else ''}>صاحب عيادة / مركز بيطري</option>
+                            <option value="مربي / خبير ثروة حيوانية" {'selected' if t_dict.get('role') == 'مربي / خبير ثروة حيوانية' else ''}>مربي / خبير ثروة حيوانية</option>
+                            <option value="باحث وأكاديمي بيطري" {'selected' if t_dict.get('role') == 'باحث وأكاديمي بيطري' else ''}>باحث وأكاديمي بيطري</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">التخصص الدقيق:</label>
+                        <input type="text" name="specialty" value="{t_dict.get('specialty') or 'طب وجراحة الحيوان'}" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">جهة العمل / العيادة:</label>
+                        <input type="text" name="work_place" value="{t_dict.get('clinic_name') or t_dict.get('work_place') or ''}" placeholder="اسم العيادة أو المستشفى" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">المدينة / المحافظة:</label>
+                        <input type="text" name="city" value="{t_dict.get('city') or ''}" placeholder="القاهرة، الجيزة..." style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text);">
+                    </div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.85rem;">النبذة التعريفية (Bio):</label>
+                    <textarea name="bio" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--fb-border); border-radius: 8px; background: var(--fb-bg); color: var(--fb-text); line-height: 1.5;">{t_dict.get('bio') or ''}</textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">صورة الحساب الشخصية (Avatar):</label>
+                        <input type="file" name="avatar_file" accept="image/*" style="width: 100%; font-size: 0.82rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; font-size: 0.82rem;">صورة الغلاف (Cover):</label>
+                        <input type="file" name="cover_file" accept="image/*" style="width: 100%; font-size: 0.82rem;">
+                    </div>
+                </div>
+                <button type="submit" class="btn-fb-primary" style="width: 100%; justify-content: center; padding: 12px;">💾 حفظ وتحديث الملف الشخصي الآن</button>
+            </form>
+        </div>
+    </div>
+
     {COMMUNITY_JS}
     """
     return HTMLResponse(content=get_base_html(f"د. {t_dict['name']} | VetBook", body, curr_user, lang), media_type="text/html; charset=utf-8")
 
 
-@router.post("/community/events/interest/{event_id}")
-async def community_toggle_event_interest(request: Request, event_id: int):
+@router.post("/community/profile/edit")
+async def community_edit_profile(
+    request: Request,
+    name: str = Form(...),
+    role: str = Form("طبيب بيطري"),
+    specialty: str = Form("طب وجراحة الحيوان"),
+    work_place: str = Form(""),
+    city: str = Form(""),
+    bio: str = Form(""),
+    avatar_file: UploadFile = File(None),
+    cover_file: UploadFile = File(None)
+):
+    from app import get_current_user
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/community", status_code=303)
+
+    user_id = user["id"]
     conn = get_db()
     c = conn.cursor()
-    c.execute("UPDATE community_events SET interested_count = interested_count + 1 WHERE id = ?", (event_id,))
-    c.execute("SELECT interested_count FROM community_events WHERE id = ?", (event_id,))
-    row = c.fetchone()
-    cnt = row[0] if row else 1
+
+    avatar_name = None
+    if avatar_file and avatar_file.filename:
+        ext = os.path.splitext(avatar_file.filename)[1].lower()
+        if ext in [".jpg", ".jpeg", ".png", ".webp"]:
+            avatar_name = f"user_av_{user_id}_{int(datetime.now().timestamp())}{ext}"
+            try:
+                with open(os.path.join(UPLOAD_DIR, avatar_name), "wb") as f:
+                    shutil.copyfileobj(avatar_file.file, f)
+            except Exception:
+                avatar_name = None
+
+    cover_name = None
+    if cover_file and cover_file.filename:
+        ext = os.path.splitext(cover_file.filename)[1].lower()
+        if ext in [".jpg", ".jpeg", ".png", ".webp"]:
+            cover_name = f"user_cov_{user_id}_{int(datetime.now().timestamp())}{ext}"
+            try:
+                with open(os.path.join(UPLOAD_DIR, cover_name), "wb") as f:
+                    shutil.copyfileobj(cover_file.file, f)
+            except Exception:
+                cover_name = None
+
+    query = """
+    UPDATE users
+    SET name = ?, role = ?, specialty = ?, clinic_name = ?, work_place = ?, city = ?, bio = ?
+    """
+    params = [name.strip(), role.strip(), specialty.strip(), work_place.strip(), work_place.strip(), city.strip(), bio.strip()]
+
+    if avatar_name:
+        query += ", avatar_image = ?"
+        params.append(avatar_name)
+    if cover_name:
+        query += ", cover_photo = ?"
+        params.append(cover_name)
+
+    query += " WHERE id = ?"
+    params.append(user_id)
+
+    c.execute(query, params)
     conn.commit()
     conn.close()
-    return JSONResponse({"success": True, "interested_count": cnt})
+
+    return RedirectResponse(f"/community/profile/{user_id}", status_code=303)
+
+
+# ==============================================================================
+# OFFLINE RESILIENCE SYNC & ADMIN CONTROLS
+# ==============================================================================
+
+@router.post("/api/community/sync-posts")
+async def api_community_sync_posts(request: Request):
+    from app import get_current_user
+    user = get_current_user(request)
+    try:
+        body = await request.json()
+        client_posts = body.get("posts", [])
+        if not client_posts:
+            return JSONResponse({"status": "empty", "synced": 0})
+
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT title, created_at FROM community_posts")
+        existing_keys = set((r[0], r[1]) for r in c.fetchall())
+
+        synced_count = 0
+        for p in client_posts:
+            key = (p.get("title"), p.get("created_at"))
+            if key not in existing_keys and p.get("title") and p.get("content"):
+                c.execute("""
+                INSERT INTO community_posts (
+                    user_id, author_name, author_specialty, author_country,
+                    category, title, content, is_urgent, privacy, species, breed, age, weight,
+                    gender, symptoms, medications, group_id, page_id, image_path, video_path,
+                    media_type, quality_score, virality_score, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
+                """, (
+                    p.get("user_id", user["id"] if user else 4),
+                    p.get("author_name", user.get("name", "طبيب بيطري") if user else "طبيب بيطري"),
+                    p.get("author_specialty", "طب وجراحة الحيوان"),
+                    p.get("author_country", "مصر"),
+                    p.get("category", "case_study"),
+                    p.get("title", ""),
+                    p.get("content", ""),
+                    p.get("is_urgent", 0),
+                    p.get("privacy", "public"),
+                    p.get("species", ""),
+                    p.get("breed", ""),
+                    p.get("age", ""),
+                    p.get("weight", ""),
+                    p.get("gender", ""),
+                    p.get("symptoms", ""),
+                    p.get("medications", ""),
+                    p.get("group_id", 0),
+                    p.get("page_id", 0),
+                    p.get("image_path"),
+                    p.get("video_path"),
+                    p.get("media_type", "text"),
+                    p.get("quality_score", 10),
+                    p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                ))
+                existing_keys.add(key)
+                save_post_to_backup_sync(p)
+                synced_count += 1
+
+        conn.commit()
+        conn.close()
+        return JSONResponse({"status": "ok", "synced": synced_count})
+    except Exception as e:
+        return JSONResponse({"status": "error", "error": str(e)}, status_code=500)
 
 
 @router.get("/admin/community/boost/{post_id}")
 async def admin_boost_post(request: Request, post_id: int):
     from app import get_current_user
     user = get_current_user(request)
-    if not user or not user.get("is_admin"):
+    if not user or (not user.get("is_admin") and user.get("role") != "admin"):
         return RedirectResponse("/community", status_code=303)
 
     conn = get_db()
@@ -3016,7 +4466,7 @@ async def admin_boost_post(request: Request, post_id: int):
 async def admin_pin_post(request: Request, post_id: int):
     from app import get_current_user
     user = get_current_user(request)
-    if not user or not user.get("is_admin"):
+    if not user or (not user.get("is_admin") and user.get("role") != "admin"):
         return RedirectResponse("/community", status_code=303)
 
     conn = get_db()
@@ -3025,3 +4475,4 @@ async def admin_pin_post(request: Request, post_id: int):
     conn.commit()
     conn.close()
     return RedirectResponse(f"/community#post-{post_id}", status_code=303)
+
