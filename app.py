@@ -30,6 +30,10 @@ from prayer_engine import calculate_prayer_times
 import clinic_routes
 import interactive_tools
 import community_routes
+import universal_search
+import contraindications_data
+import interaction_engine
+from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
@@ -2296,11 +2300,59 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+let universalSearchDebounce = null;
+
+function handleUniversalSearchInput(val) {
+    const container = document.getElementById('modal-search-suggestions');
+    if (!container) return;
+    clearTimeout(universalSearchDebounce);
+    const q = (val || '').trim();
+    if (q.length < 1) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+    }
+    universalSearchDebounce = setTimeout(() => {
+        fetch('/api/universal-search/autocomplete?q=' + encodeURIComponent(q))
+            .then(res => res.json())
+            .then(items => {
+                if (!items || items.length === 0) {
+                    container.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.85rem; text-align: center;">لا توجد اقتراحات مطابقة. اضغط Enter للبحث الشامل في المنصة.</div>';
+                    container.style.display = 'block';
+                    return;
+                }
+                let html = '<div style="padding: 6px; display: flex; flex-direction: column; gap: 4px;">';
+                items.forEach(item => {
+                    const badgeBg = item.type === 'drug' ? '#e0f2fe' : (item.type === 'reference' ? '#f0fdf4' : (item.type === 'contraindication' ? '#fef2f2' : '#f8fafc'));
+                    const badgeColor = item.type === 'drug' ? '#0369a1' : (item.type === 'reference' ? '#15803d' : (item.type === 'contraindication' ? '#991b1b' : '#475569'));
+                    html += `
+                    <a href="${item.url}" class="suggestion-item" style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; text-decoration: none; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; transition: all 0.15s ease;">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
+                            <span style="font-size: 1.25rem; flex-shrink: 0;">${item.icon}</span>
+                            <div style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 700; color: var(--text-main);">
+                                ${item.label}
+                            </div>
+                        </div>
+                        <span style="font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 10px; background: ${badgeBg}; color: ${badgeColor}; white-space: nowrap; flex-shrink: 0; margin-inline-start: 8px;">
+                            ${item.category}
+                        </span>
+                    </a>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+                container.style.display = 'block';
+            })
+            .catch(() => {
+                container.style.display = 'none';
+            });
+    }, 180);
+}
+
 function handleSearchKeydown(e) {
     if (e.key === 'Enter') {
         const val = e.target.value.trim();
         if (val) {
-            window.location.href = '/pharmacy?search=' + encodeURIComponent(val);
+            window.location.href = '/search?q=' + encodeURIComponent(val);
         }
     }
 }
@@ -2578,8 +2630,13 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-label">{t('nav_rx')}</span>
             </a>
             <a href="/interactions" class="mobile-menu-item">
-                <span class="m-icon">⚠️</span>
-                <span class="m-label">{t('nav_interactions')}</span>
+                <span class="m-icon">🔄</span>
+                <span class="m-label">{t('nav_interactions', 'فاحص التداخلات الدوائية')}</span>
+            </a>
+            <a href="/contraindications" class="mobile-menu-item" style="color: #dc2626; font-weight: 700;">
+                <span class="m-icon">⛔</span>
+                <span class="m-label">الممنوعات البيطرية في الحيوان</span>
+                <span class="m-badge" style="background: #fef2f2; color: #991b1b;">جديد</span>
             </a>
             <a href="/pharmacy" class="mobile-menu-item">
                 <span class="m-icon">💊</span>
@@ -2812,27 +2869,42 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 </div>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                <input type="text" id="modal-search-input" placeholder="اكتب اسم الدواء، العرض السريري، أو المرجع واضغط Enter..." onkeydown="handleSearchKeydown(event)" style="width: 100%; padding: 12px 14px; border: 2px solid var(--primary-border); border-radius: 12px; font-size: 0.95rem; outline: none; background: var(--bg); color: var(--text-main);">
+            <div style="margin-bottom: 12px; position: relative;">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="modal-search-input" placeholder="ابحث عن أي دواء، مرجع، أداة، ممنوعات، أو حالة سريرية..." oninput="handleUniversalSearchInput(this.value)" onkeydown="handleSearchKeydown(event)" style="flex: 1; padding: 12px 14px; border: 2px solid var(--primary-border); border-radius: 12px; font-size: 0.95rem; outline: none; background: var(--bg); color: var(--text-main);">
+                    <button type="button" onclick="const val = document.getElementById('modal-search-input').value.trim(); if(val) window.location.href='/search?q='+encodeURIComponent(val);" class="btn btn-primary" style="padding: 0 16px; border-radius: 12px; font-weight: 700;">
+                        🔍 بحث
+                    </button>
+                </div>
+                <!-- Instant Live Autocomplete Suggestions Box -->
+                <div id="modal-search-suggestions" style="display: none; background: var(--card-bg); border: 1.5px solid var(--primary-border); border-radius: 12px; margin-top: 8px; max-height: 280px; overflow-y: auto; box-shadow: var(--shadow-md);"></div>
             </div>
 
-            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">روابط سريعة لأقسام البحث:</div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">روابط سريعة لأقسام البحث والاستكشاف:</div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                <a href="/pharmacy" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                <a href="/contraindications" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px; color: #dc2626; font-weight: 700;">
+                    <span class="m-icon">⛔</span>
+                    <span class="m-label">الممنوعات البيطرية في الحيوان</span>
+                </a>
+                <a href="/interactions" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px; font-weight: 700;">
+                    <span class="m-icon">🔄</span>
+                    <span class="m-label">فاحص التداخلات الدوائية</span>
+                </a>
+                <a href="/pharmacy" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px;">
                     <span class="m-icon">💊</span>
-                    <span class="m-label">الصيدلية البيطرية (1,005 دواء)</span>
+                    <span class="m-label">الصيدلية (1,005 دواء)</span>
                 </a>
-                <a href="/clinic" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
-                    <span class="m-icon">🏥</span>
-                    <span class="m-label">سجلات وحالات العيادة</span>
-                </a>
-                <a href="/references" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                <a href="/references" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px;">
                     <span class="m-icon">📚</span>
                     <span class="m-label">المراجع الـ 30 البيطرية</span>
                 </a>
-                <a href="/tools" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+                <a href="/tools" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px;">
                     <span class="m-icon">🛠️</span>
                     <span class="m-label">الأدوات الإكلينيكية الـ 30</span>
+                </a>
+                <a href="/clinic" class="mobile-menu-item" style="background: var(--bg); border: 1px solid var(--border); padding: 9px;">
+                    <span class="m-icon">🏥</span>
+                    <span class="m-label">سجلات وحالات العيادة</span>
                 </a>
             </div>
         </div>
@@ -3092,7 +3164,7 @@ async def rx_prescription_page(
     return HTMLResponse(content=get_base_html(t("nav_rx"), body, user, lang), media_type="text/html; charset=utf-8")
 
 # ==============================================================================
-# ROUTE: DRUG-DRUG INTERACTIONS CHECKER
+# ROUTE: COMPREHENSIVE DRUG-DRUG INTERACTIONS CHECKER (ALL 1,005+ DRUGS)
 # ==============================================================================
 @app.get("/interactions", response_class=HTMLResponse)
 async def interactions_page(
@@ -3104,71 +3176,105 @@ async def interactions_page(
     lang = get_user_lang(request)
     t = lambda k, d="": get_text(lang, k, d)
 
-    result = check_drug_interaction(drug_a, drug_b)
+    result = interaction_engine.check_comprehensive_interaction(drug_a, drug_b)
+    all_drugs = interaction_engine.get_all_available_drugs_list()
 
     badge_bg = "#fef2f2" if result["level"] == "danger" else ("#fffbeb" if result["level"] == "warning" else "#f0fdf4")
     badge_border = "#fca5a5" if result["level"] == "danger" else ("#fde68a" if result["level"] == "warning" else "#86efac")
     badge_color = "#991b1b" if result["level"] == "danger" else ("#92400e" if result["level"] == "warning" else "#166534")
 
-    popular_drugs = [
-        "تايلوزين 20% (Tylosin)",
-        "بنستريب 20/20 (Penicillin G + Streptomycin)",
-        "فلونيكسين ميغلومين (Flunixin Meglumine)",
-        "ديكساميثازون 0.2% (Dexamethasone)",
-        "أوكسيتتراسيكلين 20% (Oxytetracycline)",
-        "ليفاميزول 10% (Levamisole)",
-        "دايزينون 60% (Diazinon)",
-        "سيفوكين 2.5% (Cefquinome)",
-        "إنروفلوكساسين 10% (Enrofloxacin)",
-        "فوروسيميد (Furosemide / Lasix)"
-    ]
+    # Datalist options for all 1,005+ available veterinary drugs
+    datalist_options = "\n".join([f'<option value="{d["trade_name"]}">المادة الفعالة: {d["active_ingredient"]} • {d["country"]}</option>' for d in all_drugs])
 
-    opts_a = "".join([f'<option value="{d}" {"selected" if d == drug_a else ""}>{d}</option>' for d in popular_drugs])
-    opts_b = "".join([f'<option value="{d}" {"selected" if d == drug_b else ""}>{d}</option>' for d in popular_drugs])
+    # Popular Preset Combos for Fast Testing
+    quick_presets = [
+        {"a": "فلونيكسين ميغلومين (Flunixin Meglumine)", "b": "ديكساميثازون 0.2% (Dexamethasone)", "label": "🔴 فلونيكسين + ديكساميثازون (NSAID + ستيرويد)"},
+        {"a": "تايلوزين 20% (Tylosin)", "b": "بنسلين جي (Penicillin G)", "label": "🔴 تايلوزين + بنسلين (ماكروليد + بيتالكتام)"},
+        {"a": "ليفاميزول 10% (Levamisole)", "b": "دايزينون 60% (Diazinon)", "label": "🔴 ليفاميزول + دايزينون (تسمم كوليني)"},
+        {"a": "جنتاميسين 10% (Gentamicin)", "b": "فوروسيميد (Furosemide / Lasix)", "label": "🔴 جنتاميسين + لازيكس (سمية كلوية)"},
+        {"a": "بنسلين جي (Penicillin G)", "b": "ستربتومايسين (Streptomycin)", "label": "🟢 بنسلين + ستربتومايسين (تآزر معتمد)"},
+        {"a": "أموكسيسيلين (Amoxicillin)", "b": "حمض الكلافولانيك (Clavulanic Acid)", "label": "🟢 أموكسيسيلين + كلافولانات (تآزر علاجي)"}
+    ]
+    presets_html = "".join([f'<a href="/interactions?drug_a={urllib.parse.quote(p["a"])}&drug_b={urllib.parse.quote(p["b"])}" class="btn btn-outline" style="font-size: 0.78rem; padding: 6px 10px; border-radius: 8px;">{p["label"]}</a>' for p in quick_presets])
 
     body = f"""
     <div style="margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 1.6rem; color: var(--accent);">⚠️ {t('interactions_title')}</h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">{t('interactions_subtitle')}</p>
+        <div class="card" style="background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%); color: white; border: none; padding: clamp(16px, 4vw, 24px); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px;">
+                        ⭐ فاحص السلامة والتوافق الدوائي البيطري
+                    </div>
+                    <h1 style="margin: 0 0 6px 0; font-size: clamp(1.3rem, 3.8vw, 1.7rem); color: white; font-weight: 800;">🔄 فاحص التداخلات الدوائية والسلامة السريرية</h1>
+                    <p style="margin: 0; color: #fecaca; font-size: clamp(0.85rem, 2.4vw, 0.95rem); line-height: 1.6;">
+                        ابحث وافحص أي دوائين من بين كافة الأدوية المتاحة في قاعدة البيانات (1,005 دواء) للتحقق من التضاد، التآزر، والسميات المشتركة.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="/contraindications" class="btn" style="background: #ffffff; color: #991b1b; font-weight: 800;">⛔ دليل الممنوعات البيطرية</a>
+                    <a href="/pharmacy" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-weight: 700;">💊 صيدلية الـ 1,005 دواء</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card" style="border-top: 4px solid var(--accent);">
+    <!-- Datalist containing all 1,005+ drugs -->
+    <datalist id="all-drugs-list">
+        {datalist_options}
+    </datalist>
+
+    <div class="card" style="border-top: 4px solid var(--accent); margin-bottom: 24px;">
+        <h3 style="margin-top: 0; font-size: 1.15rem; color: var(--primary);">🔍 تحديد المستحضرين للفحص السريري:</h3>
         <form action="/interactions" method="GET">
             <div class="grid-2" style="margin-bottom: 16px;">
                 <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">{t('drug_a_label', 'المستحضر الأول (Drug A):')}</label>
-                    <select name="drug_a" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600;">
-                        {opts_a}
-                    </select>
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">المستحضر الأول (Drug A):</label>
+                    <input list="all-drugs-list" name="drug_a" value="{drug_a}" placeholder="اكتب اسم الدواء الأول أو مادته الفعالة..." required style="width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600; font-size: 0.95rem; background: var(--bg); color: var(--text-main);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">💡 اختر من القائمة أو اكتب أي دواء تجاري أو مادة فعالة</div>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">{t('drug_b_label', 'المستحضر الثاني (Drug B):')}</label>
-                    <select name="drug_b" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600;">
-                        {opts_b}
-                    </select>
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">المستحضر الثاني (Drug B):</label>
+                    <input list="all-drugs-list" name="drug_b" value="{drug_b}" placeholder="اكتب اسم الدواء الثاني أو مادته الفعالة..." required style="width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600; font-size: 0.95rem; background: var(--bg); color: var(--text-main);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">💡 يمكنك فحص أي دواءين من كافة الدول (مصر، السعودية، الإمارات...)</div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-accent" style="width: 100%; padding: 12px; justify-content: center; font-size: 1rem;">
-                🔍 فحص التداخل الدوائي والسلامة السريرية
+            <button type="submit" class="btn btn-accent" style="width: 100%; padding: 12px; justify-content: center; font-size: 1rem; font-weight: 800; border-radius: 8px;">
+                ⚡ فحص التداخل الدوائي وتحليل السلامة السريرية فوراً
             </button>
         </form>
 
-        <div style="margin-top: 24px; background: {badge_bg}; border: 2px solid {badge_border}; border-radius: 12px; padding: 20px;">
-            <div style="font-size: 1.25rem; font-weight: 800; color: {badge_color}; margin-bottom: 8px;">
-                {result['level_title']}
+        <!-- Quick Combos Strip -->
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">أمثلة سريرية شائعة للفحص السريع:</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {presets_html}
             </div>
-            <div style="font-size: 0.95rem; line-height: 1.8; color: #1e293b;">
-                <strong>الآلية الفارماكولوجية والتوجيه السريري:</strong><br>
+        </div>
+
+        <!-- Clinical Result Card -->
+        <div style="margin-top: 24px; background: {badge_bg}; border: 2px solid {badge_border}; border-radius: 12px; padding: clamp(14px, 4vw, 22px);">
+            <div style="font-size: clamp(1.05rem, 3vw, 1.25rem); font-weight: 800; color: {badge_color}; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>{result['level_title']}</span>
+            </div>
+
+            <div style="font-size: 0.95rem; line-height: 1.8; color: #1e293b; margin-bottom: 14px;">
+                <div style="font-weight: 800; color: {badge_color}; margin-bottom: 4px;">🔬 الآلية الفارماكولوجية الحيوية:</div>
                 {result['mechanism']}
             </div>
-            <div style="font-size: 0.8rem; color: #64748b; margin-top: 10px; border-top: 1px dashed {badge_border}; padding-top: 6px;">
-                المرجع: Plumb's Veterinary Drug Handbook 9th Edition & Merck Veterinary Clinical Pharmacology.
+
+            <div style="font-size: 0.92rem; line-height: 1.8; color: #0f172a; background: rgba(255,255,255,0.7); padding: 12px 14px; border-radius: 8px; border: 1px solid {badge_border}; margin-bottom: 12px;">
+                <div style="font-weight: 800; color: #0f766e; margin-bottom: 4px;">📋 التوجيه السريري والإجراء الطبي الموصى به:</div>
+                {result.get('clinical_action', 'متابعة الحالة السريرية وإعادة تقييم الجرعات.')}
+            </div>
+
+            <div style="font-size: 0.8rem; color: #64748b; border-top: 1px dashed {badge_border}; padding-top: 8px;">
+                📚 التوثيق المعتمد: {result.get('references', "Plumb's Veterinary Drug Handbook 9th Edition & Merck Veterinary Clinical Pharmacology")}
             </div>
         </div>
     </div>
     """
-    return HTMLResponse(content=get_base_html(t("nav_interactions"), body, user, lang), media_type="text/html; charset=utf-8")
+    return HTMLResponse(content=get_base_html("فاحص التداخلات الدوائية البيطرية", body, user, lang), media_type="text/html; charset=utf-8")
 
 # ==============================================================================
 # ROUTE: CLINIC INVOICES & BILLING
@@ -5484,8 +5590,125 @@ async def chat_clear(request: Request):
     return RedirectResponse("/chat", status_code=303)
 
 # ==============================================================================
-# ROUTE 11: 30 SCIENTIFIC REFERENCES WITH DIRECT DOWNLOAD
+# ROUTE 11: 30 SCIENTIFIC REFERENCES WITH DIRECT DOWNLOAD & INTERACTIVE READER
 # ==============================================================================
+def generate_reference_standalone_html(ref_id: str) -> str:
+    """Generates a complete, beautiful standalone HTML document for any reference book."""
+    from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
+    ref = ARAB_FULL_BOOKS.get(ref_id) or GLOBAL_FULL_BOOKS.get(ref_id)
+    if not ref:
+        all_refs = get_all_references()
+        found = next((r for r in all_refs if r["id"] == ref_id), None)
+        if found:
+            ref = {
+                "title": found["name"],
+                "issuing_body": found.get("issuing_body", "VetMind AI Clinical Library"),
+                "citation": found.get("citation", ""),
+                "species": found.get("species", "الكلينيكال العام"),
+                "summary": found.get("summary", ""),
+                "chapters": [{"title": "الإرشادات والبروتوكولات السريرية", "content": "\n".join(found.get("key_points", []))}]
+            }
+        else:
+            ref = {
+                "title": f"مرجع بيطري {ref_id.upper()}",
+                "issuing_body": "منصة VetMind AI السريرية",
+                "citation": "VetMind AI Clinical Reference Repository (2026)",
+                "species": "متعدد الفصائل",
+                "summary": "دليل وبروتوكول سريري بيطري معتمد.",
+                "chapters": [{"title": "الفصل الأول", "content": "محتوى المرجع متاح ومفهرس بالكامل داخل المنصة."}]
+            }
+
+    chapters_html = ""
+    for idx, chap in enumerate(ref.get("chapters", []), 1):
+        content_formatted = chap.get("content", "").replace("\n", "<br>")
+        chapters_html += f"""
+        <div class="chapter-card" id="chap-{idx}" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <h2 style="color: #0f766e; margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid #ccfbf1; padding-bottom: 8px;">{chap.get('title', '')}</h2>
+            <div style="font-size: 0.95rem; line-height: 1.8; color: #334155; word-break: break-word;">{content_formatted}</div>
+        </div>
+        """
+
+    html = f"""<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{ref.get('title', 'مرجع بيطري')} - VetMind AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {{ box-sizing: border-box; max-width: 100%; }}
+        body {{
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 16px;
+            line-height: 1.7;
+        }}
+        .container {{ max-width: 900px; margin: 0 auto; }}
+        .hero {{
+            background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.25);
+        }}
+        .btn {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+        }}
+        .btn-white {{ background: #ffffff; color: #0f766e; }}
+        .btn-trans {{ background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }}
+        @media print {{
+            body {{ background: #ffffff; padding: 0; }}
+            .no-print {{ display: none !important; }}
+            .hero {{ background: #0f766e !important; color: white !important; print-color-adjust: exact; }}
+            .chapter-card {{ page-break-inside: avoid; border: 1px solid #cbd5e1; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <a href="/references" class="btn btn-trans">⬅️ العودة إلى مكتبة المراجع</a>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="window.print()" class="btn btn-white">🖨️ طباعة المرجع / حفظ PDF</button>
+                    <a href="/references/download/{ref_id}" download class="btn btn-trans">📥 تحميل الملف</a>
+                </div>
+            </div>
+            <div style="display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px;">
+                📚 مرجع سريري بيطري معتمد • منصة VetMind AI
+            </div>
+            <h1 style="margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 800; word-break: break-word;">{ref.get('title', '')}</h1>
+            <div style="font-size: 0.9rem; opacity: 0.95; margin-bottom: 6px; word-break: break-word;"><strong>جهة الإصدار:</strong> {ref.get('issuing_body', '')}</div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 6px; word-break: break-word;"><strong>التوثيق:</strong> {ref.get('citation', '')}</div>
+            <div style="font-size: 0.85rem; opacity: 0.9; word-break: break-word;"><strong>الفصائل المشمولة:</strong> {ref.get('species', '')}</div>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #0f766e; font-size: 1.1rem;">📋 الملخص والهدف السريري:</h3>
+            <p style="margin: 0; font-size: 0.92rem; color: #475569; line-height: 1.7; word-break: break-word;">{ref.get('summary', '')}</p>
+        </div>
+
+        {chapters_html}
+
+        <div class="no-print" style="text-align: center; padding: 24px; color: #64748b; font-size: 0.85rem;">
+            منصة VetMind AI للأطباء البيطريين • مكتبة المراجع السريرية الكاملة
+        </div>
+    </div>
+</body>
+</html>"""
+    return html
+
 @app.get("/references", response_class=HTMLResponse)
 async def references_page(request: Request, tab: str = "all"):
     user = get_current_user(request)
@@ -5509,24 +5732,23 @@ async def references_page(request: Request, tab: str = "all"):
         badge_color = "background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;" if is_arab else "background: #f0f9ff; color: #075985; border: 1px solid #bae6fd;"
         badge_label = t("ref_badge_arab", "مرجع عربي معتمد 🇪🇬🇸🇦") if is_arab else t("ref_badge_intl", "مرجع دولي Tier-1 🌐")
 
-        key_pts_html = "".join([f"<li style='margin-bottom: 4px;'>{pt}</li>" for pt in r.get("key_points", [])])
+        key_pts_html = "".join([f"<li style='margin-bottom: 6px; word-break: break-word;'>{pt}</li>" for pt in r.get("key_points", [])])
 
         cards_html += f"""
-        <div class="card" style="margin-bottom: 24px; border-top: 4px solid {'#16a34a' if is_arab else '#0284c7'}; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
-            <!-- DEDICATED ACTION BAR RIGHT IN FRONT OF THE REFERENCE -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+        <div class="card" style="margin-bottom: 24px; border-top: 4px solid {'#16a34a' if is_arab else '#0284c7'}; box-shadow: 0 4px 15px rgba(0,0,0,0.04); overflow: hidden; width: 100%; box-sizing: border-box;">
+            <!-- Reference Header & Action Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="{badge_color}; padding: 4px 12px; border-radius: 14px; font-size: 0.8rem; font-weight: 700;">{badge_label}</span>
+                    <span style="{badge_color}; padding: 4px 12px; border-radius: 14px; font-size: 0.8rem; font-weight: 700; white-space: normal !important; word-break: break-word;">{badge_label}</span>
                     <span style="background: var(--bg); border: 1px solid var(--border); padding: 3px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; color: var(--primary);">{r['id'].upper()}</span>
                 </div>
 
-                <!-- DEDICATED DIRECT PDF DOWNLOAD & VIEW BUTTONS RIGHT IN FRONT OF EACH REFERENCE -->
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                    <a href="/references/download/{r['id']}" download class="btn" style="background: linear-gradient(135deg, {'#16a34a 0%, #15803d' if is_arab else '#0284c7 0%, #0369a1'} 100%); color: #ffffff; font-weight: 700; font-size: 0.85rem; padding: 7px 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: inline-flex; align-items: center; gap: 6px;">
-                        {t('download_single_book_btn', '📥 تحميل كتاب المرجع كاملاً (PDF)')}
+                    <a href="/references/read/{r['id']}" class="btn" style="background: linear-gradient(135deg, {'#16a34a 0%, #15803d' if is_arab else '#0284c7 0%, #0369a1'} 100%); color: #ffffff; font-weight: 700; font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: inline-flex; align-items: center; gap: 6px;">
+                        📖 {t('read_single_book_btn', 'قراءة واستعراض المرجع')}
                     </a>
-                    <a href="/references/pdf/{r['id']}" target="_blank" class="btn" style="background: #ffffff; color: var(--primary); border: 1.5px solid var(--primary); font-weight: 700; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                        {t('view_online_pdf_btn', '👁️ قراءة واستعراض الـ PDF')}
+                    <a href="/references/download/{r['id']}" download class="btn" style="background: var(--card-bg); color: var(--text-main); border: 1.5px solid var(--border); font-weight: 700; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                        📥 {t('download_single_book_btn', 'تحميل المرجع')}
                     </a>
                     <a href="{r['url']}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 10px;" title="{t('official_source', 'الموقع الرسمي')}">
                         🌐 {t('official_source', 'الموقع الرسمي')}
@@ -5534,28 +5756,28 @@ async def references_page(request: Request, tab: str = "all"):
                 </div>
             </div>
 
-            <h3 style="margin: 0 0 8px 0; font-size: 1.25rem; color: var(--primary); font-weight: 800;">{r['name']}</h3>
-            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 10px;"><strong>{t('category_label', 'التصنيف')}:</strong> {r['category']}</div>
+            <h3 style="margin: 0 0 8px 0; font-size: clamp(1.1rem, 2.8vw, 1.3rem); color: var(--primary); font-weight: 800; word-break: break-word;">{r['name']}</h3>
+            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 10px; word-break: break-word;"><strong>{t('category_label', 'التصنيف')}:</strong> {r['category']}</div>
             
-            <div style="background: var(--bg); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px;">
+            <div style="background: var(--bg); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; word-break: break-word; line-height: 1.6;">
                 <strong>{t('citation_label', 'التوثيق القياسي')}:</strong> {r['citation']}
             </div>
 
-            <p style="font-size: 0.92rem; line-height: 1.6; margin-bottom: 12px; color: #334155;">{r.get('summary', '')}</p>
+            <p style="font-size: 0.92rem; line-height: 1.6; margin-bottom: 12px; color: var(--text-main); word-break: break-word;">{r.get('summary', '')}</p>
 
             <div style="margin-bottom: 16px;">
                 <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">{t('key_protocols_label', 'أبرز الإرشادات والبروتوكولات السريرية:')}</div>
-                <ul style="margin: 0; padding-right: 20px; font-size: 0.85rem; color: #475569;">
+                <ul style="margin: 0; padding-right: 20px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
                     {key_pts_html}
                 </ul>
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border); padding-top: 12px;">
-                <a href="/references/download/{r['id']}" download class="btn btn-download" style="font-size: 0.82rem; font-weight: 700;">
-                    {t('download_single_book_btn', '📥 تحميل كتاب المرجع كاملاً (PDF)')}
+                <a href="/references/read/{r['id']}" class="btn btn-primary" style="font-size: 0.85rem; font-weight: 700;">
+                    📖 قراءة فصول المرجع وتفاصيله
                 </a>
-                <a href="/references/pdf/{r['id']}" target="_blank" class="btn btn-outline" style="font-size: 0.82rem; font-weight: 600;">
-                    {t('view_online_pdf_btn', '👁️ قراءة واستعراض الـ PDF')}
+                <a href="/references/download/{r['id']}" download class="btn btn-outline" style="font-size: 0.82rem; font-weight: 600;">
+                    📥 {t('download_single_book_btn', 'تحميل ملف المرجع')}
                 </a>
             </div>
         </div>
@@ -5563,38 +5785,38 @@ async def references_page(request: Request, tab: str = "all"):
 
     body = f"""
     <!-- Master Hero & Download All References Banner -->
-    <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #0284c7 0%, #075985 100%); color: #ffffff; border: none; box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
-            <div style="max-width: 680px;">
-                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 10px;">
+    <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #0284c7 0%, #075985 100%); color: #ffffff; border: none; box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.3); padding: clamp(16px, 4vw, 24px);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="flex: 1 1 300px; min-width: 0;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; white-space: normal !important; word-break: break-word;">
                     ⭐ {t('refs_bundle_hero_title', 'مكتبة المراجع السريرية البيطرية الشاملة')}
                 </div>
-                <h1 style="margin: 0 0 8px 0; font-size: 1.65rem; color: #ffffff; font-weight: 800;">📚 {t('references_title')}</h1>
-                <p style="margin: 0 0 12px 0; color: #e0f2fe; font-size: 0.95rem; line-height: 1.5;">{t('refs_bundle_hero_desc', '30 مرجعاً علمياً ودليلاً تشخيصياً وفارماكولوجياً معتمداً ومتاحاً للتحميل المباشر بنقرة واحدة.')}</p>
+                <h1 style="margin: 0 0 8px 0; font-size: clamp(1.3rem, 3.8vw, 1.7rem); color: #ffffff; font-weight: 800; word-break: break-word;">📚 {t('references_title')}</h1>
+                <p style="margin: 0 0 12px 0; color: #e0f2fe; font-size: clamp(0.85rem, 2.5vw, 0.95rem); line-height: 1.6; word-break: break-word;">{t('refs_bundle_hero_desc', '30 مرجعاً علمياً ودليلاً تشخيصياً وفارماكولوجياً معتمداً ومتاحاً للقراءة المباشرة والتحميل بنقرة واحدة.')}</p>
                 
-                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(110, 231, 183, 0.4); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; color: #d1fae5; font-weight: 600;">
-                    {t('refs_offline_desktop_badge', '💾 نسخة كاملة مفهرسة ومحملة أيضاً على سطح المكتب في جهاز د. تامر سعد')}
+                <div style="display: inline-block; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(110, 231, 183, 0.4); padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; color: #d1fae5; font-weight: 600; white-space: normal !important; word-break: break-word; line-height: 1.5; max-width: 100%;">
+                    💾 {t('refs_offline_desktop_badge', 'نسخة كاملة مفهرسة ومحملة في منصة VetMind AI')}
                 </div>
             </div>
 
             <!-- Download Action Buttons -->
-            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 250px;">
-                <a href="/references/download-all" class="btn" style="background: #ffffff; color: #0284c7; font-weight: 800; font-size: 0.92rem; padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); text-align: center; justify-content: center;">
+            <div style="flex: 1 1 260px; max-width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                <a href="/references/download-all" class="btn" style="background: #ffffff; color: #0284c7; font-weight: 800; font-size: 0.9rem; padding: 12px 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); text-align: center; justify-content: center; width: 100%; white-space: normal !important; word-break: break-word; line-height: 1.4;">
                     {t('download_all_refs_zip', '📦 تحميل كافة المراجع الـ 30 في حزمة واحدة (ZIP)')}
                 </a>
-                <div style="display: flex; gap: 6px;">
-                    <a href="/references/download-arab" class="btn" style="flex: 1; background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; justify-content: center; padding: 8px 6px;">
-                        {t('download_arab_refs_zip', '🇪🇬 تحميل المراجع العربية (10 مراجع - ZIP)')}
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <a href="/references/download-arab" class="btn" style="flex: 1 1 120px; background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; justify-content: center; padding: 8px 6px; white-space: normal !important; word-break: break-word; line-height: 1.3;">
+                        {t('download_arab_refs_zip', '🇪🇬 المراجع العربية (10 مراجع)')}
                     </a>
-                    <a href="/references/download-global" class="btn" style="flex: 1; background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; justify-content: center; padding: 8px 6px;">
-                        {t('download_global_refs_zip', '🌐 تحميل المراجع الدولية Tier-1 (20 مرجعاً - ZIP)')}
+                    <a href="/references/download-global" class="btn" style="flex: 1 1 120px; background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; justify-content: center; padding: 8px 6px; white-space: normal !important; word-break: break-word; line-height: 1.3;">
+                        {t('download_global_refs_zip', '🌐 المراجع الدولية (20 مرجعاً)')}
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- Quick Statistics Bar -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18);">
             <div style="background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 8px; text-align: center;">
                 <div style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">30</div>
                 <div style="font-size: 0.75rem; color: #bae6fd;">{t('refs_count_total', '30 مرجعاً معتمداً')}</div>
@@ -5609,7 +5831,7 @@ async def references_page(request: Request, tab: str = "all"):
             </div>
             <div style="background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 8px; text-align: center;">
                 <div style="font-size: 1.25rem; font-weight: 800; color: #fde047;">100%</div>
-                <div style="font-size: 0.75rem; color: #fef08a;">{t('refs_count_status', 'محملة بالكامل بدون إنترنت')}</div>
+                <div style="font-size: 0.75rem; color: #fef08a;">{t('refs_count_status', 'متاحة للقراءة والتحميل')}</div>
             </div>
         </div>
     </div>
@@ -5636,7 +5858,7 @@ def generate_reference_zip_stream(filter_prefix=None):
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         if os.path.exists(DOCS_DIR):
             for fname in os.listdir(DOCS_DIR):
-                if fname.endswith(".html"):
+                if fname.endswith(".html") or fname.endswith(".pdf"):
                     if filter_prefix is None or fname.startswith(filter_prefix):
                         fpath = os.path.join(DOCS_DIR, fname)
                         z.write(fpath, arcname=f"VetMind_References/{fname}")
@@ -5725,25 +5947,594 @@ async def download_single_reference_book(ref_id: str):
         encoded = urllib.parse.quote(filename)
         return FileResponse(
             html_path,
-            media_type="text/html",
+            media_type="text/html; charset=utf-8",
             filename=filename,
             headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
         )
     else:
-        raise HTTPException(status_code=404, detail="المرجع المطلوب غير متوفر حالياً")
+        # Fallback: dynamically generate standalone styled HTML so user NEVER gets 404
+        content = generate_reference_standalone_html(ref_id)
+        try:
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception:
+            pass
+        filename = f"{base_name}.html"
+        encoded = urllib.parse.quote(filename)
+        return Response(
+            content=content,
+            media_type="text/html; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
+        )
 
 @app.get("/references/pdf/{ref_id}")
 async def view_single_reference_pdf(ref_id: str):
     ref_id = ref_id.lower().strip()
     pdf_path = os.path.join(DOCS_DIR, f"{ref_id}.pdf")
-    html_path = os.path.join(DOCS_DIR, f"{ref_id}.html")
     
     if os.path.exists(pdf_path):
         return FileResponse(pdf_path, media_type="application/pdf")
-    elif os.path.exists(html_path):
-        return FileResponse(html_path, media_type="text/html; charset=utf-8")
     else:
-        raise HTTPException(status_code=404, detail="المرجع المطلوب غير متوفر حالياً")
+        # Never 404: Seamlessly redirect to the interactive in-app reader
+        return RedirectResponse(f"/references/read/{ref_id}", status_code=303)
+
+# ==============================================================================
+# ROUTE 11-C: INTERACTIVE IN-APP REFERENCE READER
+# ==============================================================================
+@app.get("/references/read/{ref_id}", response_class=HTMLResponse)
+async def read_reference_book(request: Request, ref_id: str):
+    ref_id = ref_id.lower().strip()
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
+    ref = ARAB_FULL_BOOKS.get(ref_id) or GLOBAL_FULL_BOOKS.get(ref_id)
+    is_arab = ref_id.startswith("arab_")
+
+    if not ref:
+        all_refs = get_all_references()
+        found = next((r for r in all_refs if r["id"] == ref_id), None)
+        if found:
+            ref = {
+                "title": found["name"],
+                "issuing_body": found.get("issuing_body", "VetMind AI Clinical Library"),
+                "citation": found.get("citation", ""),
+                "species": found.get("species", "الكلينيكال العام"),
+                "summary": found.get("summary", ""),
+                "url": found.get("url", "/references"),
+                "chapters": [{"title": "الإرشادات والبروتوكولات السريرية", "content": "\n".join(found.get("key_points", []))}]
+            }
+        else:
+            return RedirectResponse("/references", status_code=303)
+
+    chapters = ref.get("chapters", [])
+    chapters_toc_html = ""
+    chapters_content_html = ""
+
+    for idx, chap in enumerate(chapters, 1):
+        c_title = chap.get("title", f"الفصل {idx}")
+        c_content = chap.get("content", "").replace("\n", "<br>")
+        
+        chapters_toc_html += f"""
+        <a href="#chap-{idx}" style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 0.88rem; transition: all 0.2s; word-break: break-word;">
+            <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;">{idx}</span>
+            <span>{c_title}</span>
+        </a>
+        """
+
+        chapters_content_html += f"""
+        <div id="chap-{idx}" class="card chapter-section" style="margin-bottom: 24px; border-top: 4px solid {'#16a34a' if is_arab else '#0284c7'}; box-shadow: 0 4px 15px rgba(0,0,0,0.04); padding: clamp(16px, 4vw, 24px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1.5px solid var(--border);">
+                <h2 style="margin: 0; font-size: clamp(1.15rem, 3vw, 1.35rem); color: var(--primary); font-weight: 800; word-break: break-word;">
+                    {c_title}
+                </h2>
+                <a href="#reader-top" class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 10px;">⬆️ للأعلى</a>
+            </div>
+            <div style="font-size: 0.95rem; line-height: 1.85; color: var(--text-main); word-break: break-word;">
+                {c_content}
+            </div>
+        </div>
+        """
+
+    badge_label = "مرجع عربي معتمد 🇪🇬🇸🇦" if is_arab else "مرجع دولي Tier-1 🌐"
+    badge_style = "background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;" if is_arab else "background: #f0f9ff; color: #075985; border: 1px solid #bae6fd;"
+
+    body = f"""
+    <div id="reader-top" style="margin-bottom: 24px;">
+        <!-- Breadcrumb Bar -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+            <a href="/" style="color: var(--primary); text-decoration: none;">الرئيسية</a>
+            <span>›</span>
+            <a href="/references" style="color: var(--primary); text-decoration: none;">مكتبة المراجع السريرية</a>
+            <span>›</span>
+            <span style="color: var(--text-main); font-weight: 700;">{ref.get('title', '')}</span>
+        </div>
+
+        <!-- Master Reader Header Banner -->
+        <div class="card" style="background: linear-gradient(135deg, {'#047857 0%, #065f46' if is_arab else '#0369a1 0%, #075985'} 100%); color: #ffffff; border: none; padding: clamp(16px, 4vw, 24px); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                <div style="flex: 1 1 300px; min-width: 0;">
+                    <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                        <span style="{badge_style}; padding: 4px 12px; border-radius: 14px; font-size: 0.8rem; font-weight: 700; white-space: normal !important;">{badge_label}</span>
+                        <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; color: #ffffff;">{ref_id.upper()}</span>
+                    </div>
+                    <h1 style="margin: 0 0 10px 0; font-size: clamp(1.3rem, 3.8vw, 1.7rem); color: #ffffff; font-weight: 800; word-break: break-word;">{ref.get('title', '')}</h1>
+                    <div style="font-size: 0.9rem; color: #e0f2fe; margin-bottom: 6px; word-break: break-word;"><strong>جهة الإصدار:</strong> {ref.get('issuing_body', '')}</div>
+                    <div style="font-size: 0.85rem; color: #bae6fd; margin-bottom: 6px; word-break: break-word;"><strong>التوثيق القياسي:</strong> {ref.get('citation', '')}</div>
+                    <div style="font-size: 0.85rem; color: #f0fdf4; word-break: break-word;"><strong>الفصائل المشمولة:</strong> {ref.get('species', 'متعدد')}</div>
+                </div>
+
+                <!-- Top Reader Action Buttons -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <a href="/references" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-weight: 700; font-size: 0.85rem;">
+                        ⬅️ العودة للمراجع
+                    </a>
+                    <button onclick="window.print()" class="btn" style="background: #ffffff; color: {'#065f46' if is_arab else '#0369a1'}; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                        🖨️ طباعة المرجع / حفظ PDF
+                    </button>
+                    <a href="/references/download/{ref_id}" download class="btn" style="background: rgba(255,255,255,0.25); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); font-weight: 700; font-size: 0.85rem;">
+                        📥 تحميل ملف المرجع
+                    </a>
+                    {f'<a href="{ref.get("url")}" target="_blank" rel="noopener noreferrer" class="btn" style="background: rgba(255,255,255,0.15); color: #ffffff; font-size: 0.82rem;">🌐 الموقع الرسمي</a>' if ref.get("url") else ''}
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Summary Card -->
+        <div class="card" style="margin-bottom: 20px; border-top: 4px solid var(--accent); padding: clamp(14px, 3.5vw, 20px);">
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; color: var(--primary);">📋 ملخص المرجع والغرض السريري:</h3>
+            <p style="margin: 0; font-size: 0.95rem; line-height: 1.7; color: var(--text-main); word-break: break-word;">
+                {ref.get('summary', '')}
+            </p>
+        </div>
+
+        <!-- Table of Contents & Quick Jump -->
+        <div class="card" style="margin-bottom: 24px; padding: clamp(14px, 3.5vw, 20px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary);">📑 فهرس الفصول والبروتوكولات السريرية:</h3>
+                <input type="text" id="chapter-filter-input" placeholder="🔍 فلترة فصول المرجع..." oninput="filterReaderChapters(this.value)" style="padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.85rem; background: var(--bg); color: var(--text-main); width: 220px; max-width: 100%;">
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px;" id="chapters-toc-container">
+                {chapters_toc_html}
+            </div>
+        </div>
+
+        <!-- Rendered Chapters -->
+        <div id="chapters-content-container">
+            {chapters_content_html}
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="card" style="text-align: center; padding: 24px; margin-top: 24px;">
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px;">انتهى استعراض هذا المرجع</div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">يمكنك تحميل نسخة كاملة من المرجع للاحتفاظ بها أو طباعتها كـ PDF بنقرة واحدة.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <a href="/references/download/{ref_id}" download class="btn btn-primary" style="font-weight: 700; padding: 10px 20px;">
+                    📥 تحميل ملف المرجع كاملاً
+                </a>
+                <button onclick="window.print()" class="btn btn-outline" style="font-weight: 700; padding: 10px 20px;">
+                    🖨️ طباعة المرجع / حفظ كـ PDF
+                </button>
+                <a href="/references" class="btn btn-outline" style="font-weight: 700; padding: 10px 20px;">
+                    ⬅️ تصفح باقي المراجع الـ 30
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function filterReaderChapters(query) {{
+        const q = (query || '').toLowerCase().trim();
+        const sections = document.querySelectorAll('.chapter-section');
+        sections.forEach(sec => {{
+            const text = sec.innerText.toLowerCase();
+            sec.style.display = (!q || text.includes(q)) ? 'block' : 'none';
+        }});
+    }}
+    </script>
+    """
+    return HTMLResponse(content=get_base_html(f"قراءة: {ref.get('title', '')[:35]}", body, user, lang), media_type="text/html; charset=utf-8")
+
+# ==============================================================================
+# ROUTE 12: VETERINARY CONTRAINDICATIONS & TOXICITIES GUIDE
+# ==============================================================================
+@app.get("/contraindications", response_class=HTMLResponse)
+async def contraindications_page(
+    request: Request,
+    species: str = "all",
+    category: str = "all",
+    q: str = ""
+):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    import contraindications_data
+    items = contraindications_data.get_contraindications_by_species(species_code=species, category=category, query=q)
+    species_list = contraindications_data.get_all_species_list()
+
+    # Species switcher pills
+    species_pills = f"""
+    <a href="/contraindications?species=all&category={category}&q={urllib.parse.quote(q)}" class="btn {'btn-primary' if species == 'all' else 'btn-outline'}" style="font-size: 0.85rem; padding: 8px 14px; border-radius: 20px;">
+        🐾 كافة الحيوانات (الكل)
+    </a>
+    """
+    for sp in species_list:
+        is_sel = (species == sp["code"])
+        species_pills += f"""
+        <a href="/contraindications?species={sp['code']}&category={category}&q={urllib.parse.quote(q)}" class="btn {'btn-primary' if is_sel else 'btn-outline'}" style="font-size: 0.85rem; padding: 8px 14px; border-radius: 20px;">
+            {sp['icon']} {sp['name']}
+        </a>
+        """
+
+    # Category switcher pills
+    categories = [
+        ("all", "الكل 📋"),
+        ("drugs", "أدوية محظورة 💊"),
+        ("foods", "أطعمة سامة 🍫"),
+        ("plants", "نباتات خطيرة 🌿"),
+        ("mdr1", "طفرة MDR1 🧬"),
+        ("nsaids", "مضادات التهاب ⚠️")
+    ]
+    category_pills = "".join([
+        f'<a href="/contraindications?species={species}&category={c[0]}&q={urllib.parse.quote(q)}" class="btn {"btn-accent" if category == c[0] else "btn-outline"}" style="font-size: 0.78rem; padding: 5px 10px; border-radius: 14px;">{c[1]}</a>'
+        for c in categories
+    ])
+
+    # Render Contraindication Cards
+    cards_html = ""
+    for item in items:
+        # Danger badge
+        dl = item.get("danger_level", "high_danger")
+        if dl == "fatal":
+            badge_bg = "#fef2f2"
+            badge_color = "#991b1b"
+            badge_border = "#fca5a5"
+            top_border = "#dc2626"
+        elif dl == "high_danger":
+            badge_bg = "#fffbeb"
+            badge_color = "#92400e"
+            badge_border = "#fde68a"
+            top_border = "#ea580c"
+        else:
+            badge_bg = "#f0f9ff"
+            badge_color = "#075985"
+            badge_border = "#bae6fd"
+            top_border = "#0284c7"
+
+        cards_html += f"""
+        <div class="card" style="margin-bottom: 20px; border-top: 4px solid {top_border}; box-shadow: 0 4px 15px rgba(0,0,0,0.04); padding: clamp(14px, 3.5vw, 20px); width: 100%; box-sizing: border-box; overflow: hidden;">
+            <!-- Header Badges -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span style="background: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border}; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 800; white-space: normal !important; word-break: break-word;">
+                        {item.get('danger_level_title', 'تحذير بيطري')}
+                    </span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 3px 9px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; color: var(--primary);">
+                        🐾 {item.get('species_name', '')}
+                    </span>
+                    <span style="background: var(--bg); border: 1px solid var(--border); padding: 3px 9px; border-radius: 8px; font-size: 0.78rem; color: var(--text-muted);">
+                        🏷️ {item.get('substance_category', '')}
+                    </span>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">
+                    ⚕️ الحالة: {item.get('clinical_condition', 'عامة')}
+                </div>
+            </div>
+
+            <!-- Substance Name -->
+            <h3 style="margin: 0 0 12px 0; font-size: clamp(1.15rem, 3vw, 1.35rem); color: var(--primary); font-weight: 800; word-break: break-word;">
+                ⛔ {item.get('substance_name', '')}
+            </h3>
+
+            <!-- Reason / Scientific Mechanism -->
+            <div style="background: var(--bg); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--border);">
+                <div style="font-size: 0.85rem; font-weight: 800; color: #b91c1c; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    🔬 السبب العلمي الدقيق وآلية التسمم البيولوجية:
+                </div>
+                <p style="margin: 0; font-size: 0.92rem; line-height: 1.7; color: var(--text-main); word-break: break-word;">
+                    {item.get('reason', '')}
+                </p>
+            </div>
+
+            <!-- Clinical Signs -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+                <div style="font-size: 0.85rem; font-weight: 800; color: #92400e; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    🚨 العلامات والأعراض السريرية للتسمم:
+                </div>
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.6; color: #78350f; word-break: break-word;">
+                    {item.get('clinical_signs', '')}
+                </p>
+            </div>
+
+            <!-- Emergency Antidote -->
+            <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+                <div style="font-size: 0.85rem; font-weight: 800; color: #166534; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    💉 الترياق وبروتوكول الإسعاف السريري العاجل:
+                </div>
+                <p style="margin: 0; font-size: 0.92rem; line-height: 1.7; color: #14532d; font-weight: 600; word-break: break-word;">
+                    {item.get('emergency_antidote', '')}
+                </p>
+            </div>
+
+            <!-- Reference Citation -->
+            <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border); padding-top: 8px; word-break: break-word;">
+                📚 <strong>المراجع العلمية المعتمدة:</strong> {item.get('references', 'Plumb\'s Veterinary Drug Handbook & BSAVA')}
+            </div>
+        </div>
+        """
+
+    if not cards_html:
+        cards_html = """
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">🔍🐾</div>
+            <h3 style="margin-top: 0; color: var(--primary);">لم يتم العثور على ممنوعات تطابق معايير البحث</h3>
+            <p style="color: var(--text-muted); font-size: 0.92rem;">جرب كتابة كلمة أخرى أو اختيار نوع حيوان آخر من القائمة أعلاه.</p>
+            <a href="/contraindications" class="btn btn-primary" style="margin-top: 8px;">إعادة ضبط الفلاتر</a>
+        </div>
+        """
+
+    body = f"""
+    <!-- Master Hero Banner -->
+    <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); color: #ffffff; border: none; padding: clamp(16px, 4vw, 24px); box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.35);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div style="flex: 1 1 300px; min-width: 0;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; white-space: normal !important;">
+                    ⛔ دليل السلامة السريرية والسموم البيطرية
+                </div>
+                <h1 style="margin: 0 0 8px 0; font-size: clamp(1.3rem, 3.8vw, 1.7rem); color: #ffffff; font-weight: 800; word-break: break-word;">
+                    🚫 الممنوعات البيطرية في الحيوان (Contraindications)
+                </h1>
+                <p style="margin: 0; color: #fecaca; font-size: clamp(0.85rem, 2.5vw, 0.95rem); line-height: 1.6; word-break: break-word;">
+                    دليل شامل يوضح الأدوية والأطعمة والمواد المحظورة والمميتة لكل نوع حيوان، مع السبب العلمي الدقيق، الأعراض، والترياق الإسعافي المعتمد.
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="/interactions" class="btn" style="background: #ffffff; color: #b91c1c; font-weight: 800; font-size: 0.85rem;">
+                    🔄 فاحص التداخلات الدوائية
+                </a>
+                <a href="/pharmacy" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-weight: 700; font-size: 0.85rem;">
+                    💊 صيدلية الـ 1,005 دواء
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card" style="margin-bottom: 20px; padding: 16px;">
+        <form action="/contraindications" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="hidden" name="species" value="{species}">
+            <input type="hidden" name="category" value="{category}">
+            <input type="text" name="q" value="{q}" placeholder="ابحث باسم المادة، الدواء، النبات، أو الأعراض (مثلاً: بنادول، بيرمثرين، بصل، شوكولاتة)..." style="flex: 1 1 240px; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--bg); color: var(--text-main); outline: none;">
+            <button type="submit" class="btn btn-primary" style="padding: 0 20px; font-weight: 700; border-radius: 8px;">
+                🔍 بحث
+            </button>
+            {f'<a href="/contraindications?species={species}&category={category}" class="btn btn-outline" style="border-radius: 8px;">إلغاء البحث</a>' if q else ''}
+        </form>
+    </div>
+
+    <!-- Species Switcher Pills Strip -->
+    <div style="margin-bottom: 16px;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">اختر فصيلة الحيوان لعرض قائمة الممنوعات الخاصة به:</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {species_pills}
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">التصنيف:</span>
+            {category_pills}
+        </div>
+    </div>
+
+    <!-- Results Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">
+            عدد المواد والممنوعات المسجلة: ({len(items)})
+        </div>
+    </div>
+
+    <!-- Rendered Items -->
+    <div>
+        {cards_html}
+    </div>
+    """
+    return HTMLResponse(content=get_base_html("الممنوعات البيطرية في الحيوان", body, user, lang), media_type="text/html; charset=utf-8")
+
+# ==============================================================================
+# ROUTE 13: UNIVERSAL SMART SEARCH ACROSS ENTIRE PLATFORM
+# ==============================================================================
+@app.get("/search", response_class=HTMLResponse)
+async def universal_search_page(
+    request: Request,
+    q: str = "",
+    cat: str = "all"
+):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    import universal_search
+    clean_q = (q or "").strip()
+    search_data = universal_search.search_all_platform(clean_q, category_filter=cat, limit=40) if clean_q else {"total": 0, "results": [], "counts": {}}
+
+    counts = search_data.get("counts", {})
+    total_found = search_data.get("total", 0)
+    results = search_data.get("results", [])
+
+    # Category Tabs
+    categories = [
+        ("all", "الكل", f"({total_found})" if clean_q else ""),
+        ("drugs", "💊 الأدوية", f"({counts.get('drugs', 0)})" if clean_q else ""),
+        ("references", "📚 المراجع", f"({counts.get('references', 0)})" if clean_q else ""),
+        ("tools", "🛠️ الأدوات الإكلينيكية", f"({counts.get('tools', 0)})" if clean_q else ""),
+        ("contraindications", "⛔ الممنوعات", f"({counts.get('contraindications', 0)})" if clean_q else ""),
+        ("community", "🌐 VetBook", f"({counts.get('community', 0)})" if clean_q else ""),
+        ("clinic", "🏥 العيادة", f"({counts.get('clinic', 0)})" if clean_q else "")
+    ]
+
+    cat_tabs_html = "".join([
+        f'<a href="/search?q={urllib.parse.quote(clean_q)}&cat={c[0]}" class="btn {"btn-primary" if cat == c[0] else "btn-outline"}" style="font-size: 0.85rem; padding: 7px 14px; border-radius: 20px;">{c[1]} {c[2]}</a>'
+        for c in categories
+    ])
+
+    # Popular search tags
+    popular_tags = [
+        "بنسلين", "أموكسيسيلين", "تايلوزين", "ديكساميثازون", "فلونيكسين",
+        "ممنوعات القطط", "طفرة MDR1", "تداخلات دوائية", "حاسبة الجرعات",
+        "مواقيت الصلاة", "فحوصات معملية", "أطلس الأمراض"
+    ]
+    popular_tags_html = "".join([
+        f'<a href="/search?q={urllib.parse.quote(tag)}" style="background: var(--bg); border: 1px solid var(--border); padding: 5px 12px; border-radius: 16px; font-size: 0.82rem; color: var(--primary); text-decoration: none; font-weight: 600;">{tag}</a>'
+        for tag in popular_tags
+    ])
+
+    # Results cards
+    results_html = ""
+    for item in results:
+        t_type = item.get("type", "other")
+        icon = item.get("icon", "🔍")
+        badge = item.get("badge", "نتيجة بحث")
+        title = item.get("title", "")
+        subtitle = item.get("subtitle", "")
+        description = item.get("description", "")
+        url = item.get("url", "#")
+
+        # Color based on type
+        if t_type == "drug":
+            border_c = "#0284c7"
+            badge_bg = "#f0f9ff"
+            badge_color = "#0369a1"
+        elif t_type == "reference":
+            border_c = "#16a34a"
+            badge_bg = "#f0fdf4"
+            badge_color = "#15803d"
+        elif t_type == "tool":
+            border_c = "#8b5cf6"
+            badge_bg = "#f5f3ff"
+            badge_color = "#6d28d9"
+        elif t_type == "contraindication":
+            border_c = "#dc2626"
+            badge_bg = "#fef2f2"
+            badge_color = "#b91c1c"
+        elif t_type == "community":
+            border_c = "#0d9488"
+            badge_bg = "#f0fdfa"
+            badge_color = "#0f766e"
+        else:
+            border_c = "#eab308"
+            badge_bg = "#fefce8"
+            badge_color = "#a16207"
+
+        results_html += f"""
+        <div class="card" style="margin-bottom: 14px; border-right: 4px solid {border_c}; box-shadow: 0 2px 8px rgba(0,0,0,0.03); padding: 16px; transition: transform 0.2s; width: 100%; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 1.25rem;">{icon}</span>
+                    <span style="background: {badge_bg}; color: {badge_color}; border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; white-space: normal !important;">
+                        {badge}
+                    </span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">{subtitle}</span>
+                </div>
+                <a href="{url}" class="btn btn-primary" style="font-size: 0.8rem; padding: 5px 12px; border-radius: 8px; font-weight: 700;">
+                    فتح والتنقل ↗
+                </a>
+            </div>
+
+            <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; font-weight: 800;">
+                <a href="{url}" style="color: var(--primary); text-decoration: none;">{title}</a>
+            </h3>
+
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; word-break: break-word;">
+                {description}
+            </p>
+        </div>
+        """
+
+    if clean_q and not results_html:
+        results_html = f"""
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 3.5rem; margin-bottom: 12px;">🔍</div>
+            <h3 style="margin-top: 0; color: var(--primary);">لم يتم العثور على نتائج تطابق "{clean_q}"</h3>
+            <p style="color: var(--text-muted); font-size: 0.92rem; max-width: 500px; margin: 0 auto 20px auto;">
+                تأكد من كتابة الكلمات بشكل صحيح أو جرب استخدام مصطلحات أعم، أو ابحث في أحد الأقسام الشائعة:
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <a href="/pharmacy" class="btn btn-outline">💊 صيدلية الأدوية</a>
+                <a href="/references" class="btn btn-outline">📚 مكتبة المراجع</a>
+                <a href="/contraindications" class="btn btn-outline">⛔ الممنوعات البيطرية</a>
+                <a href="/tools" class="btn btn-outline">🛠️ الأدوات الإكلينيكية</a>
+            </div>
+        </div>
+        """
+
+    body = f"""
+    <div style="margin-bottom: 24px;">
+        <!-- Header Card -->
+        <div class="card" style="background: linear-gradient(135deg, #0F4C81 0%, #1e3a8a 100%); color: #ffffff; border: none; padding: clamp(18px, 4vw, 26px); margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(15, 76, 129, 0.3);">
+            <div style="max-width: 750px;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; white-space: normal !important;">
+                    ⚡ محرك البحث الذكي الشامل لكل محتوى المنصة
+                </div>
+                <h1 style="margin: 0 0 8px 0; font-size: clamp(1.4rem, 4vw, 1.85rem); color: #ffffff; font-weight: 800;">
+                    🔍 البحث الشامل في VetMind AI
+                </h1>
+                <p style="margin: 0 0 16px 0; color: #e0f2fe; font-size: clamp(0.85rem, 2.5vw, 0.95rem); line-height: 1.6;">
+                    ابحث عن أي دواء، مرجع علمي، أداة حسابية سريرية، ممنوعات بيطرية، حالة مرضية، أو منشور مجتمعي داخل التطبيق في مكان واحد وبنتائج فورية.
+                </p>
+
+                <!-- Search Input Form -->
+                <form action="/search" method="GET" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="hidden" name="cat" value="{cat}">
+                    <input type="text" name="q" value="{clean_q}" autofocus placeholder="اكتب أي شيء للبحث في المنصة (أدوية، مراجع، أعراض، أدوات، ممنوعات)..." style="flex: 1 1 260px; padding: 14px 18px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #0f172a;">
+                    <button type="submit" class="btn" style="background: #ffffff; color: #0F4C81; font-weight: 800; font-size: 1rem; padding: 0 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        بحث سريع ⚡
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Popular Tags Bar -->
+        <div style="margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">كلمات مفتاحية شائعة:</span>
+                {popular_tags_html}
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+            {cat_tabs_html}
+        </div>
+
+        <!-- Results Counter -->
+        {f'<div style="font-size: 0.92rem; font-weight: 800; color: var(--primary); margin-bottom: 14px;">نتائج البحث عن "{clean_q}" ({total_found} نتيجة):</div>' if clean_q else ''}
+
+        <!-- Results Container -->
+        <div>
+            {results_html}
+        </div>
+    </div>
+    """
+    return HTMLResponse(content=get_base_html(f"البحث: {clean_q}" if clean_q else "البحث الشامل", body, user, lang), media_type="text/html; charset=utf-8")
+
+# ==============================================================================
+# ROUTE 14: FAST AUTOCOMPLETE & ALL-DRUGS API
+# ==============================================================================
+@app.get("/api/universal-search/autocomplete")
+async def api_universal_search_autocomplete(q: str = ""):
+    import universal_search
+    suggestions = universal_search.get_universal_autocomplete_suggestions(q, limit=10)
+    return JSONResponse(content=suggestions)
+
+@app.get("/api/drugs/all")
+async def api_all_drugs():
+    import interaction_engine
+    drugs = interaction_engine.get_all_available_drugs_list()
+    return JSONResponse(content=drugs)
 
 @app.get("/api/my-database/export")
 async def export_my_private_database(request: Request):

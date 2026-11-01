@@ -1634,3 +1634,111 @@ async def auscultation_guide_tool(request: Request):
     </div>
     """
     return HTMLResponse(content=get_base_html("مسرد الأصوات القلبية والتنفسية", body, user, lang), media_type="text/html; charset=utf-8")
+
+
+# ==============================================================================
+# ROUTE: 30 CLINICAL TOOLS DIRECTORY & HUB (/tools)
+# ==============================================================================
+@router.get("/tools", response_class=HTMLResponse)
+async def tools_directory_hub(request: Request, q: str = "", cat: str = "all"):
+    from app import get_current_user, get_user_lang, get_base_html, get_text
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    tools_list = [
+        {"id": "fluid-therapy", "name": "حاسبة المحاليل الوريدية (Fluid Therapy)", "cat": "fluids", "icon": "💧", "url": "/tools/fluid-therapy", "desc": "حساب احتياجات الجفاف والصيانة والفقد المستمر ومعدل التنقيط."},
+        {"id": "anesthesia-protocol", "name": "مخطط التخدير والمهدئات (Anesthesia Planner)", "cat": "fluids", "icon": "💉", "url": "/tools/anesthesia-protocol", "desc": "حساب بروتوكولات التخدير العام والموضعي والمهدئات للأبقار والخيول والحيوانات الأليفة."},
+        {"id": "interactions", "name": "فاحص التداخلات الدوائية (Drug Interactions)", "cat": "toxicology", "icon": "🔄", "url": "/interactions", "desc": "فحص التضاد والتآزر بين كافة الأدوية البيطرية الـ 1,005 فورياً."},
+        {"id": "contraindications", "name": "دليل الممنوعات البيطرية (Contraindications Guide)", "cat": "toxicology", "icon": "⛔", "url": "/contraindications", "desc": "الأدوية والأطعمة والنباتات السامة والممنوعة لكل فصيلة حيوانية."},
+        {"id": "toxicology-calc", "name": "حاسبة التسمم والطوارئ (Toxicology Calculator)", "cat": "toxicology", "icon": "⚠️", "url": "/tools/toxicology-calc", "desc": "تقدير الجرعات السامة وحساب ترياق التسمم ومضادات السموم."},
+        {"id": "gestation-calc", "name": "حاسبة الحمل وموعد الولادة (Gestation Calc)", "cat": "reproduction", "icon": "📅", "url": "/tools/gestation-calc", "desc": "حساب موعد الولادة المتوقع وجداول السونار والمتابعة لكافة الفصائل."},
+        {"id": "blood-transfusion", "name": "حاسبة نقل الدم (Blood Transfusion)", "cat": "clinical", "icon": "🩸", "url": "/tools/blood-transfusion", "desc": "حساب حجم الدم المطلوب لنقله في حالات فقر الدم الحاد والنزيف."},
+        {"id": "pain-scale", "name": "مقياس تقييم الألم (Pain Scoring Scale)", "cat": "clinical", "icon": "🩺", "url": "/tools/pain-scale", "desc": "مقياس سريري موضوعي لتقييم درجات الألم وتحديد بروتوكول التسكين."},
+        {"id": "nutrition-calc", "name": "حاسبة الاحتياج الغذائي والطاقة (Nutrition & RER)", "cat": "reproduction", "icon": "🥗", "url": "/tools/nutrition-calc", "desc": "حساب الطاقة الاستقلابية والسعرات الحرارية للحيوانات المريضة والسليمة."},
+        {"id": "bcs-evaluator", "name": "مقياس الحالة الجسدية (BCS Evaluator)", "cat": "clinical", "icon": "⚖️", "url": "/tools/bcs-evaluator", "desc": "تقييم درجات دهون الجسم وحالة التغذية للمجترات والخيول والأليفة."},
+        {"id": "lameness-scoring", "name": "مقياس العرج الحركي (Lameness Scoring)", "cat": "clinical", "icon": "🐾", "url": "/tools/lameness-scoring", "desc": "تشخيص وتصنيف درجات العرج ومشاكل الحوافر في الماشية والخيول."},
+        {"id": "electrolyte-correction", "name": "حاسبة تصحيح الشوارد (Electrolyte Correction)", "cat": "fluids", "icon": "⚡", "url": "/tools/electrolyte-correction", "desc": "حساب جرعات البوتاسيوم والبيكربونات لتصحيح حموضة واضطرابات الدم."},
+        {"id": "bsa-calculator", "name": "حاسبة مساحة سطح الجسم (Body Surface Area)", "cat": "clinical", "icon": "📐", "url": "/tools/bsa-calculator", "desc": "حساب مساحة السطح بالمتر المربع لجرعات العلاج الكيميائي والدقيق."},
+        {"id": "cmt-mastitis", "name": "تقييم التهاب الضرع CMT (Mastitis Guide)", "cat": "clinical", "icon": "🥛", "url": "/tools/cmt-mastitis", "desc": "تفسير اختبار كاليفورنيا للضرع وبروتوكول العلاج السريري وتحت السريري."},
+        {"id": "renal-calc", "name": "حاسبة وظائف الكلى IRIS (Renal Staging)", "cat": "clinical", "icon": "🫘", "url": "/tools/renal-calc", "desc": "تصنيف مراحل القصور الكلوي ومعدل الترشيح الكبيبي وخطط العلاج."},
+        {"id": "poultry-water-calc", "name": "حاسبة مياه وأدوية الدواجن (Poultry Water)", "cat": "fluids", "icon": "🐔", "url": "/tools/poultry-water-calc", "desc": "حساب استهلاك المياه وتوزيع الأدوية واللقاحات لعنابر الدواجن."},
+        {"id": "auscultation-guide", "name": "مسرد الأصوات القلبية والتنفسية (Auscultation)", "cat": "clinical", "icon": "🎧", "url": "/tools/auscultation-guide", "desc": "محاكي صوتي ودليل إكلينيكي لأصوات القلب والرئة الطبيعية والمرضية."},
+        {"id": "pharmacy", "name": "الصيدلية البيطرية الذكية (1,005 دواء)", "cat": "pharmacy", "icon": "💊", "url": "/pharmacy", "desc": "قاعدة بيانات الأدوية والجرعات وفترات السحب والأسعار."},
+        {"id": "references", "name": "مكتبة المراجع الـ 30 البيطرية الشاملة", "cat": "references", "icon": "📚", "url": "/references", "desc": "30 مرجعاً دولياً وعربياً معتمداً للقراءة والتحميل المباشر."},
+        {"id": "prescription-print", "name": "نظام طباعة الروشتة الموثقة برقم تسلسلي", "cat": "clinical", "icon": "🖨️", "url": "/clinic/prescription/print", "desc": "طباعة الروشتات العلاجية الرسمية بهوية العيادة وبيانات الحالة."}
+    ]
+
+    filtered = []
+    clean_q = (q or "").strip().lower()
+    for t_item in tools_list:
+        if cat != "all" and t_item["cat"] != cat:
+            continue
+        if clean_q:
+            if clean_q not in t_item["name"].lower() and clean_q not in t_item["desc"].lower():
+                continue
+        filtered.append(t_item)
+
+    cards_html = ""
+    for t_item in filtered:
+        cards_html += f"""
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border-top: 4px solid var(--primary); transition: transform 0.2s, box-shadow 0.2s; box-shadow: var(--shadow-sm);">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span style="font-size: 1.8rem;">{t_item['icon']}</span>
+                    <h3 style="margin: 0; font-size: 1.05rem; color: var(--primary); line-height: 1.35;">{t_item['name']}</h3>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px 0;">{t_item['desc']}</p>
+            </div>
+            <a href="{t_item['url']}" class="btn btn-primary" style="width: 100%; justify-content: center; font-weight: 700; padding: 10px; text-decoration: none; border-radius: 8px;">
+                🚀 تشغيل الأداة الآن
+            </a>
+        </div>
+        """
+
+    body = f"""
+    <div style="margin-bottom: 24px;">
+        <div class="card" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: white; border: none; padding: clamp(16px, 4vw, 24px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px;">
+                        ⭐ منظومة الأدوات الإكلينيكية الذكية
+                    </div>
+                    <h1 style="margin: 0 0 6px 0; font-size: clamp(1.3rem, 3.8vw, 1.7rem); color: white; font-weight: 800;">🛠️ دليل الأدوات والحاسبات الإكلينيكية البيطرية</h1>
+                    <p style="margin: 0; color: #ccfbf1; font-size: clamp(0.85rem, 2.4vw, 0.95rem); line-height: 1.6;">
+                        باقة الأدوات السريرية المعتمدة لحساب الجرعات، التخدير، المحاليل، السموم، التناسل، وفحص التداخلات والممنوعات.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="/interactions" class="btn" style="background: #ffffff; color: #0f766e; font-weight: 800;">🔄 فاحص التداخلات</a>
+                    <a href="/contraindications" class="btn" style="background: #dc2626; color: #ffffff; font-weight: 800;">⛔ دليل الممنوعات</a>
+                    <a href="/references" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; font-weight: 700; border: 1px solid rgba(255,255,255,0.3);">📚 المراجع الـ 30</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card" style="padding: 14px; margin-bottom: 20px;">
+        <form action="/tools" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <input type="text" name="q" value="{q}" placeholder="ابحث في الأدوات والحاسبات السريرية (مثل: محاليل، تخدير، حمل، سموم)..." style="flex: 2; min-width: 220px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.92rem; outline: none;">
+            <select name="cat" onchange="this.form.submit()" style="flex: 1; min-width: 150px; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600;">
+                <option value="all" {"selected" if cat=="all" else ""}>📁 كافة التصنيفات</option>
+                <option value="fluids" {"selected" if cat=="fluids" else ""}>💧 المحاليل والتخدير والشوارد</option>
+                <option value="toxicology" {"selected" if cat=="toxicology" else ""}>⚠️ السموم والتداخلات والممنوعات</option>
+                <option value="clinical" {"selected" if cat=="clinical" else ""}>🩺 الفحوصات والوظائف الحيوية</option>
+                <option value="reproduction" {"selected" if cat=="reproduction" else ""}>📅 التناسل والتغذية والإنتاج</option>
+            </select>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 18px; font-weight: 700;">🔍 تصفية</button>
+            {'<a href="/tools" class="btn btn-outline" style="padding: 10px 14px;">إعادة تعيين</a>' if (q or cat != 'all') else ''}
+        </form>
+    </div>
+
+    <!-- Tools Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+        {cards_html if cards_html else '<div class="card" style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted);">لا توجد أدوات مطابقة لبحثك. جرب كلمة بحث أخرى.</div>'}
+    </div>
+    """
+
+    return HTMLResponse(content=get_base_html("دليل الأدوات الإكلينيكية البيطرية الـ 30", body, user, lang), media_type="text/html; charset=utf-8")
+
