@@ -2040,15 +2040,27 @@ footer a { color: #38BDF8; text-decoration: none; }
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
     }
-    .btn, .badge, .btn-fb-primary, .btn-fb-outline, .btn-fb-danger {
+    .btn, .btn-primary, .btn-secondary, .btn-accent, .btn-gold, .btn-download, .btn-outline, .btn-fb-primary, .btn-fb-outline, .btn-fb-danger {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        box-sizing: border-box !important;
+        min-height: 38px !important;
+        padding: 7px 12px !important;
+        line-height: 1.3 !important;
         white-space: normal !important;
-        max-width: 100% !important;
-        word-break: break-word !important;
+        word-break: normal !important;
         text-align: center !important;
+    }
+    .badge, .pill-btn, .tag, .chip, .user-badge {
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
     }
 }
 
-/* Narrow Mobile Screens (<= 420px) - Hide brand title to prioritize icons */
+/* Compact Mobile Screens (<= 420px) - Fluid Topbar without collision */
 @media (max-width: 420px) {
     .brand-titles {
         display: none !important;
@@ -2086,7 +2098,30 @@ footer a { color: #38BDF8; text-decoration: none; }
     }
 }
 
-/* Ultra-Compact & Foldable Screens (<= 340px) */
+/* Narrow & Foldable Screens (<= 380px) - Pure Compact Icon Mode for Prayer Pill to prevent squeezing */
+@media (max-width: 380px) {
+    .prayer-indicator-pill {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        max-width: 30px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 9px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        display: none !important;
+    }
+    .prayer-indicator-pill .prayer-pill-countdown {
+        display: none !important;
+    }
+    .prayer-indicator-pill .prayer-pill-icon {
+        font-size: 0.95rem !important;
+        margin: 0 !important;
+    }
+}
+
+/* Ultra-Compact & 320px Foldable Screens (<= 340px) */
 @media (max-width: 340px) {
     .topbar-container {
         padding: 2px 3px !important;
@@ -2108,6 +2143,18 @@ footer a { color: #38BDF8; text-decoration: none; }
         font-size: 1.05rem !important;
     }
     .prayer-indicator-pill {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+    }
+    .prayer-indicator-pill .prayer-pill-text {
+        display: none !important;
+    }
+    .prayer-indicator-pill .prayer-pill-countdown {
         display: none !important;
     }
     .btn {
@@ -2139,19 +2186,6 @@ footer a { color: #38BDF8; text-decoration: none; }
     }
     .user-profile-widget .user-avatar-circle {
         font-size: 0.76rem !important;
-    }
-    .prayer-indicator-pill {
-        max-width: 68px !important;
-        height: 28px !important;
-        padding: 0 3px !important;
-        gap: 2px !important;
-    }
-    .prayer-indicator-pill .prayer-pill-icon {
-        font-size: 0.80rem !important;
-    }
-    .prayer-indicator-pill .prayer-pill-text {
-        max-width: 44px !important;
-        font-size: 0.60rem !important;
     }
 }
 
@@ -5171,10 +5205,7 @@ async def login_page(request: Request, redirect: str = "/"):
                 </button>
             </form>
 
-            <div style="margin-top: 20px; padding: 12px; background: var(--bg); border-radius: 8px; font-size: 0.8rem; color: var(--text-muted);">
-                <strong>حساب الإدارة التنفيذية المعتمد:</strong><br>
-                director@vetmind.ai | Director@VetMind2026#
-            </div>
+
 
             <div style="text-align: center; margin-top: 18px; font-size: 0.88rem;">
                 {t('login_no_account')} <a href="/register" style="color: var(--primary); font-weight: 700;">{t('login_register_link')}</a>

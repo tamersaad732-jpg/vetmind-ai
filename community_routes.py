@@ -44,13 +44,18 @@ if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def get_db():
-    if os.environ.get("VERCEL"):
+    if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
         tmp_db = "/tmp/vetmind.db"
-        if not os.path.exists(tmp_db):
-            shutil.copy2(DB_PATH, tmp_db)
-        conn = sqlite3.connect(tmp_db, timeout=20.0)
-    else:
-        conn = sqlite3.connect(DB_PATH, timeout=20.0)
+        if not os.path.exists(tmp_db) and os.path.exists(DB_PATH):
+            try:
+                shutil.copy2(DB_PATH, tmp_db)
+            except Exception:
+                pass
+        if os.path.exists(tmp_db):
+            conn = sqlite3.connect(tmp_db, timeout=20.0)
+            conn.row_factory = sqlite3.Row
+            return conn
+    conn = sqlite3.connect(DB_PATH, timeout=20.0)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -59,13 +64,85 @@ BACKUP_SYNC_FILE = os.path.join(UPLOAD_DIR, "community_posts_sync.json")
 STATIC_BACKUP_FILE = os.path.join(BASE_DIR, "static", "community_posts_sync.json")
 DELETED_POSTS_FILE = os.path.join(UPLOAD_DIR, "community_deleted_posts.json")
 STATIC_DELETED_FILE = os.path.join(BASE_DIR, "static", "community_deleted_posts.json")
+BACKUP_STORIES_FILE = os.path.join(UPLOAD_DIR, "community_stories_sync.json")
+STATIC_STORIES_FILE = os.path.join(BASE_DIR, "static", "community_stories_sync.json")
+
+def save_story_to_backup_sync(story_dict: dict):
+    try:
+        stories = []
+        for s_file in [BACKUP_STORIES_FILE, STATIC_STORIES_FILE]:
+            if os.path.exists(s_file):
+                try:
+                    with open(s_file, "r", encoding="utf-8-sig") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, list):
+                            stories = loaded
+                            break
+                except Exception:
+                    pass
+        s_clean = {k: v for k, v in story_dict.items() if isinstance(v, (str, int, float, bool)) or v is None}
+        stories = [s for s in stories if s.get("id") != s_clean.get("id")]
+        stories.insert(0, s_clean)
+        stories = stories[:50]
+        for s_file in [BACKUP_STORIES_FILE, STATIC_STORIES_FILE]:
+            try:
+                os.makedirs(os.path.dirname(s_file), exist_ok=True)
+                with open(s_file, "w", encoding="utf-8") as f:
+                    json.dump(stories, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+    except Exception as e:
+        print("save_story_to_backup_sync error:", e)
+
+def sync_stories_from_backup_sync(conn):
+    try:
+        stories = []
+        for s_file in [BACKUP_STORIES_FILE, STATIC_STORIES_FILE]:
+            if os.path.exists(s_file):
+                try:
+                    with open(s_file, "r", encoding="utf-8-sig") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, list) and len(loaded) > 0:
+                            stories = loaded
+                            break
+                except Exception:
+                    pass
+        if not stories:
+            return
+        c = conn.cursor()
+        c.execute("SELECT id FROM community_stories")
+        existing_ids = set(r[0] for r in c.fetchall())
+        for s in stories:
+            s_id = s.get("id")
+            if s_id and s_id not in existing_ids and s.get("media_url"):
+                c.execute("""
+                INSERT OR REPLACE INTO community_stories (
+                    id, user_id, author_name, author_specialty, author_avatar,
+                    media_url, caption, likes_count, created_at, expires_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    s_id,
+                    s.get("user_id", 4),
+                    s.get("author_name", "طبيب بيطري"),
+                    s.get("author_specialty", "طب وجراحة الحيوان"),
+                    s.get("author_avatar", ""),
+                    s.get("media_url", ""),
+                    s.get("caption", ""),
+                    s.get("likes_count", 0),
+                    s.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                    s.get("expires_at", "")
+                ))
+                existing_ids.add(s_id)
+        conn.commit()
+    except Exception as e:
+        print("sync_stories_from_backup_sync error:", e)
 
 def get_deleted_posts_set() -> set:
     deleted = set()
     for fpath in [DELETED_POSTS_FILE, STATIC_DELETED_FILE]:
         if os.path.exists(fpath):
             try:
-                with open(fpath, "r", encoding="utf-8") as f:
+                with open(fpath, "r", encoding="utf-8-sig") as f:
                     data = json.load(f)
                     if isinstance(data, list):
                         for item in data:
@@ -86,7 +163,7 @@ def delete_post_from_backup_sync(post_id: int, title: str = ""):
         for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
             if os.path.exists(p_file):
                 try:
-                    with open(p_file, "r", encoding="utf-8") as f:
+                    with open(p_file, "r", encoding="utf-8-sig") as f:
                         posts = json.load(f)
                     if isinstance(posts, list):
                         new_posts = [
@@ -105,7 +182,7 @@ def delete_post_from_backup_sync(post_id: int, title: str = ""):
                 cur_deleted = []
                 if os.path.exists(d_file):
                     try:
-                        with open(d_file, "r", encoding="utf-8") as f:
+                        with open(d_file, "r", encoding="utf-8-sig") as f:
                             cur_deleted = json.load(f)
                     except Exception:
                         cur_deleted = []
@@ -128,7 +205,7 @@ def save_post_to_backup_sync(post_dict: dict):
         for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
             if os.path.exists(p_file):
                 try:
-                    with open(p_file, "r", encoding="utf-8") as f:
+                    with open(p_file, "r", encoding="utf-8-sig") as f:
                         loaded = json.load(f)
                         if isinstance(loaded, list):
                             posts = loaded
@@ -156,7 +233,7 @@ def sync_posts_from_backup_sync(conn):
         for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
             if os.path.exists(p_file):
                 try:
-                    with open(p_file, "r", encoding="utf-8") as f:
+                    with open(p_file, "r", encoding="utf-8-sig") as f:
                         loaded = json.load(f)
                         if isinstance(loaded, list) and len(loaded) > 0:
                             posts = loaded
@@ -166,15 +243,19 @@ def sync_posts_from_backup_sync(conn):
         if not posts:
             return
         c = conn.cursor()
-        c.execute("SELECT title, created_at FROM community_posts")
-        existing_keys = set((r[0], r[1]) for r in c.fetchall())
+        c.execute("SELECT id, title FROM community_posts")
+        existing_rows = c.fetchall()
+        existing_ids = set(r[0] for r in existing_rows)
+        existing_titles = set((r[1] or "").strip() for r in existing_rows if r[1])
         for p in posts:
             p_id = p.get("id")
-            p_title = p.get("title")
-            if p_id in deleted_set or p_title in deleted_set:
+            p_title = (p.get("title") or "").strip()
+            if not p_title or not p.get("content"):
                 continue
-            key = (p_title, p.get("created_at"))
-            if key not in existing_keys and p_title and p.get("content"):
+            if (p_id and p_id in deleted_set) or (p_title in deleted_set):
+                continue
+            if (p_id and p_id in existing_ids) or (p_title in existing_titles):
+                continue
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
@@ -345,6 +426,49 @@ def init_community_schema():
             followers_count INTEGER DEFAULT 0,
             owner_id INTEGER NOT NULL,
             created_at TEXT NOT NULL
+        )
+        """)
+
+        # Stories Table & Story Reactions
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_stories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            author_name TEXT NOT NULL,
+            author_specialty TEXT DEFAULT 'طب وجراحة الحيوان',
+            author_avatar TEXT DEFAULT '',
+            media_url TEXT NOT NULL,
+            caption TEXT DEFAULT '',
+            likes_count INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            expires_at TEXT
+        )
+        """)
+
+        # Migration check for existing community_stories table
+        c.execute("PRAGMA table_info(community_stories)")
+        story_cols = set(r["name"] for r in c.fetchall())
+        for col, ctype in [
+            ("author_specialty", "TEXT DEFAULT 'طب وجراحة الحيوان'"),
+            ("author_avatar", "TEXT DEFAULT ''"),
+            ("likes_count", "INTEGER DEFAULT 0"),
+            ("caption", "TEXT DEFAULT ''"),
+            ("expires_at", "TEXT")
+        ]:
+            if col not in story_cols:
+                try:
+                    c.execute(f"ALTER TABLE community_stories ADD COLUMN {col} {ctype}")
+                except Exception:
+                    pass
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS community_story_likes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            reaction_type TEXT DEFAULT 'like',
+            created_at TEXT NOT NULL,
+            UNIQUE(story_id, user_id)
         )
         """)
 
@@ -630,10 +754,16 @@ def format_media_url(path: str) -> str:
     path = str(path).strip()
     if path.startswith("data:") or path.startswith("http://") or path.startswith("https://"):
         return path
+    if path.startswith("/static/uploads/"):
+        return path.replace("/static/uploads/", "/uploads/")
+    if path.startswith("static/uploads/"):
+        return "/" + path.replace("static/uploads/", "uploads/")
     if path.startswith("/uploads/"):
         return path
     if path.startswith("uploads/"):
         return "/" + path
+    if path.startswith("/"):
+        return path
     return f"/uploads/{path}"
 
 def parse_extra_images(raw: str) -> list:
@@ -1360,6 +1490,25 @@ body {
         margin-top: -32px !important;
     }
 }
+@media (max-width: 340px) {
+    .fb-main-container {
+        padding: 0 4px !important;
+        margin: 6px auto !important;
+    }
+    .fb-card {
+        padding: 10px 8px !important;
+        border-radius: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    .fb-action-btn {
+        padding: 4px 1px !important;
+        font-size: 0.60rem !important;
+        gap: 1px !important;
+    }
+    .fb-action-btn span:last-child {
+        font-size: 0.58rem !important;
+    }
+}
 </style>
 """
 
@@ -1513,12 +1662,137 @@ function openEditPostModal(postId) {
     openModal('edit-post-modal-' + postId);
 }
 
+let currentViewerStoryId = null;
+
+function openStoryViewerFromCard(cardEl) {
+    if (!cardEl) return;
+    const sId = cardEl.getAttribute('data-story-id');
+    const sUrl = cardEl.getAttribute('data-story-url');
+    const sAuthor = cardEl.getAttribute('data-story-author');
+    const sCaption = cardEl.getAttribute('data-story-caption');
+    const sTime = cardEl.getAttribute('data-story-time');
+    const sLikes = cardEl.getAttribute('data-story-likes') || '0';
+    const isOwner = cardEl.getAttribute('data-is-owner') === '1';
+
+    currentViewerStoryId = sId;
+
+    const modal = document.getElementById('story-viewer-modal');
+    if (!modal) return;
+
+    // Set author info
+    const authorEl = document.getElementById('story-viewer-author');
+    if (authorEl) authorEl.innerText = 'د. ' + (sAuthor || 'طبيب بيطري');
+
+    const timeEl = document.getElementById('story-viewer-time');
+    if (timeEl) timeEl.innerText = sTime || 'اليوم';
+
+    // Set caption (الكلام أسفل القصة)
+    const captionBox = document.getElementById('story-viewer-caption-box');
+    const captionText = document.getElementById('story-viewer-caption-text');
+    if (sCaption && sCaption.trim()) {
+        if (captionText) captionText.innerText = sCaption;
+        if (captionBox) captionBox.style.display = 'block';
+    } else {
+        if (captionBox) captionBox.style.display = 'none';
+    }
+
+    // Set Likes count
+    const likesEl = document.getElementById('story-viewer-likes-count');
+    if (likesEl) likesEl.innerText = sLikes;
+
+    // Owner delete button
+    const delBtn = document.getElementById('story-viewer-del-btn');
+    if (delBtn) delBtn.style.display = isOwner ? 'inline-flex' : 'none';
+
+    // Media
+    const mediaContainer = document.getElementById('story-viewer-media-container');
+    if (mediaContainer) {
+        const isVideo = sUrl.endsWith('.mp4') || sUrl.endsWith('.webm') || sUrl.startsWith('data:video');
+        if (isVideo) {
+            mediaContainer.innerHTML = `<video controls autoplay playsinline src="${sUrl}" style="max-height: 65vh; max-width: 100%; border-radius: 12px; object-fit: contain; background: #000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"></video>`;
+        } else {
+            mediaContainer.innerHTML = `<img src="${sUrl}" alt="Story" style="max-height: 65vh; max-width: 100%; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" onerror="this.src='/static/favicon.svg'">`;
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+
 function openStoryViewer(src, author, caption) {
-    const m = document.getElementById('image-modal');
-    const img = document.getElementById('image-modal-src');
-    if (m && img) {
-        img.src = src;
-        m.style.display = 'flex';
+    // Backward compatibility shim
+    openStoryViewerFromCard({
+        getAttribute: (k) => {
+            if (k === 'data-story-url') return src;
+            if (k === 'data-story-author') return author || 'طبيب بيطري';
+            if (k === 'data-story-caption') return caption || '';
+            if (k === 'data-story-likes') return '0';
+            if (k === 'data-is-owner') return '0';
+            return '';
+        }
+    });
+}
+
+function closeStoryViewer() {
+    const modal = document.getElementById('story-viewer-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        const mediaContainer = document.getElementById('story-viewer-media-container');
+        if (mediaContainer) mediaContainer.innerHTML = '';
+    }
+}
+
+async function likeCurrentStory() {
+    if (!currentViewerStoryId) return;
+    try {
+        const res = await fetch('/community/story/like/' + currentViewerStoryId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            const likesEl = document.getElementById('story-viewer-likes-count');
+            if (likesEl) likesEl.innerText = data.likes_count;
+
+            const card = document.querySelector(`.story-card[data-story-id="${currentViewerStoryId}"]`);
+            if (card) {
+                card.setAttribute('data-story-likes', data.likes_count);
+                const countSpan = card.querySelector('div span:last-child');
+                if (countSpan) countSpan.innerText = data.likes_count;
+            }
+
+            const heartBtn = document.getElementById('story-like-btn');
+            if (heartBtn) {
+                heartBtn.style.transform = 'scale(1.25)';
+                setTimeout(() => { heartBtn.style.transform = 'scale(1)'; }, 200);
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function sendStoryReaction(reactionText) {
+    if (!currentViewerStoryId) return;
+    await likeCurrentStory();
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f766e;color:#fff;padding:8px 18px;border-radius:20px;font-size:0.85rem;font-weight:700;z-index:999999;box-shadow:0 4px 15px rgba(0,0,0,0.3);';
+    toast.innerText = 'تم إرسال تفاعلك: ' + reactionText;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
+
+async function deleteCurrentStory() {
+    if (!currentViewerStoryId) return;
+    if (!confirm('هل تريد بالتأكيد حذف هذه القصة السريرية الآن؟')) return;
+    try {
+        const res = await fetch('/community/story/delete/' + currentViewerStoryId, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            closeStoryViewer();
+            const card = document.querySelector(`.story-card[data-story-id="${currentViewerStoryId}"]`);
+            if (card) card.remove();
+        } else {
+            alert(data.error || 'حدث خطأ أثناء حذف القصة');
+        }
+    } catch (e) {
+        console.error(e);
     }
 }
 
@@ -1535,6 +1809,12 @@ async function deletePost(postId) {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         });
+        const data = await res.json().catch(() => ({ success: res.ok }));
+        if (!res.ok || (data && data.success === false)) {
+            alert(data.error || 'حدث خطأ أثناء محاولة حذف المنشور من الخادم.');
+            if (postEl) postEl.style.opacity = '1';
+            return;
+        }
 
         // Scrub from client-side localStorage so it can NEVER sync back:
         try {
@@ -1934,8 +2214,8 @@ def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
         else:
             html_parts.append(f"""
             <div style="margin: 12px 0; background: #000; border-radius: 12px; overflow: hidden; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                <video controls playsinline preload="metadata" style="width: 100%; max-height: 520px; display: block; background: #0f172a;">
-                    <source src="{v_url}">
+                <video controls playsinline preload="metadata" src="{v_url}" style="width: 100%; max-height: 520px; display: block; background: #0f172a;">
+                    <source src="{v_url}" type="video/mp4">
                     المتصفح لا يدعم تشغيل هذا الفيديو.
                 </video>
             </div>
@@ -1951,26 +2231,26 @@ def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
     grid_html = ""
     if cnt == 1:
         grid_html = f"""
-        <div class="fb-media-grid grid-1" onclick="openImageModal('{clean_imgs[0]}')">
+        <div class="fb-media-grid grid-1" onclick="openImageModal(this.src)">
             <img src="{clean_imgs[0]}" alt="Case photo" loading="lazy" onerror="this.style.display=\'none\'">
         </div>
         """
     elif cnt == 2:
         grid_html = f"""
         <div class="fb-media-grid grid-2">
-            <img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'">
-            <img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'">
+            <img src="{clean_imgs[0]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'">
+            <img src="{clean_imgs[1]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'">
         </div>
         """
     elif cnt == 3:
         grid_html = f"""
         <div class="fb-media-grid grid-3">
             <div class="media-col-left">
-                <img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'">
+                <img src="{clean_imgs[0]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'">
             </div>
             <div class="media-col-right">
-                <img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'">
-                <img src="{clean_imgs[2]}" onclick="openImageModal('{clean_imgs[2]}')" loading="lazy" onerror="this.style.display=\'none\'">
+                <img src="{clean_imgs[1]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'">
+                <img src="{clean_imgs[2]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'">
             </div>
         </div>
         """
@@ -1978,10 +2258,10 @@ def render_facebook_media_grid(img_list: list, video_path: str = None) -> str:
         extra = cnt - 3
         grid_html = f"""
         <div class="fb-media-grid grid-4">
-            <div style="position: relative;"><img src="{clean_imgs[0]}" onclick="openImageModal('{clean_imgs[0]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
-            <div style="position: relative;"><img src="{clean_imgs[1]}" onclick="openImageModal('{clean_imgs[1]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
-            <div style="position: relative;"><img src="{clean_imgs[2]}" onclick="openImageModal('{clean_imgs[2]}')" loading="lazy" onerror="this.style.display=\'none\'"></div>
-            <div style="position: relative;" onclick="openImageModal('{clean_imgs[3]}')">
+            <div style="position: relative;"><img src="{clean_imgs[0]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;"><img src="{clean_imgs[1]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;"><img src="{clean_imgs[2]}" onclick="openImageModal(this.src)" loading="lazy" onerror="this.style.display=\'none\'"></div>
+            <div style="position: relative;" onclick="openImageModal(this.src)">
                 <img src="{clean_imgs[3]}" loading="lazy" onerror="this.style.display=\'none\'">
                 {f'<div class="media-extra-overlay">+{extra}</div>' if extra > 0 else ''}
             </div>
@@ -2019,6 +2299,7 @@ async def community_hub(
     conn = get_db()
     c = conn.cursor()
     sync_posts_from_backup_sync(conn)
+    sync_stories_from_backup_sync(conn)
 
     # Social graph helpers
     friends_set = get_user_friends_ids(current_user_id, conn)
@@ -2032,18 +2313,45 @@ async def community_hub(
 
     stories_html = """
     <div class="stories-strip">
-        <div class="story-card" onclick="openModal('create-story-modal')" style="background: linear-gradient(135deg, #0f766e, #14b8a6); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 12px; text-align: center;">
+        <div class="story-card" onclick="openModal('create-story-modal')" style="background: linear-gradient(135deg, #0f766e, #14b8a6); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 12px; text-align: center; cursor: pointer;">
             <div style="font-size: 2rem; margin-bottom: 6px;">➕</div>
             <div style="font-size: 0.8rem; font-weight: 800;">إضافة قصة سريرية (24h)</div>
         </div>
     """
+    import html as html_escape_lib
     for st in stories:
         st_url = format_media_url(st['media_url'])
+        st_caption = (st.get('caption') or '').strip()
+        st_author = st.get('author_name', 'طبيب بيطري')
+        st_likes = st.get('likes_count', 0)
+        is_owner = 1 if (st.get('user_id') == current_user_id or is_admin) else 0
+
+        safe_caption = html_escape_lib.escape(st_caption, quote=True)
+        safe_author = html_escape_lib.escape(st_author, quote=True)
+        safe_url = html_escape_lib.escape(st_url, quote=True)
+
+        caption_preview = f"<div class='story-caption-preview' style='font-size: 0.72rem; color: #f1f5f9; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;'>{html_escape_lib.escape(st_caption[:25])}</div>" if st_caption else ""
+
         stories_html += f"""
-        <div class="story-card" onclick="openStoryViewer('{st_url}', '{st['author_name']}', '{st['caption']}')">
+        <div class="story-card" 
+             data-story-id="{st['id']}"
+             data-story-url="{safe_url}"
+             data-story-author="{safe_author}"
+             data-story-caption="{safe_caption}"
+             data-story-time="{st.get('created_at', '')[:16]}"
+             data-story-likes="{st_likes}"
+             data-is-owner="{is_owner}"
+             onclick="openStoryViewerFromCard(this)"
+             style="cursor: pointer; position: relative;">
             <img src="{st_url}" alt="Story" onerror="this.src=\'/static/favicon.svg\'">
-            <div style="position: absolute; bottom: 8px; right: 8px; left: 8px; color: white; font-size: 0.78rem; font-weight: 800; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.3;">
-                {st['author_name'][:18]}
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 18px 8px 8px 8px; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 60%, transparent 100%); color: white; line-height: 1.25;">
+                <div style="font-size: 0.78rem; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    د. {safe_author}
+                </div>
+                {caption_preview}
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: #fca5a5; font-weight: 700; margin-top: 3px;">
+                    <span>❤️</span> <span>{st_likes}</span>
+                </div>
             </div>
         </div>
         """
@@ -3356,6 +3664,53 @@ async def community_hub(
         </div>
     </div>
 
+    <!-- Dedicated Facebook-Grade Interactive Story Viewer Modal -->
+    <div id="story-viewer-modal" class="fb-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 999999; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+        <div style="position: relative; width: 100%; max-width: 520px; margin: 0 auto; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; max-height: 96vh;">
+            
+            <!-- Top Bar inside story -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #0f766e; border: 2px solid #14b8a6; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+                        🩺
+                    </div>
+                    <div>
+                        <div id="story-viewer-author" style="color: white; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">د. طبيب بيطري</div>
+                        <div id="story-viewer-time" style="color: #94a3b8; font-size: 0.75rem;">الآن</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" id="story-viewer-del-btn" onclick="deleteCurrentStory()" class="btn-fb-danger" style="display: none; padding: 4px 10px; font-size: 0.75rem; border-radius: 8px;">🗑️ حذف</button>
+                    <button type="button" onclick="closeStoryViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">✕</button>
+                </div>
+            </div>
+
+            <!-- Media Container -->
+            <div id="story-viewer-media-container" style="display: flex; align-items: center; justify-content: center; min-height: 280px; max-height: 65vh; overflow: hidden; margin-bottom: 12px;"></div>
+
+            <!-- Full Caption Box (الكلام أسفل القصة) -->
+            <div id="story-viewer-caption-box" style="display: none; background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);">
+                <div style="font-size: 0.75rem; color: #14b8a6; font-weight: 700; margin-bottom: 4px;">💬 تعليق وسؤال الحالة السريرية:</div>
+                <div id="story-viewer-caption-text" style="color: #ffffff; font-size: 0.95rem; line-height: 1.6; word-break: break-word; font-weight: 600;"></div>
+            </div>
+
+            <!-- Interactive Reaction & Engagement Bar (التفاعل مع القصة) -->
+            <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 30px; padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="story-like-btn" onclick="likeCurrentStory()" style="background: #e11d48; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform 0.2s ease;">
+                    <span>❤️</span> <span>إعجاب ودعم</span> (<span id="story-viewer-likes-count">0</span>)
+                </button>
+
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" onclick="sendStoryReaction('💡 تشخيص دقيق')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; border-radius: 16px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; font-weight: 700;">💡 تشخيص</button>
+                    <button type="button" onclick="sendStoryReaction('🩺 استشارة')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; border-radius: 16px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; font-weight: 700;">🩺 استشارة</button>
+                    <button type="button" onclick="sendStoryReaction('👏 رائع')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; border-radius: 16px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; font-weight: 700;">👏 رائع</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Create Story Modal -->
     <div id="create-story-modal" class="fb-modal-overlay">
         <div class="fb-modal-box">
@@ -3423,6 +3778,7 @@ async def community_hub(
 # ==============================================================================
 
 @router.post("/community/post")
+@router.post("/community/post/create")
 async def community_create_post(
     request: Request,
     title: str = Form(...),
@@ -4009,21 +4365,111 @@ async def community_create_story(
             if len(raw_bytes) <= 1.5 * 1024 * 1024:
                 media_ref = f"data:image/jpeg;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
 
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    author_spec = (user.get("specialty") or user.get("role") or "طب وجراحة الحيوان") if user else "طب وجراحة الحيوان"
+    author_avatar = user.get("avatar_image", "") if user else ""
+
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-    INSERT INTO community_stories (user_id, author_name, media_url, caption, created_at)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO community_stories (user_id, author_name, author_specialty, author_avatar, media_url, caption, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         author_id,
         author_name,
+        author_spec,
+        author_avatar,
         media_ref,
         caption.strip(),
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str
     ))
+    story_id = c.lastrowid
     conn.commit()
     conn.close()
-    return RedirectResponse("/community", status_code=303)
+
+    story_record = {
+        "id": story_id,
+        "user_id": author_id,
+        "author_name": author_name,
+        "author_specialty": author_spec,
+        "author_avatar": author_avatar,
+        "media_url": media_ref,
+        "caption": caption.strip(),
+        "likes_count": 0,
+        "created_at": now_str
+    }
+    save_story_to_backup_sync(story_record)
+
+    return RedirectResponse("/community?story_posted=1", status_code=303)
+
+
+@router.post("/community/story/like/{story_id}")
+async def community_like_story(request: Request, story_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM community_stories WHERE id = ?", (story_id,))
+    if not c.fetchone():
+        conn.close()
+        return JSONResponse({"success": False, "error": "القصة غير موجودة"}, status_code=404)
+    
+    c.execute("SELECT id FROM community_story_likes WHERE story_id = ? AND user_id = ?", (story_id, user_id))
+    existing = c.fetchone()
+    if existing:
+        c.execute("DELETE FROM community_story_likes WHERE id = ?", (existing[0],))
+        c.execute("UPDATE community_stories SET likes_count = MAX(0, likes_count - 1) WHERE id = ?", (story_id,))
+        liked = False
+    else:
+        c.execute("INSERT OR REPLACE INTO community_story_likes (story_id, user_id, reaction_type, created_at) VALUES (?, ?, 'like', ?)",
+                  (story_id, user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        c.execute("UPDATE community_stories SET likes_count = likes_count + 1 WHERE id = ?", (story_id,))
+        liked = True
+    
+    c.execute("SELECT likes_count FROM community_stories WHERE id = ?", (story_id,))
+    new_count = c.fetchone()[0]
+    conn.commit()
+    conn.close()
+    return JSONResponse({"success": True, "liked": liked, "likes_count": new_count})
+
+
+@router.post("/community/story/delete/{story_id}")
+async def community_delete_story(request: Request, story_id: int):
+    from app import get_current_user
+    user = get_current_user(request)
+    user_id = user["id"] if user else 4
+    is_admin = bool(user and (user.get("is_admin") or user.get("role") == "admin"))
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id, user_id FROM community_stories WHERE id = ?", (story_id,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse({"success": False, "error": "القصة غير موجودة"}, status_code=404)
+    if not (is_admin or row[1] == user_id or not user):
+        conn.close()
+        return JSONResponse({"success": False, "error": "غير مصرح لك بحذف هذه القصة"}, status_code=403)
+    
+    c.execute("DELETE FROM community_stories WHERE id = ?", (story_id,))
+    c.execute("DELETE FROM community_story_likes WHERE story_id = ?", (story_id,))
+    conn.commit()
+    conn.close()
+
+    for s_file in [BACKUP_STORIES_FILE, STATIC_STORIES_FILE]:
+        if os.path.exists(s_file):
+            try:
+                with open(s_file, "r", encoding="utf-8-sig") as f:
+                    stories = json.load(f)
+                if isinstance(stories, list):
+                    stories = [s for s in stories if s.get("id") != story_id]
+                    with open(s_file, "w", encoding="utf-8") as f:
+                        json.dump(stories, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+    return JSONResponse({"success": True, "message": "تم حذف القصة بنجاح"})
+
 
 
 # ==============================================================================
@@ -4782,17 +5228,21 @@ async def api_community_sync_posts(request: Request):
         deleted_set = get_deleted_posts_set()
         conn = get_db()
         c = conn.cursor()
-        c.execute("SELECT title, created_at FROM community_posts")
-        existing_keys = set((r[0], r[1]) for r in c.fetchall())
+        c.execute("SELECT id, title FROM community_posts")
+        existing_rows = c.fetchall()
+        existing_ids = set(r[0] for r in existing_rows)
+        existing_titles = set((r[1] or "").strip() for r in existing_rows if r[1])
 
         synced_count = 0
         for p in client_posts:
             p_id = p.get("id")
-            p_title = p.get("title")
-            if p_id in deleted_set or p_title in deleted_set:
+            p_title = (p.get("title") or "").strip()
+            if not p_title or not p.get("content"):
                 continue
-            key = (p_title, p.get("created_at"))
-            if key not in existing_keys and p_title and p.get("content"):
+            if (p_id and p_id in deleted_set) or (p_title in deleted_set):
+                continue
+            if (p_id and p_id in existing_ids) or (p_title in existing_titles):
+                continue
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,

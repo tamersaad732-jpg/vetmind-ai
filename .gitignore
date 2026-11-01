@@ -37,7 +37,7 @@ setup_git.py
 check_layout.py
 test_live_html.py
 
-static/reference_docs/*.pdf
+# static/reference_docs/*.pdf (tracked now)
 static/reference_docs/*.zip
 
 ?????_???????_???????.bat
@@ -45,3 +45,5 @@ static/reference_docs/*.zip
 *.bat
 backups_vetbook_upgrade/
 
+
+uploads/
