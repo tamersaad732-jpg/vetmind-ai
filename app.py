@@ -44,15 +44,13 @@ DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
 # Vercel Serverless & Read-only Environment Compatibility
 if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     tmp_db = "/tmp/vetmind.db"
-    if os.path.exists(DB_PATH):
-        try:
-            import shutil
-            if (not os.path.exists(tmp_db) or 
-                os.path.getmtime(DB_PATH) > os.path.getmtime(tmp_db) or 
-                os.path.getsize(DB_PATH) != os.path.getsize(tmp_db)):
+    if not os.path.exists(tmp_db):
+        if os.path.exists(DB_PATH):
+            try:
+                import shutil
                 shutil.copy2(DB_PATH, tmp_db)
-        except Exception:
-            pass
+            except Exception:
+                pass
     if os.path.exists(tmp_db):
         DB_PATH = tmp_db
     UPLOAD_DIR = "/tmp/uploads" 
@@ -2833,6 +2831,12 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     </select>
                 </div>
 
+                <!-- VetBook Community Feed Notification Bell -->
+                <a href="/community" class="icon-action-btn" title="مجتمع الأطباء والتعميمات السريرية (VetBook)" style="position: relative; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                    🔔
+                    <span style="position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444;"></span>
+                </a>
+
                 <!-- Theme Toggle -->
                 <button type="button" onclick="toggleTheme()" class="icon-action-btn" title="{t('nav_toggle_theme', 'تبديل نمط العرض')}">
                     🌓
@@ -3517,6 +3521,15 @@ async def home_page(request: Request):
     three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
     c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE user_id = ? AND performed_at >= ?", (user_id, three_days_ago))
     active_clients_3d = c.fetchone()[0]
+
+    # Fetch 3 latest broadcast community posts for homepage spotlight
+    spotlight_posts = []
+    try:
+        c.execute("SELECT id, title, author_name, author_specialty, category, is_urgent, created_at FROM community_posts ORDER BY id DESC LIMIT 3")
+        spotlight_posts = [dict(r) for r in c.fetchall()]
+    except Exception:
+        spotlight_posts = []
+
     conn.close()
 
     stock_alert_html = ""
@@ -3568,8 +3581,57 @@ async def home_page(request: Request):
         </div>
         """
 
+    spotlight_html = ""
+    if spotlight_posts:
+        items_html = ""
+        for sp in spotlight_posts:
+            urg_tag = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">🚨 عاجلة</span>' if sp.get("is_urgent") else '<span style="background:#ccfbf1;color:#0f766e;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700;">📢 تعميم سريري</span>'
+            sp_title = (sp.get('title') or '')[:70]
+            items_html += f"""
+            <a href="/community#post-{sp['id']}" style="display:block;text-decoration:none;color:inherit;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all 0.2s ease;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="width:32px;height:32px;border-radius:50%;background:#0f766e;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">🩺</span>
+                        <div>
+                            <div style="font-weight:700;font-size:0.85rem;color:var(--text);">{sp.get('author_name','طبيب بيطري')}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">{sp.get('author_specialty','طب وجراحة الحيوان')}</div>
+                        </div>
+                    </div>
+                    {urg_tag}
+                </div>
+                <div style="font-weight:800;font-size:0.92rem;color:var(--primary);margin-bottom:6px;line-height:1.4;">
+                    {sp_title}
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px dashed var(--border);padding-top:6px;">
+                    <span>🕒 {sp.get('created_at','')[:16]}</span>
+                    <span style="color:#0f766e;font-weight:700;">عرض ومشاركة بالرأي ←</span>
+                </div>
+            </a>
+            """
+        spotlight_html = f"""
+        <div class="card" style="margin-bottom:24px;border-right:5px solid #0f766e;background:linear-gradient(135deg, rgba(15,118,110,0.03) 0%, rgba(204,251,241,0.08) 100%);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:1.4rem;">📢</span>
+                    <div>
+                        <h3 style="margin:0;font-size:1.1rem;color:#0f766e;">نبض مجتمع الأطباء البيطريين (VetBook Live Feed)</h3>
+                        <p style="margin:2px 0 0;font-size:0.8rem;color:var(--text-muted);">أحدث الحالات والتعميمات السريرية المعممة على كافة الأطباء المسجلين</p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a href="/community" class="btn btn-primary" style="font-size:0.82rem;padding:6px 14px;">تصفح المجتمع الكامل 🩺</a>
+                    <a href="/community?action=new" class="btn btn-accent" style="font-size:0.82rem;padding:6px 14px;">➕ نشر حالة للجميع</a>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;">
+                {items_html}
+            </div>
+        </div>
+        """
+
     body = f"""
     {stock_alert_html}
+    {spotlight_html}
 
     <div class="grid-4"  style="margin-bottom: 24px;">
         <div class="card" style="border-top: 4px solid var(--primary); padding: 16px;">

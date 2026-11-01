@@ -38,7 +38,13 @@ if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     UPLOAD_DIR = "/tmp/uploads" 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    if os.environ.get("VERCEL"):
+        tmp_db = "/tmp/vetmind.db"
+        if not os.path.exists(tmp_db):
+            shutil.copy2(DB_PATH, tmp_db)
+        conn = sqlite3.connect(tmp_db, timeout=20.0)
+    else:
+        conn = sqlite3.connect(DB_PATH, timeout=20.0)
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -22,14 +22,12 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 DB_PATH = os.path.join(BASE_DIR, "vetmind.db")
 if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     tmp_db = "/tmp/vetmind.db"
-    if os.path.exists(DB_PATH):
-        try:
-            if (not os.path.exists(tmp_db) or 
-                os.path.getmtime(DB_PATH) > os.path.getmtime(tmp_db) or 
-                os.path.getsize(DB_PATH) != os.path.getsize(tmp_db)):
+    if not os.path.exists(tmp_db):
+        if os.path.exists(DB_PATH):
+            try:
                 shutil.copy2(DB_PATH, tmp_db)
-        except Exception:
-            pass
+            except Exception:
+                pass
     if os.path.exists(tmp_db):
         DB_PATH = tmp_db
     UPLOAD_DIR = "/tmp/uploads"
@@ -47,6 +45,104 @@ def get_db():
     except Exception:
         pass
     return conn
+
+# ==============================================================================
+# MULTI-LAYER COMMUNITY POSTS PERSISTENCE & GLOBAL SYNC ENGINE
+# ==============================================================================
+COMMUNITY_SYNC_FILE = os.path.join(UPLOAD_DIR, "community_posts_sync.json")
+COMMUNITY_BACKUP_ALT = os.path.join(BASE_DIR, "static", "community_posts_sync.json")
+
+def get_sync_file_path():
+    try:
+        if os.path.exists(COMMUNITY_SYNC_FILE):
+            return COMMUNITY_SYNC_FILE
+        if os.path.exists(COMMUNITY_BACKUP_ALT):
+            return COMMUNITY_BACKUP_ALT
+        return COMMUNITY_SYNC_FILE
+    except Exception:
+        return "/tmp/community_posts_sync.json"
+
+def save_post_to_backup_sync(post_dict: dict):
+    """Permanently backs up a post to JSON to survive serverless container lifecycles."""
+    try:
+        fpath = get_sync_file_path()
+        existing = []
+        if os.path.exists(fpath):
+            with open(fpath, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        # Avoid duplicates by title + created_at
+        exists = any(
+            (p.get("title") == post_dict.get("title") and p.get("created_at") == post_dict.get("created_at"))
+            for p in existing
+        )
+        if not exists:
+            existing.insert(0, post_dict)
+            with open(fpath, "w", encoding="utf-8") as f:
+                json.dump(existing[:200], f, ensure_ascii=False, indent=2)
+            if fpath != COMMUNITY_BACKUP_ALT:
+                try:
+                    os.makedirs(os.path.dirname(COMMUNITY_BACKUP_ALT), exist_ok=True)
+                    with open(COMMUNITY_BACKUP_ALT, "w", encoding="utf-8") as f2:
+                        json.dump(existing[:200], f2, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
+    except Exception as e:
+        print("save_post_to_backup_sync error:", e)
+
+def sync_posts_from_backup_sync(conn):
+    """Restores any backed up posts into SQLite community_posts table."""
+    try:
+        fpath = get_sync_file_path()
+        if not os.path.exists(fpath) and os.path.exists(COMMUNITY_BACKUP_ALT):
+            fpath = COMMUNITY_BACKUP_ALT
+        if not os.path.exists(fpath):
+            return
+        with open(fpath, "r", encoding="utf-8") as f:
+            backup_posts = json.load(f)
+        if not backup_posts:
+            return
+        c = conn.cursor()
+        c.execute("SELECT title, created_at FROM community_posts")
+        existing_keys = set((r[0], r[1]) for r in c.fetchall())
+
+        for p in backup_posts:
+            key = (p.get("title"), p.get("created_at"))
+            if key not in existing_keys and p.get("title") and p.get("content"):
+                c.execute("""
+                INSERT INTO community_posts (
+                    user_id, author_name, author_specialty, author_country,
+                    category, title, content, is_urgent, species, breed, age, weight,
+                    gender, symptoms, medications, group_id, image_path, video_path,
+                    media_type, quality_score, virality_score, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    p.get("user_id", 4),
+                    p.get("author_name", "طبيب بيطري"),
+                    p.get("author_specialty", "طب وجراحة الحيوان"),
+                    p.get("author_country", "مصر"),
+                    p.get("category", "case_study"),
+                    p.get("title", "حالة سريرية"),
+                    p.get("content", ""),
+                    p.get("is_urgent", 0),
+                    p.get("species", ""),
+                    p.get("breed", ""),
+                    p.get("age", ""),
+                    p.get("weight", ""),
+                    p.get("gender", ""),
+                    p.get("symptoms", ""),
+                    p.get("medications", ""),
+                    p.get("group_id", 0),
+                    p.get("image_path"),
+                    p.get("video_path"),
+                    p.get("media_type", "text"),
+                    p.get("quality_score", 10),
+                    p.get("virality_score", 5.0),
+                    p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                ))
+                existing_keys.add(key)
+        conn.commit()
+    except Exception as e:
+        print("sync_posts_from_backup_sync error:", e)
 
 def is_user_community_approved(user_dict: dict) -> bool:
     """100% Free Community: Any logged-in registered veterinarian has complete access."""
@@ -1204,6 +1300,77 @@ async function votePoll(postId, optId) {
         console.log(e);
     }
 }
+
+// Global Feed Broadcast & Local Storage Resilience
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Detect if post was successfully published and broadcasted
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('posted') === '1') {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f766e;color:#fff;padding:14px 24px;border-radius:12px;font-weight:700;box-shadow:0 10px 25px rgba(0,0,0,0.3);z-index:99999;display:flex;align-items:center;gap:10px;font-size:0.95rem;transition:all 0.4s ease;';
+        toast.innerHTML = '<span>🎉</span><span>تم حفظ ونشر حالتك وتعميمها بنجاح على كافة الأطباء المسجلين في المنصة!</span>';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, 20px)';
+            setTimeout(() => toast.remove(), 500);
+        }, 4500);
+
+        urlParams.delete('posted');
+        const newSearch = urlParams.toString() ? ('?' + urlParams.toString()) : '';
+        window.history.replaceState({}, '', window.location.pathname + newSearch + window.location.hash);
+    }
+
+    // 2. Intercept composer submission to preserve in localStorage backup
+    const compForm = document.getElementById('composer-form');
+    if (compForm) {
+        compForm.addEventListener('submit', function() {
+            try {
+                const formData = new FormData(compForm);
+                const postObj = {
+                    title: formData.get('title') || '',
+                    content: formData.get('content') || '',
+                    category: formData.get('category') || 'case_study',
+                    is_urgent: formData.get('is_urgent') === '1' ? 1 : 0,
+                    species: formData.get('species') || '',
+                    breed: formData.get('breed') || '',
+                    age: formData.get('age') || '',
+                    weight: formData.get('weight') || '',
+                    gender: formData.get('gender') || '',
+                    symptoms: formData.get('symptoms') || '',
+                    medications: formData.get('medications') || '',
+                    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                };
+                let saved = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+                // Filter duplicates by title
+                saved = saved.filter(p => p.title !== postObj.title);
+                saved.unshift(postObj);
+                if (saved.length > 50) saved = saved.slice(0, 50);
+                localStorage.setItem('vetbook_my_posts', JSON.stringify(saved));
+            } catch (err) {
+                console.warn('Local storage post backup error:', err);
+            }
+        });
+    }
+
+    // 3. Client-side resilience check & auto-sync to server
+    try {
+        const localPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+        if (localPosts.length > 0) {
+            fetch('/api/community/sync-posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ posts: localPosts })
+            }).then(r => r.json()).then(res => {
+                if (res && res.synced > 0) {
+                    console.log('Synchronized ' + res.synced + ' offline posts with VetMind community cloud.');
+                }
+            }).catch(e => console.warn('Sync error:', e));
+        }
+    } catch (err) {
+        console.warn('Auto sync check error:', err);
+    }
+});
 </script>
 """
 
@@ -1365,13 +1532,19 @@ async def community_hub(
             </div>
             """
 
+    # Ensure all persistent posts are synced into SQLite
+    sync_posts_from_backup_sync(conn)
+
     # Fetch and Score Posts
     sql = "SELECT * FROM community_posts WHERE 1=1"
     params = []
+    if tab == "my_posts" or category == "my_posts":
+        sql += " AND user_id = ?"
+        params.append(user["id"])
     if group_id:
         sql += " AND group_id = ?"
         params.append(group_id)
-    if category != "all" and category != "bookmarks":
+    if category != "all" and category != "bookmarks" and category != "my_posts":
         if category == "urgent":
             sql += " AND is_urgent = 1"
         else:
@@ -1408,9 +1581,14 @@ async def community_hub(
         latest_c_time = post_latest_comments.get(p["id"])
         p["edgerank_score"] = calculate_edgerank_score(p, user, latest_c_time)
 
-    # Sort based on selector
+    # Sort based on selector (Guarantees doctor's newly created posts are prioritized at the top)
     if sort == "smart":
-        raw_posts.sort(key=lambda x: (x.get("is_pinned", 0), x.get("edgerank_score", 0)), reverse=True)
+        raw_posts.sort(key=lambda x: (
+            x.get("is_pinned", 0),
+            1 if x.get("user_id") == user["id"] else 0,
+            x.get("edgerank_score", 0),
+            x["id"]
+        ), reverse=True)
     elif sort == "recent":
         raw_posts.sort(key=lambda x: (x.get("is_pinned", 0), x["id"]), reverse=True)
     elif sort == "urgent":
@@ -1619,6 +1797,9 @@ async def community_hub(
             post_badges += '<span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">🚀 مروج</span>'
         if is_urgent:
             post_badges += '<span style="background: #fee2e2; color: #dc2626; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">🚨 طارئ</span>'
+        post_badges += '<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">📢 منشور عام موجه لكافة الأطباء</span>'
+        if user and p.get("user_id") == user["id"]:
+            post_badges += '<span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">👑 منشوري</span>'
 
         cat_badge = CATEGORIES.get(p["category"], {"name": p["category"], "color": "#0f766e", "icon": "📄"})
 
@@ -1859,6 +2040,7 @@ async def community_hub(
     subnav_strip = f"""
     <div class="vetbook-subnav-strip">
         <a href="/community" class="vetbook-nav-pill {'active' if tab == 'feed' else ''}"><span>📰</span> <span>آخر الأخبار</span></a>
+        <a href="/community?tab=my_posts" class="vetbook-nav-pill {'active' if tab == 'my_posts' else ''}"><span>📢</span> <span>منشوراتي وحالاتي</span></a>
         <a href="/community?tab=groups" class="vetbook-nav-pill {'active' if tab == 'groups' else ''}"><span>👥</span> <span>المجموعات التخصصية</span></a>
         <a href="/community?tab=network" class="vetbook-nav-pill {'active' if tab == 'network' else ''}"><span>🤝</span> <span>شبكة الزملاء (PYMK)</span></a>
         <a href="/community?tab=events" class="vetbook-nav-pill {'active' if tab == 'events' else ''}"><span>🎓</span> <span>الفعاليات والمؤتمرات</span></a>
@@ -2190,13 +2372,14 @@ async def community_create_post(
 
     conn = get_db()
     c = conn.cursor()
+    now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("""
     INSERT INTO community_posts (
         user_id, author_name, author_specialty, author_country,
         category, title, content, is_urgent, species, breed, age, weight,
         gender, symptoms, medications, group_id, image_path, video_path,
         media_type, quality_score, virality_score, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1.0, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
     """, (
         user["id"],
         user.get("name", "طبيب بيطري"),
@@ -2218,12 +2401,120 @@ async def community_create_post(
         saved_video_name,
         media_type,
         quality_score,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_ts
     ))
+    post_id = c.lastrowid
     conn.commit()
+
+    # 1. Platform-Wide Broadcast Notification to ALL registered doctors
+    try:
+        author_name = user.get("name", "طبيب بيطري")
+        c.execute("""
+        INSERT INTO broadcast_notifications (title, message, target_country, badge_type, created_at)
+        VALUES (?, ?, 'all', 'community', ?)
+        """, (
+            f"📢 منشور وحالة جديدة من د. {author_name}",
+            f"{title.strip()[:100]}",
+            now_ts
+        ))
+        conn.commit()
+    except Exception:
+        pass
     conn.close()
 
-    return RedirectResponse("/community", status_code=303)
+    # 2. Multi-Layer JSON Persistence (Survives Serverless Container Recycles)
+    post_record = {
+        "id": post_id,
+        "user_id": user["id"],
+        "author_name": user.get("name", "طبيب بيطري"),
+        "author_specialty": user.get("clinic_name", "طب وجراحة الحيوان"),
+        "author_country": user.get("country", "مصر"),
+        "category": category,
+        "title": title.strip(),
+        "content": content.strip(),
+        "is_urgent": is_urgent,
+        "species": species.strip(),
+        "breed": breed.strip(),
+        "age": age.strip(),
+        "weight": weight.strip(),
+        "gender": gender.strip(),
+        "symptoms": symptoms.strip(),
+        "medications": medications.strip(),
+        "group_id": group_id,
+        "image_path": saved_img_name,
+        "video_path": saved_video_name,
+        "media_type": media_type,
+        "quality_score": quality_score,
+        "virality_score": 5.0,
+        "created_at": now_ts
+    }
+    save_post_to_backup_sync(post_record)
+
+    return RedirectResponse(f"/community?posted=1#post-{post_id}", status_code=303)
+
+
+@router.post("/api/community/sync-posts")
+async def api_community_sync_posts(request: Request):
+    """
+    Client-Server Two-Way Sync Endpoint:
+    Guarantees that posts created by doctors in localStorage are permanently synced to the database.
+    """
+    from app import get_current_user
+    user = get_current_user(request)
+    try:
+        body = await request.json()
+        client_posts = body.get("posts", [])
+        if not client_posts:
+            return JSONResponse({"status": "empty", "synced": 0})
+
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT title, created_at FROM community_posts")
+        existing_keys = set((r[0], r[1]) for r in c.fetchall())
+
+        synced_count = 0
+        for p in client_posts:
+            key = (p.get("title"), p.get("created_at"))
+            if key not in existing_keys and p.get("title") and p.get("content"):
+                c.execute("""
+                INSERT INTO community_posts (
+                    user_id, author_name, author_specialty, author_country,
+                    category, title, content, is_urgent, species, breed, age, weight,
+                    gender, symptoms, medications, group_id, image_path, video_path,
+                    media_type, quality_score, virality_score, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, ?)
+                """, (
+                    p.get("user_id", user["id"] if user else 4),
+                    p.get("author_name", user.get("name", "طبيب بيطري") if user else "طبيب بيطري"),
+                    p.get("author_specialty", "طب وجراحة الحيوان"),
+                    p.get("author_country", "مصر"),
+                    p.get("category", "case_study"),
+                    p.get("title", ""),
+                    p.get("content", ""),
+                    p.get("is_urgent", 0),
+                    p.get("species", ""),
+                    p.get("breed", ""),
+                    p.get("age", ""),
+                    p.get("weight", ""),
+                    p.get("gender", ""),
+                    p.get("symptoms", ""),
+                    p.get("medications", ""),
+                    p.get("group_id", 0),
+                    p.get("image_path"),
+                    p.get("video_path"),
+                    p.get("media_type", "text"),
+                    p.get("quality_score", 10),
+                    p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                ))
+                existing_keys.add(key)
+                save_post_to_backup_sync(p)
+                synced_count += 1
+
+        conn.commit()
+        conn.close()
+        return JSONResponse({"status": "success", "synced": synced_count})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
 @router.post("/community/like/{post_id}")

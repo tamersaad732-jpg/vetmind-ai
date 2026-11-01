@@ -121,7 +121,18 @@ def calculate_edgerank_score(post: dict, viewer: dict = None, latest_comment_tim
             urgency_boost = 10.0
 
     # -------------------------------------------------------------
-    # 5. Time Decay Factor with Comment Bump
+    # 5. Freshness & Author Boost (ضمان صدارة المنشورات الجديدة ولصاحب المنشور)
+    # -------------------------------------------------------------
+    freshness_boost = 0.0
+    if hours_since_post <= 72.0:
+        freshness_boost = (72.0 - hours_since_post) * 8.0
+
+    author_boost = 0.0
+    if viewer and post.get("user_id") and viewer.get("id") and str(post.get("user_id")) == str(viewer.get("id")):
+        author_boost = 600.0  # ضمان ظهور منشور الطبيب في صدارة حسابه دوماً
+
+    # -------------------------------------------------------------
+    # 6. Time Decay Factor with Comment Bump
     # -------------------------------------------------------------
     # If the post has received recent comments, use the latest comment time (Facebook bump)
     effective_hours = hours_since_post
@@ -138,7 +149,7 @@ def calculate_edgerank_score(post: dict, viewer: dict = None, latest_comment_tim
     # -------------------------------------------------------------
     # Final EdgeRank Formula
     # -------------------------------------------------------------
-    final_score = ((affinity * engagement_weight * richness * 20.0) + urgency_boost) * time_decay
+    final_score = ((affinity * engagement_weight * richness * 20.0) + urgency_boost + freshness_boost + author_boost) * time_decay
     return round(final_score, 2)
 
 
