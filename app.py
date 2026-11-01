@@ -832,10 +832,17 @@ html, body {
     letter-spacing: 0 !important;
 }
 
-/* Universal Text Wrap & Overflow Containment: Zero Text Out of Bounds */
+/* Universal Text Wrap & Overflow Containment: Zero Text Out of Bounds on Any Screen */
 p, span, div, a, h1, h2, h3, h4, h5, h6, label, td, th, li, strong, b, em, blockquote, .post-text {
-    overflow-wrap: break-word !important;
-    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+}
+
+/* Ensure flex and grid children can shrink without breaking screen borders */
+.container, .main-content, .card, .grid-2, .grid-3, .grid-4,
+.grid-2 > *, .grid-3 > *, .grid-4 > *, div, section, main, article {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* Typography Line Heights: Arabic ascenders & descenders need generous vertical space */
@@ -1699,19 +1706,31 @@ body.dark .lang-pill.active-lang,
 }
 
 .grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+    gap: clamp(14px, 2vw, 20px) !important;
 }
 .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
+    gap: clamp(12px, 1.8vw, 20px) !important;
 }
 .grid-4 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+    gap: clamp(10px, 1.5vw, 18px) !important;
+}
+
+/* Laptop Optimization (1024px to 1366px) */
+@media (max-width: 1280px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+    }
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+    }
 }
 
 /* Buttons */

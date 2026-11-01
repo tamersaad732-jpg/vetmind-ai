@@ -96,17 +96,19 @@ def save_story_to_backup_sync(story_dict: dict):
 
 def sync_stories_from_backup_sync(conn):
     try:
-        stories = []
-        for s_file in [BACKUP_STORIES_FILE, STATIC_STORIES_FILE]:
+        stories_map = {}
+        for s_file in [STATIC_STORIES_FILE, BACKUP_STORIES_FILE]:
             if os.path.exists(s_file):
                 try:
                     with open(s_file, "r", encoding="utf-8-sig") as f:
                         loaded = json.load(f)
-                        if isinstance(loaded, list) and len(loaded) > 0:
-                            stories = loaded
-                            break
+                        if isinstance(loaded, list):
+                            for item in loaded:
+                                if item and isinstance(item, dict) and item.get("id"):
+                                    stories_map[item["id"]] = item
                 except Exception:
                     pass
+        stories = list(stories_map.values())
         if not stories:
             return
         c = conn.cursor()
@@ -229,17 +231,21 @@ def save_post_to_backup_sync(post_dict: dict):
 def sync_posts_from_backup_sync(conn):
     try:
         deleted_set = get_deleted_posts_set()
-        posts = []
-        for p_file in [BACKUP_SYNC_FILE, STATIC_BACKUP_FILE]:
+        posts_map = {}
+        for p_file in [STATIC_BACKUP_FILE, BACKUP_SYNC_FILE]:
             if os.path.exists(p_file):
                 try:
                     with open(p_file, "r", encoding="utf-8-sig") as f:
                         loaded = json.load(f)
-                        if isinstance(loaded, list) and len(loaded) > 0:
-                            posts = loaded
-                            break
+                        if isinstance(loaded, list):
+                            for item in loaded:
+                                if item and isinstance(item, dict):
+                                    key = item.get("id") or item.get("title")
+                                    if key:
+                                        posts_map[key] = item
                 except Exception:
                     pass
+        posts = list(posts_map.values())
         if not posts:
             return
         c = conn.cursor()
@@ -256,6 +262,7 @@ def sync_posts_from_backup_sync(conn):
                 continue
             if (p_id and p_id in existing_ids) or (p_title in existing_titles):
                 continue
+            try:
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
@@ -289,7 +296,12 @@ def sync_posts_from_backup_sync(conn):
                     p.get("privacy", "public"),
                     p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 ))
-                existing_keys.add(key)
+                if p_id:
+                    existing_ids.add(p_id)
+                if p_title:
+                    existing_titles.add(p_title)
+            except Exception as e_ins:
+                pass
         conn.commit()
     except Exception as e:
         print("sync_posts_from_backup_sync error:", e)
@@ -953,23 +965,51 @@ body {
     box-shadow: 0 0 0 3px rgba(15,118,110,0.15);
 }
 
-/* Main Grid Layout */
+/* Main Grid Layout - Universal Laptop & Desktop Compatibility */
 .fb-main-container {
-    max-width: 1280px;
-    margin: 16px auto;
-    padding: 0 14px;
-    display: grid;
-    grid-template-columns: 280px minmax(0, 1fr) 300px;
-    gap: 20px;
-    align-items: start;
+    max-width: 1280px !important;
+    margin: 16px auto !important;
+    padding: 0 clamp(8px, 1.8vw, 16px) !important;
+    display: grid !important;
+    grid-template-columns: 260px minmax(0, 1fr) 280px !important;
+    gap: clamp(12px, 1.5vw, 20px) !important;
+    align-items: start !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
-@media (max-width: 1080px) {
+
+/* Laptop Optimization (1024px to 1260px) - Hide right sidebar to give feed generous width */
+@media (max-width: 1080px) {\n    .fb-main-container { grid-template-columns: 240px minmax(0, 1fr) !important; }\n}\n@media (max-width: 1260px) {
     .fb-main-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: 240px minmax(0, 1fr) !important;
+        gap: 16px !important;
+    }
+    .fb-sidebar-col.fb-right-col {
+        display: none !important;
+    }
+}
+
+/* Tablet & Mobile (<= 960px) - Single fluid column */
+@media (max-width: 960px) {
+    .fb-main-container {
+        grid-template-columns: minmax(0, 1fr) !important;
+        padding: 0 8px !important;
     }
     .fb-sidebar-col {
-        display: none;
+        display: none !important;
     }
+}
+
+/* Zero Text Overflow on any screen */
+.fb-app-wrapper, .fb-main-container, .fb-card, .urgent-banner-row {
+    max-width: 100vw !important;
+    overflow-x: clip !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+}
+
+.fb-card, .fb-card * {
+    overflow-wrap: anywhere !important;
 }
 
 /* Cards & Components */
@@ -3482,10 +3522,48 @@ async def community_hub(
     groups_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; flex-wrap: wrap; gap: 4px;"><a href="/community?group_id={sg["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🐾 {sg["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sg["members_count"]} عضواً</span></div>' for sg in sidebar_groups])
     pages_sidebar_html = "".join([f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; flex-wrap: wrap; gap: 4px;"><a href="/community?page_id={sp["id"]}" style="font-weight: 700; color: #0f766e; text-decoration: none;">🏥 {sp["name"]}</a><span style="color: var(--fb-text-muted); font-size: 0.75rem;">{sp["followers_count"]} متابع</span></div>' for sp in sidebar_pages])
 
+    # Build client-side cross-device persistence script
+    posts_sync_json = json.dumps([{'id': p['id'], 'title': p['title'], 'content': p['content'], 'user_id': p['user_id'], 'category': p.get('category','case_study'), 'is_urgent': p.get('is_urgent',0), 'privacy': p.get('privacy','public'), 'species': p.get('species',''), 'breed': p.get('breed',''), 'created_at': p.get('created_at','')} for p in raw_posts[:25]], ensure_ascii=False)
+    client_sync_script = f'''<script>
+    (function() {{
+        try {{
+            const currentUserId = {current_user_id};
+            const serverPosts = {posts_sync_json};
+            let localMyPosts = JSON.parse(localStorage.getItem('vetbook_my_posts') || '[]');
+            const deletedList = JSON.parse(localStorage.getItem('vetbook_deleted_posts') || '[]');
+            
+            serverPosts.forEach(function(p) {{
+                if (p.user_id === currentUserId && !deletedList.includes(p.id) && !deletedList.includes(p.title)) {{
+                    if (!localMyPosts.some(function(x) {{ return x.id === p.id || (x.title && x.title === p.title); }})) {{
+                        localMyPosts.unshift(p);
+                    }}
+                }}
+            }});
+            localStorage.setItem('vetbook_my_posts', JSON.stringify(localMyPosts.slice(0, 50)));
+
+            const missingOnServer = localMyPosts.filter(function(lp) {{
+                return !deletedList.includes(lp.id) && !deletedList.includes(lp.title) &&
+                       !serverPosts.some(function(sp) {{ return sp.id === lp.id || (sp.title && sp.title === lp.title); }});
+            }});
+            if (missingOnServer.length > 0) {{
+                fetch('/api/community/sync-posts', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ posts: missingOnServer }})
+                }}).then(function(r) {{ return r.json(); }}).then(function(data) {{
+                    if (data && data.synced > 0) {{
+                        window.location.reload();
+                    }}
+                }}).catch(function() {{}});
+            }}
+        }} catch(e) {{}}
+    }})();
+    </script>'''
+
     feed_layout = f"""
     <div class="fb-main-container">
         <!-- Left Sidebar (Shortcuts & Quick Filters) -->
-        <div class="fb-sidebar-col">
+        <div class="fb-sidebar-col fb-left-col">
             <div class="fb-card" style="padding: 16px;">
                 <div style="font-weight: 800; font-size: 0.88rem; color: #0f766e; margin-bottom: 12px;">📁 تصنيفات الحالات</div>
                 <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -3537,6 +3615,8 @@ async def community_hub(
                 {species_strip}
             </div>
 
+{client_sync_script}
+
             <!-- Stream of Post Cards -->
             <div id="posts-stream">
                 {posts_cards_html}
@@ -3544,7 +3624,7 @@ async def community_hub(
         </div>
 
         <!-- Right Sidebar (Urgent & Pages) -->
-        <div class="fb-sidebar-col">
+        <div class="fb-sidebar-col fb-right-col">
             <div class="fb-card" style="padding: 16px;">
                 <div style="font-weight: 800; font-size: 0.88rem; color: #dc2626; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
                     <span>🚨</span> <span>حالات سريرية عاجلة (Live Triage)</span>
@@ -5243,6 +5323,7 @@ async def api_community_sync_posts(request: Request):
                 continue
             if (p_id and p_id in existing_ids) or (p_title in existing_titles):
                 continue
+            try:
                 c.execute("""
                 INSERT INTO community_posts (
                     user_id, author_name, author_specialty, author_country,
@@ -5276,9 +5357,17 @@ async def api_community_sync_posts(request: Request):
                     p.get("quality_score", 10),
                     p.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 ))
-                existing_keys.add(key)
-                save_post_to_backup_sync(p)
+                new_id = c.lastrowid
+                p_copy = dict(p)
+                p_copy["id"] = new_id
+                save_post_to_backup_sync(p_copy)
+                if p_id:
+                    existing_ids.add(p_id)
+                if p_title:
+                    existing_titles.add(p_title)
                 synced_count += 1
+            except Exception as e_api_ins:
+                pass
 
         conn.commit()
         conn.close()
