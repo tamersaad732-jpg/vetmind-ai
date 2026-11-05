@@ -249,15 +249,38 @@ async def require_auth_middleware(request: Request, call_next):
     path = request.headers.get("x-matched-path", "").split("?")[0] or request.url.path
     raw_info = f"{path} {request.url} {request.headers.get('x-now-route-matches', '')} {request.headers.get('x-matched-path', '')}".lower()
 
-    # 1. Allow static assets, public uploads, and health check
-    if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", "/api/storage-health"]):
+    # 1. Allow PWA Service Worker, Manifest, Static Assets, and Uploads
+    if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", "/sw.js", "/manifest.json", "/api/storage-health"]):
         return await call_next(request)
 
-    # 2. Allow public auth endpoints & language switch
-    if any(path.startswith(p) for p in ["/login", "/register", "/verify-otp", "/resend-otp", "/set-language"]):
+    # 2. Allow Public Auth Endpoints, Registration & Language Switch
+    if any(path.startswith(p) for p in ["/login", "/register", "/verify-otp", "/resend-otp", "/set-language", "/logout"]):
         return await call_next(request)
 
-    # 3. Check user authentication
+    # 3. Allow Public Veterinary Clinical Tools, Knowledge Base & Home Page
+    # (Doctors and students can immediately access tools, references, symptom checker, and vision scanner)
+    PUBLIC_CLINICAL_PATHS = [
+        "/",
+        "/dashboard",
+        "/vision-detect",
+        "/symptom-checker",
+        "/references",
+        "/pharmacy",
+        "/rx-prescription",
+        "/interactions",
+        "/contraindications",
+        "/tools",
+        "/clinic",
+        "/clinic/prayer-times",
+        "/about",
+        "/terms",
+        "/api/index.py",
+        "/api/index"
+    ]
+    if any(path == p or path.startswith(p + "/") for p in PUBLIC_CLINICAL_PATHS):
+        return await call_next(request)
+
+    # 4. Protected Routes (Admin Panel & Private Profile) require active user authentication
     user = get_current_user(request)
     if not user:
         accept_header = (request.headers.get("accept") or "").lower()
@@ -3205,6 +3228,26 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </div>
             
             <div class="actions-vertical-list">
+                <!-- 0. AI Symptom Diagnostician -->
+                <a href="/symptom-checker" class="action-vertical-item" style="border-right: 4px solid #047857; background: #ecfdf5;">
+                    <div class="action-item-icon" style="background: #d1fae5; color: #047857;">🩺</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title" style="color: #065f46;">المشخص البيطري بناءً على الأعراض</div>
+                        <div class="action-item-desc">تشخيص تفريقي بحسب النوع والعمر والحرارة والأعراض والجرعات</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </a>
+
+                <!-- 00. AI Vision Detector -->
+                <a href="/vision-detect" class="action-vertical-item" style="border-right: 4px solid #0284c7; background: #f0f9ff;">
+                    <div class="action-item-icon" style="background: #e0f2fe; color: #0284c7;">👁️</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title" style="color: #0369a1;">فاحص الصور بالذكاء الاصطناعي (AI Vision)</div>
+                        <div class="action-item-desc">تحليل آفات الجلد، الفم، الحوافر، العيون، وتشخيص الأمراض فورياً</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </a>
+
                 <!-- 1. Prayer Times -->
                 <a href="/clinic/prayer-times" class="action-vertical-item">
                     <div class="action-item-icon" style="background: #ecfdf5; color: #065f46;">🕌</div>
@@ -3340,6 +3383,16 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-icon">🏠</span>
                 <span class="m-label">{t('nav_home')}</span>
             </a>
+            <a href="/symptom-checker" class="mobile-menu-item" style="color: #047857; font-weight: 800;">
+                <span class="m-icon">🩺</span>
+                <span class="m-label">المشخص البيطري بناءً على الأعراض</span>
+                <span class="m-badge" style="background: #dcfce7; color: #15803d;">جديد 🌟</span>
+            </a>
+            <a href="/vision-detect" class="mobile-menu-item" style="color: #0284c7; font-weight: 800;">
+                <span class="m-icon">👁️</span>
+                <span class="m-label">فاحص الصور بالذكاء الاصطناعي</span>
+                <span class="m-badge" style="background: #e0f2fe; color: #0369a1;">AI Vision</span>
+            </a>
 
             <a href="/clinic" class="mobile-menu-item">
                 <span class="m-icon">🏥</span>
@@ -3430,6 +3483,9 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     is_clinic_active = "active" if "clinic" in title_l or "عيادة" in title_l or "حالات" in title_l else ""
 
     # Instagram / YouTube-Style Mobile Bottom Navigation Bar
+    is_diag_active = "active" if "symptom" in title_l or "تشخيص" in title_l else ""
+    is_vision_active = "active" if "vision" in title_l or "فحص" in title_l else ""
+
     mobile_bottom_nav_html = f"""
     <nav class="mobile-bottom-nav" aria-label="شريط التنقل السريع">
         <a href="/" class="bnav-item {is_home_active}" title="{t('nav_home', 'الرئيسية')}">
@@ -3439,17 +3495,32 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             <span class="bnav-label">{t('nav_home', 'الرئيسية')}</span>
         </a>
 
+        <a href="/symptom-checker" class="bnav-item {is_diag_active}" title="المشخص البيطري للأعراض">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+            </span>
+            <span class="bnav-label">المشخص</span>
+        </a>
+
+        <a href="/vision-detect" class="bnav-item {is_vision_active}" title="فاحص الصور AI Vision">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <span class="bnav-label">فاحص الصور</span>
+        </a>
+
+        <a href="/clinic" class="bnav-item {is_clinic_active}" title="{t('nav_clinic', 'العيادة')}">
+            <span class="bnav-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+            </span>
+            <span class="bnav-label">{t('nav_clinic', 'العيادة')}</span>
+        </a>
+
         <a href="/tools" class="bnav-item {is_tools_active}" title="{t('nav_tools_30', 'الأدوات الـ 30')}">
             <span class="bnav-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             </span>
             <span class="bnav-label">{t('nav_tools_30', 'الأدوات')}</span>
-        </a>
-        <a href="/clinic" class="bnav-item {is_clinic_active}" title="{t('nav_clinic', 'العيادة')}">
-            <span class="bnav-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
-            </span>
-            <span class="bnav-label">{t('nav_clinic', 'العيادة')}</span>
         </a>
     </nav>
     """
@@ -4311,8 +4382,24 @@ async def home_page(request: Request):
 
     <!-- Core Clinical & Knowledge Tools Grid -->
     <div style="margin-bottom: 24px;">
-        <h2 style="font-size: 1.3rem; margin: 0 0 16px 0; color: var(--text-main);">⚡ الخدمات والأقسام الرئيسية المعتمدة</h2>
+        <h2 style="font-size: 1.3rem; margin: 0 0 16px 0; color: var(--text-main);">⚡ منظومة التشخيص السريري والخدمات البيطرية الذكية</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <a href="/symptom-checker" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #059669; background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%); box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 2rem;">🩺</div>
+                    <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">جديد 🌟</span>
+                </div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #047857;">المشخص البيطري بناءً على الأعراض</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">تشخيص تفريقي بحسب نوع الحيوان، العمر، درجة الحرارة، وحساب الجرعات لوزن الحيوان</div>
+            </a>
+            <a href="/vision-detect" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #0284c7; background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%); box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 2rem;">👁️</div>
+                    <span style="background: #0284c7; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">AI Vision</span>
+                </div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #0369a1;">فاحص الصور بالذكاء الاصطناعي</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">فحص صور الآفات، العيون، الفم، الحوافر، والتنخر النسيجي بالرؤية الحاسوبية</div>
+            </a>
             <a href="/clinic" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #059669; box-sizing: border-box;">
                 <div style="font-size: 1.8rem; margin-bottom: 8px;">🏥</div>
                 <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">إدارة العيادة الشاملة</div>
@@ -5805,6 +5892,498 @@ async def process_logout():
 # ==============================================================================
 # ROUTE 8: CASES, DETAILS, DELETE
 # ==============================================================================
+
+# ==============================================================================
+# SECTION A: AI VISION DETECTOR (فاحص الصور بالذكاء الاصطناعي)
+# ==============================================================================
+@app.get("/vision-detect", response_class=HTMLResponse)
+async def vision_detect_page(request: Request):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    body = f"""
+    <div style="max-width: 850px; margin: 0 auto;">
+        <!-- Header Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 22px; text-align: center; border: 1px solid #38bdf8;">
+            <div style="font-size: 2.8rem; margin-bottom: 6px;">👁️</div>
+            <h1 style="margin: 0; font-size: 1.7rem; color: #ffffff;">فاحص الصور والآفات السريرية بالذكاء الاصطناعي</h1>
+            <p style="color: #bae6fd; font-size: 0.95rem; margin-top: 6px; line-height: 1.5;">
+                ارفع صورة الآفة السريرية (جلد، فم، حوافر، عيون، أعضاء بعد الصفة التشريحية، طيور أو مواشي) لتحليلها بصرية واستخراج التشخيص والعلاج المعتمد
+            </p>
+        </div>
+
+        <div class="card" style="border-top: 6px solid var(--accent); padding: 24px;">
+            <form action="/vision-detect" method="POST" enctype="multipart/form-data">
+                <div style="border: 2px dashed var(--accent); padding: 36px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 22px; transition: border-color 0.2s;">
+                    <div style="font-size: 3.2rem; margin-bottom: 10px;">📸</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">اضغط هنا لالتقاط أو اختيار صورة الآفة السريرية</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">يدعم كاميرا الهاتف، ملفات JPEG، PNG، WEBP لكافة الحيوانات والطيور</div>
+                    <input type="file" name="image" accept="image/*" required style="margin-top: 16px; font-size: 0.95rem; width: 100%; max-width: 380px;">
+                </div>
+
+                <div class="grid-2" style="margin-bottom: 20px; gap: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">🐾 فصيلة ونوع الحيوان:</label>
+                        <select name="species" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
+                            <option value="أبقار">🐄 أبقار ومواشي (Cattle / Bovine)</option>
+                            <option value="أغنام وماعز">🐑 أغنام وماعز (Sheep & Goats)</option>
+                            <option value="إبل وهجن">🐪 إبل وهجن (Camels)</option>
+                            <option value="خيول">🐎 خيول وفصيلة خيلية (Horses / Equine)</option>
+                            <option value="دواجن وطيور">🐔 دواجن وطيور (Poultry / Avian)</option>
+                            <option value="كلاب">🐕 كلاب (Canine)</option>
+                            <option value="قطط">🐈 قطط (Feline)</option>
+                            <option value="أرانب">🐇 أرانب (Rabbits)</option>
+                            <option value="غير محدد">🔍 فحص عام للآفة (غير محدد)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">📝 ملاحظات سريرية إضافية (اختياري):</label>
+                        <input type="text" name="notes" placeholder="مثال: حرارة 40°C، سيلان لعاب، عرج من 3 أيام..." style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-accent" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.25);">
+                    🚀 بدء الفحص البصري والتحليل بالذكاء الاصطناعي
+                </button>
+            </form>
+        </div>
+    </div>
+    """
+    return HTMLResponse(content=get_base_html("فاحص الصور بالذكاء الاصطناعي", body, user, lang), media_type="text/html; charset=utf-8")
+
+@app.post("/vision-detect", response_class=HTMLResponse)
+async def process_vision_detect(
+    request: Request,
+    image: UploadFile = File(...),
+    species: str = Form("أبقار"),
+    notes: str = Form("")
+):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    user_country = user.get("country", "مصر") if user else "مصر"
+    t = lambda k, d="": get_text(lang, k, d)
+
+    safe_name = f"vision_{int(datetime.now().timestamp())}_{image.filename.replace(' ', '_')}"
+    image_full_path = os.path.join(UPLOAD_DIR, safe_name)
+    try:
+        with open(image_full_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+    except Exception as img_err:
+        image_full_path = None
+
+    v_metrics = analyze_image_locally(image_full_path) if image_full_path else {
+        "summary": "فحص بصري قياسي",
+        "detected_lesion": "آفة سريرية ظاهرية",
+        "erythema_score": 35, "necrosis_score": 10, "exudate_score": 15, "contrast_score": 60,
+        "clinical_impression": "فحص نسيجي أولي"
+    }
+
+    api_key = get_effective_groq_api_key(request)
+    effective_notes = f"فصيلة الحيوان: {species}. " + (notes if notes and notes.strip() else "يرجى فحص الآفة المشاهدة في الصورة واستخراج التشخيص التفريقي والبروتوكول العلاجي المناسب.")
+    
+    clinical_report = ask_ai_chat(api_key, effective_notes, [], image_full_path, lang, user_country)
+
+    body = f"""
+    <div style="max-width: 900px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
+            <a href="/vision-detect" class="btn btn-outline" style="font-weight: 700;">📸 فحص صورة جديدة</a>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="/rx-prescription?species={species}&notes={notes}" class="btn btn-primary" style="font-weight: 700;">📋 تحويل إلى روشتة معتمدة بالباركود</a>
+                <a href="/symptom-checker" class="btn btn-gold" style="font-weight: 700;">🩺 فحص الأعراض التفصيلي</a>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 6px solid var(--accent); padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                <h2 style="margin: 0; color: var(--accent); font-size: 1.35rem;">👁️ نتائج الفحص البصري والتشخيص السريري</h2>
+                <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">الفصيلة: {species}</span>
+            </div>
+
+            <!-- Image Viewport -->
+            <div style="text-align: center; margin: 16px 0; background: #0f172a; padding: 12px; border-radius: 12px;">
+                <img src="/uploads/{safe_name}" alt="صورة الآفة" style="max-width: 100%; max-height: 480px; border-radius: 8px; object-fit: contain;">
+            </div>
+
+            <!-- Vision Metric Gauges -->
+            <div class="grid-3" style="margin: 20px 0; gap: 12px;">
+                <div class="card" style="background: #fef2f2; border: 1.5px solid #fecaca; text-align: center; padding: 14px;">
+                    <div style="font-size: 0.85rem; color: #991b1b; font-weight: 700;">درجة الاحتقان والالتهاب</div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #dc2626; margin: 4px 0;">{v_metrics['erythema_score']}%</div>
+                    <div style="font-size: 0.75rem; color: #991b1b;">احتقان نسيجي ووذمة دموية</div>
+                </div>
+                <div class="card" style="background: #f8fafc; border: 1.5px solid #cbd5e1; text-align: center; padding: 14px;">
+                    <div style="font-size: 0.85rem; color: #475569; font-weight: 700;">درجة التنخر النسيجي</div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #334155; margin: 4px 0;">{v_metrics['necrosis_score']}%</div>
+                    <div style="font-size: 0.75rem; color: #475569;">تآكل خلوي وجلبات قشرية</div>
+                </div>
+                <div class="card" style="background: #fffbeb; border: 1.5px solid #fde68a; text-align: center; padding: 14px;">
+                    <div style="font-size: 0.85rem; color: #92400e; font-weight: 700;">درجة النضح والإفرازات</div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #d97706; margin: 4px 0;">{v_metrics['exudate_score']}%</div>
+                    <div style="font-size: 0.75rem; color: #92400e;">إفرازات قيحية ومخاطية</div>
+                </div>
+            </div>
+
+            <!-- AI Clinical Diagnosis Report Body -->
+            <div class="card" style="background: var(--bg); border: 1.5px solid var(--border); line-height: 1.8; white-space: pre-wrap; font-size: 0.96rem; padding: 20px; border-radius: 12px; color: var(--text-main);">
+{clinical_report}
+            </div>
+
+            <!-- Instant Actions Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <form action="/vision-detect/delete/{safe_name}" method="POST" onsubmit="return confirm('هل تريد حذف هذه الصورة نهائياً من الذاكرة لضمان الخصوصية وتوفير المساحة؟');" style="margin: 0;">
+                    <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.82rem; padding: 6px 14px;">🗑️ حذف الصورة نهائياً لتوفير المساحة</button>
+                </form>
+                <a href="/vision-detect" class="btn btn-primary" style="font-weight: 700;">📸 فحص آفة سريرية أخرى</a>
+            </div>
+        </div>
+    </div>
+    """
+    return HTMLResponse(content=get_base_html("نتيجة فحص الصورة والآفة", body, user, lang), media_type="text/html; charset=utf-8")
+
+@app.post("/vision-detect/delete/{filename}")
+async def delete_vision_image(request: Request, filename: str):
+    try:
+        p = os.path.join(UPLOAD_DIR, filename)
+        if os.path.exists(p):
+            os.remove(p)
+    except Exception:
+        pass
+    return RedirectResponse("/vision-detect", status_code=303)
+
+
+# ==============================================================================
+# SECTION B: VETERINARY SYMPTOM-BASED DIAGNOSTICIAN (المشخص البيطري الذكي)
+# ==============================================================================
+@app.get("/symptom-checker", response_class=HTMLResponse)
+async def symptom_checker_page(request: Request):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    body = f"""
+    <div style="max-width: 950px; margin: 0 auto;">
+        <!-- Header Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 26px; border-radius: 14px; margin-bottom: 22px; text-align: center; border: 1px solid #10b981; box-shadow: 0 6px 20px rgba(6,95,70,0.2);">
+            <div style="font-size: 3rem; margin-bottom: 6px;">🩺</div>
+            <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff;">المشخص البيطري الذكي بناءً على الأعراض والخصائص</h1>
+            <p style="color: #a7f3d0; font-size: 1rem; margin-top: 6px; line-height: 1.5;">
+                تشخيص سريري تفريقي دقيق وحساب فوري لجرعات الأدوية بناءً على: نوع الحيوان، العمر، درجة الحرارة، الوزن، والأعراض المشاهدة
+            </p>
+        </div>
+
+        <form action="/symptom-checker" method="POST">
+            <!-- 1. Patient Profile Card -->
+            <div class="card" style="border-top: 5px solid var(--primary); padding: 22px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                    <span>🐾</span> <span>1. بيانات وخصائص الحيوان السريرية</span>
+                </h2>
+
+                <div class="grid-3" style="gap: 14px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">فصيلة ونوع الحيوان:</label>
+                        <select name="species" id="diag_species" onchange="updateTempGuidance(this.value)" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
+                            <option value="أبقار" selected>🐄 أبقار ومواشي (Bovine)</option>
+                            <option value="أغنام وماعز">🐑 أغنام وماعز (Ovine / Caprine)</option>
+                            <option value="إبل وهجن">🐪 إبل وهجن (Camels)</option>
+                            <option value="خيول">🐎 خيول وفصيلة خيلية (Equine)</option>
+                            <option value="دواجن وطيور">🐔 دواجن وطيور (Poultry)</option>
+                            <option value="كلاب">🐕 كلاب (Canine)</option>
+                            <option value="قطط">🐈 قطط (Feline)</option>
+                            <option value="أرانب">🐇 أرانب (Rabbits)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">مرحلة النمو والعمر:</label>
+                        <select name="age_stage" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
+                            <option value="رضيع">رضيع / حديث ولادة (Neonatal 0-1 شهر)</option>
+                            <option value="مفطوم">مفطوم / نامي (Growing 1-6 شهور)</option>
+                            <option value="بالغ" selected>بالغ / منتج (Adult / Mature)</option>
+                            <option value="مسن">مسن / كبير السن (Geriatric)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">الوزن التقريبي (كجم):</label>
+                        <input type="number" step="0.5" min="0.1" max="1500" name="weight_kg" value="250" required placeholder="مثال: 350 كجم" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">لحساب الجرعات الدوائية بدقة</span>
+                    </div>
+                </div>
+
+                <div class="grid-3" style="gap: 14px;">
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">🌡️ درجة حرارة الجسم (°C):</label>
+                        <input type="number" step="0.1" min="30" max="45" name="temperature_c" id="diag_temp" value="39.8" required style="width: 100%; padding: 11px; border: 1.5px solid #f87171; border-radius: 10px; font-weight: 800; font-size: 1.05rem; background: var(--card-bg); color: var(--danger);">
+                        <span id="temp_guidance" style="font-size: 0.75rem; color: #059669; font-weight: 700; display: block; margin-top: 3px;">المعدل الطبيعي للأبقار: 38.0 - 39.3 °C</span>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">الحالة التناسلية والإنتاجية:</label>
+                        <select name="pregnancy_status" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
+                            <option value="عادي">غير حامل / إنتاج عادي</option>
+                            <option value="حامل / عشار">حامل / عشار (Pregnant) ⚠️</option>
+                            <option value="حلوب">حلوب / مدرة للحليب (Lactating)</option>
+                            <option value="تسمين">تسمين / إنتاج لحوم</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">مدة وتطور المرض:</label>
+                        <select name="duration" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
+                            <option value="حاد جداً">حاد ومفاجئ (< 24 ساعة)</option>
+                            <option value="حاد" selected>حاد (1 - 3 أيام)</option>
+                            <option value="تحت الحاد">تحت الحاد (4 - 7 أيام)</option>
+                            <option value="مزمن">مزمن (> أسبوعين)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Symptoms Checklist Grid -->
+            <div class="card" style="border-top: 5px solid var(--emerald); padding: 22px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 1.25rem; color: var(--emerald-dark); display: flex; align-items: center; gap: 8px;">
+                    <span>📋</span> <span>2. حدد الأعراض والعلامات السريرية المشاهدة (اختر ما ينطبق):</span>
+                </h2>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                    <!-- Respiratory & Head -->
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
+                        <div style="font-weight: 800; color: #0284c7; margin-bottom: 10px;">🫁 أعراض تنفسية ورأس:</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="صعوبة تنفس ونهجان"> صعوبة تنفس ونهجان (Dyspnea)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="سعال وحشرجة صدرية"> سعال وحشرجة صدرية (Cough)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إفرازات أنفية صديدية"> إفرازات أنفية صديدية أو رغوية</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إفرازات عينية ودمع"> إفرازات عينية والتهاب ملتحمة</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="وذمة الحلق واللبب"> وذمة وتورم الحلق أو أسفل الفك</label>
+                    </div>
+
+                    <!-- Digestive & Mouth -->
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
+                        <div style="font-weight: 800; color: #d97706; margin-bottom: 10px;">🍽️ أعراض هضمية وفم:</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="سيلان لعاب غزير"> سيلان لعاب رغوي غزير (Salivation)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تقرحات وحويصلات بالفم واللسان"> حويصلات وتقرحات باللسان واللثة</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إسهال مائي غزير"> إسهال مائي كريه الرائحة</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إسهال دموي أسود"> إسهال دموي أو نزف معوي</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="نفاخ بالكرش ومغص"> نفاخ حاد بالكرش أو مغص معوي</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="توقف الاجترار والشهية"> فقدان تام للشهية وتوقف الاجترار</label>
+                    </div>
+
+                    <!-- Locomotor & Skin -->
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
+                        <div style="font-weight: 800; color: #7c3aed; margin-bottom: 10px;">🐾 حركية، جلد ومناعة:</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عرج وتقرحات حوافر"> عرج وتقرحات بين شقي الحافر</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عقد جلدية بارزة"> عقد جلدية صلبة أو دمامل (Nodules)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عدم القدرة على الوقوف والربوض"> عدم القدرة على النهوض (Downer)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تضخم الغدد الليمفاوية"> تضخم واضح بالغدد الليمفاوية</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="شحوب واصفرار يرقان"> شحوب الأغشية المخاطية أو يرقان</label>
+                    </div>
+
+                    <!-- Nervous & Urinary -->
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
+                        <div style="font-weight: 800; color: #dc2626; margin-bottom: 10px;">🧠 عصبية، بولية وتناسلية:</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="بول أحمر مدمم"> بول مدمم أحمر داكن (Red water)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تشنجات ورجوع الرأس للخلف"> تشنجات وصمل بالرقبة (Opisthotonos)</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="ترنح ودوران"> ترنح واختلال توازن ودوران</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="طحن أسنان وغيبوبة"> طحن الأسنان وخمول شديد</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إجهاض الحوامل"> إجهاض أو ولادة مبكرة للأجنة</label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">📝 ملاحظات ووصف سريري إضافي من الطبيب:</label>
+                    <textarea name="notes" rows="3" placeholder="صف أي ملاحظات أخرى مثل: طبيعة التغذية، استجابة سابقة لعلاج، تطعيمات القطيع..." style="width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);"></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 16px rgba(15,76,129,0.25);">
+                🔬 استخراج التشخيص السريري التفريقي وحساب الجرعات فوراً
+            </button>
+        </form>
+    </div>
+
+    <script>
+    const tempGuides = {{
+        "أبقار": "المعدل الطبيعي للأبقار: 38.0 - 39.3 °C",
+        "أغنام وماعز": "المعدل الطبيعي للأغنام والماعز: 38.5 - 40.0 °C",
+        "إبل وهجن": "المعدل الطبيعي للإبل والهجن: 36.5 - 38.5 °C",
+        "خيول": "المعدل الطبيعي للخيول: 37.5 - 38.5 °C",
+        "دواجن وطيور": "المعدل الطبيعي للدواجن والطيور: 40.5 - 42.0 °C",
+        "كلاب": "المعدل الطبيعي للكلاب: 38.0 - 39.2 °C",
+        "قطط": "المعدل الطبيعي للقطط: 38.0 - 39.2 °C",
+        "أرانب": "المعدل الطبيعي للأرانب: 38.5 - 40.0 °C"
+    }};
+    function updateTempGuidance(species) {{
+        const el = document.getElementById('temp_guidance');
+        if (el && tempGuides[species]) {{
+            el.innerText = tempGuides[species];
+        }}
+    }}
+    </script>
+    """
+    return HTMLResponse(content=get_base_html("المشخص البيطري بناءً على الأعراض", body, user, lang), media_type="text/html; charset=utf-8")
+
+@app.post("/symptom-checker", response_class=HTMLResponse)
+async def process_symptom_checker(
+    request: Request,
+    species: str = Form("أبقار"),
+    age_stage: str = Form("بالغ"),
+    weight_kg: float = Form(250.0),
+    temperature_c: float = Form(39.5),
+    pregnancy_status: str = Form("عادي"),
+    duration: str = Form("حاد"),
+    symptoms: List[str] = Form([]),
+    notes: str = Form("")
+):
+    from symptom_diagnostician import diagnose_clinical_case
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+
+    res = diagnose_clinical_case(
+        species=species,
+        age_str=age_stage,
+        temp_c=temperature_c,
+        weight_kg=weight_kg,
+        pregnancy_status=pregnancy_status,
+        duration=duration,
+        symptoms_list=symptoms,
+        notes=notes
+    )
+
+    temp_eval = res["temp_evaluation"]
+
+    # Build Diagnostic Cards HTML
+    diagnoses_html = ""
+    for idx, diag in enumerate(res["diagnoses"], 1):
+        # Meds table rows
+        meds_rows = ""
+        for m in diag["treatment_protocol"]:
+            meds_rows += f"""
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 10px; font-weight: 700; color: var(--primary);">{m['drug']}</td>
+                <td style="padding: 10px; font-weight: 800; color: #047857;">{m['dosage']}</td>
+                <td style="padding: 10px; font-size: 0.85rem; color: var(--text-muted);">{m['purpose']}</td>
+            </tr>
+            """
+
+        preg_warn_html = ""
+        if diag.get("pregnancy_warning"):
+            preg_warn_html = f"""
+            <div style="background: #fef2f2; border: 1.5px solid #f87171; color: #991b1b; padding: 12px; border-radius: 8px; margin: 12px 0; font-weight: 700; font-size: 0.88rem;">
+                {diag['pregnancy_warning']}
+            </div>
+            """
+
+        diff_list = " • ".join(diag["differential_diagnoses"])
+
+        diagnoses_html += f"""
+        <div class="card" style="border-top: 5px solid {'#047857' if idx == 1 else '#0284c7'}; padding: 22px; margin-bottom: 22px; border-radius: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <span style="background: {'#d1fae5' if idx == 1 else '#e0f2fe'}; color: {'#065f46' if idx == 1 else '#0369a1'}; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">
+                        {'🥇 التشخيص الأرجح رقم 1' if idx == 1 else f'🥈 احتمال تفريقي رقم {idx}'}
+                    </span>
+                    <h3 style="margin: 8px 0 2px 0; font-size: 1.35rem; color: var(--primary);">{diag['name_ar']}</h3>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">{diag['name_en']}</div>
+                </div>
+                <div style="text-align: center; background: var(--bg); border: 2px solid {'#10b981' if idx == 1 else '#38bdf8'}; border-radius: 12px; padding: 8px 16px;">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">نسبة الترجيح</div>
+                    <div style="font-size: 1.6rem; font-weight: 900; color: {'#047857' if idx == 1 else '#0284c7'};">{diag['confidence']}%</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 12px;">
+                🔬 <strong>المسبب:</strong> {diag['etiology']}
+            </div>
+
+            {preg_warn_html}
+
+            <!-- Confirmatory Tests -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.88rem; color: #166534;">
+                <strong>🔬 العلامات الفارقة والفحوصات التأكيدية:</strong> {diag['confirmatory_tests']}
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+                🔄 <strong>التشخيصات التفريقية الواجب استبعادها:</strong> {diff_list}
+            </div>
+
+            <!-- Treatment Protocol & Calculated Dosages -->
+            <div style="margin-top: 16px;">
+                <h4 style="margin: 0 0 10px 0; color: var(--text-main); font-size: 1.05rem;">💊 البروتوكول العلاجي المعتمد لوزن الحيوان ({weight_kg} كجم):</h4>
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: right; background: var(--card-bg);">
+                        <thead>
+                            <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
+                                <th style="padding: 10px;">الدواء المقترح</th>
+                                <th style="padding: 10px;">الجرعة المحسوبة للحيوان</th>
+                                <th style="padding: 10px;">الهدف العلاجي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {meds_rows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- General Clinical Caution -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px; border-radius: 8px; margin-top: 14px; font-size: 0.82rem;">
+                ⚠️ <strong>إرشادات السلامة الحيوية:</strong> {diag['warnings']}
+            </div>
+
+            <!-- Quick Action: Convert to Prescription -->
+            <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                <a href="/rx-prescription?species={species}&weight={weight_kg}&notes={diag['name_ar']}" class="btn btn-primary" style="font-weight: 700; font-size: 0.88rem;">
+                    🖨️ تحويل إلى روشتة معتمدة بالباركود
+                </a>
+            </div>
+        </div>
+        """
+
+    symptoms_badges = "".join([f'<span style="background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">{s}</span> ' for s in symptoms])
+
+    body = f"""
+    <div style="max-width: 950px; margin: 0 auto;">
+        <!-- Top Action Nav -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+            <a href="/symptom-checker" class="btn btn-outline" style="font-weight: 700;">🔄 فحص وتشخيص حالة سريرية أخرى</a>
+            <div style="display: flex; gap: 8px;">
+                <a href="/vision-detect" class="btn btn-accent" style="font-weight: 700;">👁️ فحص صورة الآفة (AI Vision)</a>
+                <button type="button" onclick="window.print()" class="btn btn-outline" style="font-weight: 700;">🖨️ طباعة تقرير التشخيص</button>
+            </div>
+        </div>
+
+        <!-- Case Summary Card -->
+        <div class="card" style="border-top: 5px solid var(--primary); padding: 20px; margin-bottom: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">📋 ملخص بيانات الحالة السريرية المفحوصة</h2>
+                    <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+                        الفصيلة: <strong>{species}</strong> | المرحلة: <strong>{age_stage}</strong> | الوزن: <strong>{weight_kg} كجم</strong> | الحالة: <strong>{pregnancy_status}</strong>
+                    </div>
+                </div>
+                <!-- Temperature Evaluation Badge -->
+                <div style="background: {temp_eval['color']}15; border: 1.5px solid {temp_eval['color']}; color: {temp_eval['color']}; padding: 10px 18px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 0.75rem; font-weight: 700;">حرارة الجسم: {temperature_c} °C</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; margin-top: 2px;">{temp_eval['label']}</div>
+                    <div style="font-size: 0.7rem; opacity: 0.9;">{temp_eval['norm_text']}</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px;">الأعراض المشاهدة المرصودة:</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    {symptoms_badges if symptoms_badges else '<span style="color: var(--text-muted); font-size: 0.85rem;">لم يتم اختيار أعراض من القائمة</span>'}
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnostic Differential Cards -->
+        {diagnoses_html}
+    </div>
+    """
+    return HTMLResponse(content=get_base_html("تقرير التشخيص التفريقي والعلاج", body, user, lang), media_type="text/html; charset=utf-8")
+
+
 def generate_reference_standalone_html(ref_id: str) -> str:
     """Generates a complete, beautiful standalone HTML document for any reference book."""
     from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
