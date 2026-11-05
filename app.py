@@ -4,6 +4,7 @@ VetMind AI Enterprise v4.2 - Long-Term Investment Grade Veterinary Clinical Inte
 """
 
 import os
+import sys
 import io
 import json
 import base64
