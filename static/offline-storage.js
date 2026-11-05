@@ -9,8 +9,8 @@
   'use strict';
 
   const DB_NAME = 'VetMind_Local_Storage';
-  const DB_VERSION = 2;
-  const STORES = ['clinic_profile', 'appointments', 'inventory', 'vaccinations', 'prescriptions', 'offline_notes'];
+  const DB_VERSION = 3;
+  const STORES = ['clinic_profile', 'appointments', 'inventory', 'vaccinations', 'prescriptions', 'offline_notes', 'vision_cases', 'symptom_cases'];
 
   let dbInstance = null;
 
@@ -285,10 +285,97 @@
     URL.revokeObjectURL(url);
   };
 
+
+  // Generic Delete Item from IndexedDB & localStorage
+  async function deleteItem(storeName, id) {
+    const db = await openDatabase();
+    if (db) {
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const req = store.delete(id);
+          req.onsuccess = () => {
+            deleteFromLocalStorage(storeName, id);
+            resolve(true);
+          };
+          req.onerror = () => {
+            deleteFromLocalStorage(storeName, id);
+            resolve(true);
+          };
+        } catch (e) {
+          deleteFromLocalStorage(storeName, id);
+          resolve(true);
+        }
+      });
+    } else {
+      deleteFromLocalStorage(storeName, id);
+      return Promise.resolve(true);
+    }
+  }
+
+  function deleteFromLocalStorage(storeName, id) {
+    try {
+      const key = 'vm_local_' + storeName;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      const filtered = existing.filter(x => x.id !== id && String(x.id) !== String(id));
+      localStorage.setItem(key, JSON.stringify(filtered));
+    } catch (e) {}
+  }
+
+  // Clear entire store to free device space
+  async function clearStore(storeName) {
+    const db = await openDatabase();
+    if (db) {
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const req = store.clear();
+          req.onsuccess = () => {
+            localStorage.removeItem('vm_local_' + storeName);
+            resolve(true);
+          };
+          req.onerror = () => {
+            localStorage.removeItem('vm_local_' + storeName);
+            resolve(true);
+          };
+        } catch (e) {
+          localStorage.removeItem('vm_local_' + storeName);
+          resolve(true);
+        }
+      });
+    } else {
+      localStorage.removeItem('vm_local_' + storeName);
+      return Promise.resolve(true);
+    }
+  }
+
+  // Calculate approximate storage used
+  async function getStorageSizeEst() {
+    let bytes = 0;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('vm_local_')) {
+          bytes += (localStorage.getItem(k) || '').length * 2;
+        }
+      }
+      const visionItems = await getAllItems('vision_cases');
+      bytes += JSON.stringify(visionItems).length * 2;
+    } catch (e) {}
+    if (bytes < 1024) return bytes + ' Bytes';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
   // Expose API globally
   window.VetMindOffline = {
     saveItem,
     getAllItems,
+    deleteItem,
+    clearStore,
+    getStorageSizeEst,
     openDatabase
   };
 

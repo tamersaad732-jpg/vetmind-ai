@@ -3,7 +3,7 @@
  * Enables full offline functionality, asset caching, and offline-first performance.
  */
 
-const CACHE_NAME = 'vetmind-offline-v6';
+const CACHE_NAME = 'vetmind-offline-v7';
 
 // Core routes and assets to pre-cache on install
 const PRECACHE_ASSETS = [
