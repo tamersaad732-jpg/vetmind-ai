@@ -254,6 +254,10 @@ async def require_auth_middleware(request: Request, call_next):
     if any(k in raw_info for k in ["/static", "/uploads", "favicon.ico", "/sw.js", "/manifest.json", "/api/storage-health"]):
         return await call_next(request)
 
+    # 1.5. Seamless redirect of retired legacy premium route
+    if path.startswith("/premium"):
+        return RedirectResponse("/", status_code=302)
+
     # 2. Allow Public Auth Endpoints, Registration & Language Switch
     if any(path.startswith(p) for p in ["/login", "/register", "/verify-otp", "/resend-otp", "/set-language", "/logout"]):
         return await call_next(request)
@@ -324,13 +328,14 @@ def analyze_image_locally(image_path: str):
     try:
         if not os.path.exists(image_path):
             return {
-                "summary": "فحص بصري قياسي للأنسجة الظاهرية",
-                "detected_lesion": "آفة سريرية ظاهرية",
-                "erythema_score": 35,
-                "necrosis_score": 10,
-                "exudate_score": 15,
-                "contrast_score": 60,
-                "clinical_impression": "فحص أولي للأنسجة المخاطية والجلدية"
+                "is_clinical": False,
+                "summary": "لم يتم العثور على ملف الصورة",
+                "detected_lesion": "صورة غير صالحة",
+                "erythema_score": 0,
+                "necrosis_score": 0,
+                "exudate_score": 0,
+                "contrast_score": 0,
+                "clinical_impression": "تعذر قراءة الصورة."
             }
 
         with Image.open(image_path) as img:
@@ -342,6 +347,35 @@ def analyze_image_locally(image_path: str):
             crop = rgb_img.crop((cw, ch, width - cw, height - ch))
             stat = ImageStat.Stat(crop)
             r_mean, g_mean, b_mean = stat.mean
+
+            aspect_ratio = max(width, height) / max(1, min(width, height))
+
+            # Heuristics for non-veterinary backgrounds (landscapes, blue skies, graphics, wallpapers)
+            is_non_veterinary = False
+            # Blue sky / open water landscape wallpaper
+            if b_mean > (r_mean + 20) and b_mean > 125:
+                is_non_veterinary = True
+            # Uniform green nature scenery wallpaper
+            elif g_mean > (r_mean + 25) and b_mean > 95:
+                is_non_veterinary = True
+            # High aspect ratio desktop wallpaper (16:9 or ultra-wide) without localized tissue redness
+            elif aspect_ratio >= 1.6 and (width >= 1200 or height >= 1200) and (r_mean < 130 or b_mean > r_mean):
+                is_non_veterinary = True
+            # Very low contrast / uniform graphic image
+            elif stat.stddev[0] < 18 and stat.stddev[1] < 18 and stat.stddev[2] < 18:
+                is_non_veterinary = True
+
+            if is_non_veterinary:
+                return {
+                    "is_clinical": False,
+                    "summary": f"فحص ميكروسكوبي ورقمي: تم فحص أبعاد الصورة {width}×{height} وتبين أنها تمثل خلفية أو رسماً غير بيطري.",
+                    "detected_lesion": "صورة غير بيطرية (خلفية / منظر عام)",
+                    "erythema_score": 0,
+                    "necrosis_score": 0,
+                    "exudate_score": 0,
+                    "contrast_score": int(stat.stddev[0]),
+                    "clinical_impression": "الصورة المرفوعة لا تحتوي على أي مؤشرات أو أنسجة بيطرية لحيوان."
+                }
 
             erythema_ratio = r_mean / max(1.0, (g_mean + b_mean) / 2.0)
             erythema_score = min(100, int(max(0, (erythema_ratio - 1.0) * 120 + (r_mean / 255.0) * 40)))
@@ -357,24 +391,25 @@ def analyze_image_locally(image_path: str):
             contrast_score = min(100, int(stat.stddev[0] * 1.5))
 
             if erythema_score > 60 and exudate_score > 40:
-                detected_lesion = "التهاب فموي حويصلي متقرح مصحوب بسيلان لعابي وإفرازات مخاطية قيحية (اشتباه حمى قلاعية FMD أو التهاب الفم التقرحي)"
+                detected_lesion = "التهاب فموي حويصلي متقرح وسيلان لعابي (اشتباه حمى قلاعية FMD أو التهاب الفم التقرحي)"
                 clinical_impression = "آفة حادة شديدة الاحتقان والتآكل المخاطي تتطلب عزلاً بيولوجياً فورياً ومسحة للتأكيد المخبري."
             elif erythema_score > 55 and necrosis_score > 30:
-                detected_lesion = "تنخر نسيجي والتهاب جلدي عقدي متقرح (اشتباه الجلد العقدي Lumpy Skin أو الجدري Sheep Pox)"
+                detected_lesion = "تنخر نسيجي والتهاب جلدي عقدي متقرح (اشتباه الجلد العقدي Lumpy Skin أو الجدري)"
                 clinical_impression = "عقد جلدية متنخرة بؤرية مع وذمة موضعية. تطبيق مضاد التهاب واسع وتطهير موضعي."
             elif exudate_score > 50:
-                detected_lesion = "إفرازات مخاطية قيحية عينية أو أنفية مع احتقان ملتحمة (اشتباه باستريلا أو ميكوبلازما أو متلازمة تنفسية)"
+                detected_lesion = "إفرازات مخاطية قيحية عينية أو أنفية مع احتقان ملتحمة (اشتباه باستريلا أو متلازمة تنفسية)"
                 clinical_impression = "عدوى بكتيرية ثانوية بالجهاز التنفسي أو الملتحمة تستدعي تدخلاً بالمضادات الحيوية واسعة المدى."
             elif necrosis_score > 40:
-                detected_lesion = "جلبات قشرية داكنة وجفاف جلدي موضعي (اشتباه قراع جلدي فصائلي Ringworm أو إكزيما حادة)"
+                detected_lesion = "جلبات قشرية داكنة وجفاف جلدي موضعي (اشتباه قراع جلدي فطري Ringworm أو إكزيما حادة)"
                 clinical_impression = "آفة جلدية دائرية متقشرة بدون نزف فوري، تتطلب مضادات فطريات موضعية وعزل."
             else:
-                detected_lesion = "احتقان نسيجي موضعي وتغير سطحي في تروية الأغشية المخاطية"
-                clinical_impression = "فحص سريري يظهر وذمة خفيفة إلى متوسطة بدون تنخر متقدم."
+                detected_lesion = "التهاب نسيجي موضعي واحتقان في الأنسجة الظاهرية"
+                clinical_impression = "فحص سريري يظهر احتقاناً خفيفاً إلى متوسط يتطلب متابعة سريرية وتطهيراً موضعياً."
 
             summary = f"فحص ميكروسكوبي ورقمي: الأبعاد {width}×{height} بكسل ({img_format}). مؤشر الاحمرار: {erythema_score}% | مؤشر التنخر: {necrosis_score}% | مؤشر الإفرازات: {exudate_score}%."
 
             return {
+                "is_clinical": True,
                 "summary": summary,
                 "detected_lesion": detected_lesion,
                 "erythema_score": erythema_score,
@@ -385,28 +420,34 @@ def analyze_image_locally(image_path: str):
             }
     except Exception as e:
         return {
-            "summary": f"تحليل بصري رقمي عام: {str(e)}",
-            "detected_lesion": "آفة سريرية ظاهرية",
-            "erythema_score": 40,
-            "necrosis_score": 15,
-            "exudate_score": 20,
+            "is_clinical": True,
+            "summary": f"تحليل بصري رقمي: {str(e)}",
+            "detected_lesion": "التهاب سطحي واحتقان نسيجي",
+            "erythema_score": 35,
+            "necrosis_score": 10,
+            "exudate_score": 10,
             "contrast_score": 50,
-            "clinical_impression": "فحص سريري استرشادي للأنسجة"
+            "clinical_impression": "فحص قياسي عام"
         }
-
 # ==============================================================================
 # SMART CONDITION-AWARE & SPECIES-AWARE DRUG MATCHING ENGINE
 # ==============================================================================
 def get_localized_drugs(country: str, condition_hint: str = "", species: str = ""):
     """
-    Intelligent Condition-Aware & Species-Aware Pharmacotherapy Matcher.
-    Dynamically maps clinical symptoms, detected lesions, and species to registered products.
-    Ensures different cases receive completely distinct, disease-specific medications!
+    Intelligent Condition-Aware Pharmacotherapy Matcher.
+    Maps clinical lesions strictly to their specific therapeutic category.
+    Returns EMPTY list for non-veterinary images / wallpapers so no fake drugs are prescribed!
     """
+    hint = (condition_hint or "").lower().strip()
+    spec = (species or "").lower().strip()
+
+    # If image was flagged as non-veterinary, return NO drugs!
+    if any(k in hint for k in ["غير بيطري", "غير بيطرية", "خلفية", "منظر عام", "طبيعة", "wallpaper", "non-veterinary", "landscape"]):
+        return []
+
     conn = get_db()
     c = conn.cursor()
-    
-    # Map country name to standard database format
+
     c_clean = (country or "").strip()
     country_map = {
         "egypt": "مصر", "saudi arabia": "السعودية", "saudi": "السعودية",
@@ -416,89 +457,78 @@ def get_localized_drugs(country: str, condition_hint: str = "", species: str = "
     }
     target_country = country_map.get(c_clean.lower(), c_clean if c_clean in ["مصر", "السعودية", "الإمارات", "الأردن", "السودان", "العراق", "الكويت", "المغرب", "الجزائر"] else "مصر")
 
-    hint = (condition_hint or "").lower()
-    spec = (species or "").lower()
-
     matched_categories = []
     primary_category = ""
+    specific_keyword = ""
 
-    # 1. Mastitis & Reproductive (Check before general antibiotics)
-    if any(k in hint for k in ["ضرع", "حليب", "ورم الضرع", "mastitis", "ولادة", "مشيمة", "رحم", "شبق", "عشار"]):
-        matched_categories = ["أدوية الضرع والتناسل", "مضادات حيوية", "مضادات التهاب ومسكنات"]
-        primary_category = "أدوية الضرع والتناسل"
-
-    # 2. Gastrointestinal, Bloat & Colic
-    elif any(k in hint for k in ["كرش", "نفاخ", "انتفاخ", "غازات", "مغص", "إسهال", "اسهال", "حموضة", "تسمم معوي", "روث"]):
-        matched_categories = ["أدوية الهضم والكرش", "مضادات حيوية", "فيتامينات ومعادن"]
-        primary_category = "أدوية الهضم والكرش"
-
-    # 3. Parasites & Blood Protozoa (Babesia, Theileria, Trypanosoma)
-    elif any(k in hint for k in ["طفيليات", "ديدان", "حكة", "جرب", "قراد", "فاشيولا", "كبدية", "هيام", "تريبانوسوما", "بابيزيا", "ثايليريا", "دم في البول", "حمرة البول", "بول مدمم"]):
-        matched_categories = ["طفيليات وديدان", "فيتامينات ومعادن"]
+    # 1. Skin Mycosis / Ringworm / Fungal / Mange / Eczema
+    if any(k in hint for k in ["قراع", "فطري", "فطريات", "جرب", "حكة", "تساقط شعر", "ringworm", "mange", "جلد"]):
+        matched_categories = ["طفيليات وديدان", "مطهرات وبخاخات"]
         primary_category = "طفيليات وديدان"
+        specific_keyword = "إيفرمكتين"
 
-    # 4. Equine Colic & Lameness
-    elif any(k in hint or k in spec for k in ["خيل", "خيول", "حصان", "مهر", "horse", "equine", "مغص الخيل"]):
-        matched_categories = ["مضادات التهاب ومسكنات", "أدوية الهضم والكرش", "فيتامينات ومعادن"]
-        primary_category = "مضادات التهاب ومسكنات"
-
-    # 5. Companion Animals (Dogs & Cats Parvo, Vomiting)
-    elif any(k in hint or k in spec for k in ["كلب", "قطة", "كلاب", "قطط", "بارفو", "قيء", "ترجيع", "استفراغ", "canine", "feline"]):
-        matched_categories = ["أدوية الحيوانات الأليفة", "مضادات حيوية", "مضادات التهاب ومسكنات"]
-        primary_category = "أدوية الحيوانات الأليفة"
-
-    # 6. Respiratory & Pneumonia
-    elif any(k in hint for k in ["رئة", "تنفس", "سعال", "باستريلا", "ميكوبلازما", "حرارة", "التهاب رئوي", "كحة", "أنف", "صدر", "أكياس هوائية"]):
-        matched_categories = ["مضادات حيوية", "مضادات التهاب ومسكنات"]
-        primary_category = "مضادات حيوية"
-
-    # 7. Foot, Mouth & Ulcerative Lesions (FMD, Foot Rot)
-    elif any(k in hint for k in ["حوافر", "عرج", "تقرح", "فم", "لعاب", "قلاعية", "جلد عقدي", "عقد", "جروح"]):
+    # 2. Hoof, Lameness & Foot Rot (عرج، حوافر، تعفن الحافر)
+    elif any(k in hint for k in ["حافر", "حوافر", "عرج", "تعفن", "foot rot", "قلاعية"]):
         matched_categories = ["مطهرات وبخاخات", "مضادات التهاب ومسكنات", "مضادات حيوية"]
         primary_category = "مطهرات وبخاخات"
+        specific_keyword = "بخاخ"
 
-    # 8. Camels & Racing Dromedary (Surra, Exhaustion)
-    elif any(k in hint or k in spec for k in ["إبل", "هجن", "نوق", "سباق", "camel", "حيران", "سورا"]):
-        matched_categories = ["طفيليات وديدان", "فيتامينات ومعادن", "مضادات حيوية"]
+    # 3. Mastitis & Udder Lesions (التهاب الضرع والحلمات)
+    elif any(k in hint for k in ["ضرع", "حليب", "حلمة", "mastitis"]):
+        matched_categories = ["أدوية الضرع والتناسل", "مضادات التهاب ومسكنات"]
+        primary_category = "أدوية الضرع والتناسل"
+        specific_keyword = "ماستيجيت"
+
+    # 4. Eye Lesions & Conjunctivitis (التهاب ملتحمة، عيون)
+    elif any(k in hint for k in ["عين", "عيني", "ملتحمة", "conjunctivitis", "إفرازات عينية"]):
+        matched_categories = ["مطهرات وبخاخات", "أدوية الحيوانات الأليفة", "مضادات حيوية"]
+        primary_category = "مطهرات وبخاخات"
+        specific_keyword = "قطرة"
+
+    # 5. Respiratory & Pneumonia (تنفس، رئة، سعال، كحة، نهجان، باستريلا)
+    elif any(k in hint for k in ["رئة", "تنفس", "سعال", "كحة", "نهجان", "باستريلا", "صدر"]):
+        matched_categories = ["مضادات حيوية", "مضادات التهاب ومسكنات"]
+        primary_category = "مضادات حيوية"
+        specific_keyword = "فلورفينيكول"
+
+    # 6. Wounds, Abscess & Cuts (جروح، خراريج، نزف، دمامل)
+    elif any(k in hint for k in ["جرح", "جروح", "خراج", "دمامل", "نزف", "صديد"]):
+        matched_categories = ["مطهرات وبخاخات", "مضادات حيوية"]
+        primary_category = "مطهرات وبخاخات"
+        specific_keyword = "أزرق"
+
+    # 7. Gastrointestinal / Bloat / Diarrhea (نفاخ، إسهال، مغص)
+    elif any(k in hint for k in ["نفاخ", "كرش", "إسهال", "اسهال", "مغص", "تسمم معوي"]):
+        matched_categories = ["أدوية الهضم والكرش", "فيتامينات ومعادن"]
+        primary_category = "أدوية الهضم والكرش"
+        specific_keyword = "بلوت"
+
+    # 8. Blood Parasites (بابيزيا، ثايليريا، بول مدمم، قراد)
+    elif any(k in hint for k in ["بابيزيا", "ثايليريا", "بول مدمم", "دم في البول", "قراد", "هيام"]):
+        matched_categories = ["طفيليات وديدان", "فيتامينات ومعادن"]
         primary_category = "طفيليات وديدان"
+        specific_keyword = "بيرينيل"
 
-    # 9. Toxicities & Poisoning
-    elif any(k in hint for k in ["تسمم", "مبيد", "حشري", "أعصاب", "ارتعاش", "فوسفوري"]):
-        matched_categories = ["مضادات التهاب ومسكنات", "فيتامينات ومعادن"]
-        primary_category = "مضادات التهاب ومسكنات"
+    else:
+        # General safe antiseptic & supportive
+        matched_categories = ["مطهرات وبخاخات", "مضادات التهاب ومسكنات"]
+        primary_category = "مطهرات وبخاخات"
 
-    products = []
-    if matched_categories:
-        placeholders = ",".join(["?"] * len(matched_categories))
-        search_kw = ""
-        for kw in ["ضرع", "حليب", "كرش", "نفاخ", "انتفاخ", "ديدان", "طفيليات", "قراد", "بابيزيا", "مغص", "رئة", "تنفس", "كحة", "قلاعية", "حافر", "عرج", "هيام", "بارفو", "قيء", "تسمم"]:
-            if kw in hint:
-                search_kw = f"%{kw}%"
-                break
-        
-        c.execute(f"""
-        SELECT * FROM local_products 
-        WHERE (country = ? OR country = 'دول أخرى') AND category IN ({placeholders})
-        ORDER BY 
-            CASE WHEN category = ? THEN 0 ELSE 1 END,
-            CASE WHEN (? != '' AND (indication LIKE ? OR trade_name LIKE ?)) THEN 0 ELSE 1 END,
-            CASE WHEN country = ? THEN 0 ELSE 1 END, 
-            id ASC
-        LIMIT 5
-        """, (target_country, *matched_categories, primary_category, search_kw, search_kw, search_kw, target_country))
-        products = [dict(r) for r in c.fetchall()]
+    placeholders = ",".join(["?"] * len(matched_categories))
+    c.execute(f"""
+    SELECT * FROM local_products 
+    WHERE (country = ? OR country = 'دول أخرى') AND category IN ({placeholders})
+    ORDER BY 
+        CASE WHEN category = ? THEN 0 ELSE 1 END,
+        CASE WHEN (? != '' AND (trade_name LIKE ? OR indication LIKE ? OR active_ingredient LIKE ?)) THEN 0 ELSE 1 END,
+        CASE WHEN country = ? THEN 0 ELSE 1 END,
+        id ASC
+    LIMIT 4
+    """, (target_country, *matched_categories, primary_category, specific_keyword, f"%{specific_keyword}%", f"%{specific_keyword}%", f"%{specific_keyword}%", target_country))
+    products = [dict(r) for r in c.fetchall()]
 
-    if not products:
-        c.execute("""
-        SELECT * FROM local_products 
-        WHERE country = ? OR country = 'دول أخرى'
-        ORDER BY CASE WHEN country = ? THEN 0 ELSE 1 END, id ASC
-        LIMIT 5
-        """, (target_country, target_country))
-        products = [dict(r) for r in c.fetchall()]
-
+    conn.close()
     return products
-
 # ==============================================================================
 # VETERINARY DRUG-DRUG INTERACTIONS KNOWLEDGE BASE
 # ==============================================================================
@@ -700,9 +730,22 @@ CRITICAL DIRECTIVES:
     # -------------------------------------------------------------------------
     if image_path and os.path.exists(image_path):
         v_metrics = analyze_image_locally(image_path)
-        lesion = v_metrics.get("detected_lesion", "آفة نسيجية سريرية ظاهرية")
+        
+        # Check if the image was identified as a non-veterinary background / wallpaper
+        if not v_metrics.get("is_clinical", True):
+            return f"""❌ **تنبيه: الصورة المرفقة ليست حالة مرضية أو سريرية لحيوان**
+
+🔍 **نتيجة الفحص البصري والرقمي**:
+الصورة المرفقة تم تصنيفها كـ (خلفية شاشة / منظر طبيعي / صورة غير طبية)، ولا تحتوي على أي معالم نسيجية أو آفات سريرية تخص الحيوانات أو الماشية.
+
+⚠️ **التوجيه الإكلينيكي**:
+- لا يمكن استخراج تشخيص مرضي أو نسب ترجيح على صورة غير بيطرية.
+- **لا توجد أدوية مقترحة** نهائياً لعدم وجود إصابة سريرية.
+- يرجى التقاط صورة واضحة ومقربة للحيوان المصاب أو موضع الآفة السريرية (مثل: الجلد، الفم، العين، الحافر، الضرع) لإجراء الفحص الطبي الدقيق."""
+
+        lesion = v_metrics.get("detected_lesion", "التهاب سطحي واحتقان نسيجي")
         local_drugs = get_localized_drugs(user_country, condition_hint=lesion)
-        drugs_list_str = "\n".join([f"- **{d['trade_name']}** ({d.get('active_ingredient', '')}) - الشركة: {d.get('company', '')} [الوظيفة: {d.get('clinical_function') or d.get('category', '')}]" for d in local_drugs[:4]]) if local_drugs else f"- **أدوية الطوارئ المعتمدة ({user_country})**: مضادات الالتهاب غير الستيرويدية، ومضاد حيوي واسع المدى، ومطهر نسيجي موضعي."
+        drugs_list_str = "\n".join([f"- **{d['trade_name']}** ({d.get('active_ingredient', '')}) - الشركة: {d.get('company', '')} [الوظيفة: {d.get('clinical_function') or d.get('category', '')}]" for d in local_drugs[:4]]) if local_drugs else f"- **العناية الموضعية المعتمدة ({user_country})**: مطهر نسيجي موضعي ومضاد التهاب غير ستيرويدي."
 
         return f"""🩺 **التقرير الإكلينيكي لفحص الآفة البصرية (VetMind Vision AI Expert Report)**
 *الدولة المعتمدة: {user_country} | النظام: VetMind Enterprise Multimodal Diagnostic Engine*
@@ -718,15 +761,15 @@ CRITICAL DIRECTIVES:
 📊 **ثانياً: التشخيص التفريقي المؤكد (Ranked Differential Diagnoses)**:
 1. **الاحتمال الرئيسي ({max(75, min(95, 50 + v_metrics.get('erythema_score', 0) // 2))}%)**: {lesion} (مرجع: Merck Veterinary Manual - Clinical Dermatology & Infectious Diseases).
 2. **الاحتمال الثاني (15%)**: التهاب نسيجي سطحي أو تحسس جلدي تلامسي حاد (Acute Dermatitis).
-3. **الاحتمال الثالث (10%)**: عدوى مختلطة (بكتيرية / فطرية موضعية) تتطلب كشطة جلدية للتأكيد المخبري.
+3. **الاحتمال الثالث (10%)**: عدوى موضعية مختلطة تتطلب كشطة جلدية أو فحصاً مجهرياً للتأكيد.
 
 💉 **ثالثاً: البروتوكول العلاجي والإسعافي الموصى به فوراً**:
 1. العزل السريري للحيوان المصاب لمنع انتشار أي عدوى بؤرية في القطيع أو العيادة.
 2. تطهير موضعي لطيف للآفة باستخدام محاليل مطهرة فسيولوجية خالية من التهيج (مثل الكلورهيكسيدين 0.5% أو بوفيدون اليود المخفف).
-3. إعطاء مضاد التهاب غير ستيرويدي مناسب (NSAID) لتخفيف الاحتقان والوذمة النسيجية.
-4. تغطية وقائية بمضاد حيوي جهازي واسع المدى في حالة وجود إفرازات أو تآكل ظهاري.
+3. تطبيق مضاد التهاب نوعي ومسكن للألم بحسب طبيعة الآفة الموضعية.
+4. تقديم مضاد حيوي أو مضاد فطريات نوعي وموجه لهذه الإصابة المحددة.
 
-🏛️ **رابعاً: الأدوية المسجلة المعتمدة المخصصة للحالة ({user_country})**:
+🏛️ **رابعاً: الأدوية المسجلة المعتمدة المخصصة تحديداً لهذه الحالة ({user_country})**:
 {drugs_list_str}
 
 ⚠️ **إرشادات المتابعة والأمان الحيوي**:
@@ -2331,10 +2374,7 @@ html.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
     .user-name, .user-badge {
         display: none !important;
     }
-    .user-profile-widget span[style*="PREMIUM"] {
-        display: none !important;
-    }
-    .user-profile-widget a[href="/logout"] {
+        .user-profile-widget a[href="/logout"] {
         display: none !important; /* Always in hamburger drawer */
     }
 }
@@ -2552,10 +2592,7 @@ table {
     .user-name, .user-badge {
         display: none !important;
     }
-    .user-profile-widget span[style*="PREMIUM"] {
-        display: none !important;
-    }
-    .user-profile-widget a[href="/logout"] {
+        .user-profile-widget a[href="/logout"] {
         display: none !important; /* Always in hamburger drawer */
     }
     .lang-selector-pill {
@@ -3153,9 +3190,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     if current_user and current_user.get("is_admin"):
         admin_link = f'<a href="/admin" class="nav-item nav-admin">⚙️ {t("nav_admin")}</a>'
 
-    premium_badge = ""
-    if current_user and current_user.get("is_premium"):
-        premium_badge = f'<span style="background: #fef08a; color: #854d0e; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 0.72rem;">⭐ PREMIUM</span>'
+    premium_badge = "" 
 
     user_nav = ""
     if current_user:
@@ -3363,8 +3398,12 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <aside id="mobile-drawer" class="mobile-drawer">
         <div class="mobile-drawer-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
-                    🩺
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
+                    <svg width="26" height="26" viewBox="0 0 512 512" fill="none">
+                        <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#34d399" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M 206 190 C 231 180, 281 180, 306 190 C 311 220, 308 260, 296 290 C 281 305, 231 305, 216 290 C 204 260, 201 220, 206 190 Z" fill="#ffffff"/>
+                        <path d="M 221 285 C 221 277, 291 277, 291 285 C 294 303, 286 323, 256 325 C 226 323, 218 303, 221 285 Z" fill="#fed7aa"/>
+                    </svg>
                 </div>
                 <div>
                     <div style="font-weight: 800; font-size: 1.05rem; color: white;">VetMind AI</div>
@@ -3441,10 +3480,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-icon">📜</span>
                 <span class="m-label">{t('nav_terms')}</span>
             </a>
-            <a href="/premium" class="mobile-menu-item" style="color: #d97706; font-weight: 700;">
-                <span class="m-icon">⭐</span>
-                <span class="m-label">{t('nav_premium')}</span>
-            </a>
+
             <a href="/support" class="mobile-menu-item">
                 <span class="m-icon">🎧</span>
                 <span class="m-label">{t('nav_support')}</span>
@@ -3568,15 +3604,20 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 </button>
                 <a href="/" class="brand-link" title="{t('app_name')} - الرئيسية">
                     <span class="brand-logo-wrap">
-                        <svg width="26" height="26" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="50" cy="50" r="47" fill="#0f766e" stroke="#5eead4" stroke-width="2.5"/>
-                            <path d="M22 28 L50 82 L78 28" stroke="#fde047" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
-                            <line x1="50" y1="15" x2="50" y2="84" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
-                            <circle cx="50" cy="15" r="4.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1"/>
-                            <path d="M38 32 C58 30, 58 40, 50 44 C40 48, 40 58, 50 62 C60 66, 60 76, 48 80" stroke="#34d399" stroke-width="5" stroke-linecap="round" fill="none"/>
-                            <circle cx="38" cy="32" r="4.5" fill="#34d399" stroke="#065f46" stroke-width="1"/>
-                            <circle cx="37" cy="31" r="1.2" fill="#0f172a"/>
-                            <path d="M34 31 L30 30 M34 31 L30 33" stroke="#ef4444" stroke-width="1.2" stroke-linecap="round"/>
+                        <svg width="28" height="28" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="16" y="16" width="480" height="480" rx="110" fill="#064e3b" stroke="#10b981" stroke-width="10"/>
+                            <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#34d399" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#6ee7b7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                            <path d="M 201 195 C 171 160, 161 120, 186 105 C 201 110, 211 140, 221 170" fill="#f59e0b"/>
+                            <path d="M 311 195 C 341 160, 351 120, 326 105 C 311 110, 301 140, 291 170" fill="#f59e0b"/>
+                            <path d="M 211 200 C 171 190, 141 210, 156 230 C 171 240, 196 225, 216 220" fill="#ffffff"/>
+                            <path d="M 301 200 C 341 190, 371 210, 356 230 C 341 240, 316 225, 296 220" fill="#ffffff"/>
+                            <path d="M 206 190 C 231 180, 281 180, 306 190 C 311 220, 308 260, 296 290 C 281 305, 231 305, 216 290 C 204 260, 201 220, 206 190 Z" fill="#ffffff"/>
+                            <path d="M 236 187 C 261 190, 281 205, 274 225 C 266 245, 251 240, 241 220 Z" fill="#064e3b"/>
+                            <ellipse cx="228" cy="237" rx="6" ry="5" fill="#0f172a"/>
+                            <ellipse cx="284" cy="237" rx="6" ry="5" fill="#0f172a"/>
+                            <path d="M 221 285 C 221 277, 291 277, 291 285 C 294 303, 286 323, 256 325 C 226 323, 218 303, 221 285 Z" fill="#fed7aa"/>
+                            <circle cx="256" cy="440" r="14" fill="#f59e0b"/>
                         </svg>
                     </span>
                     <div class="brand-titles">
@@ -3630,14 +3671,9 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     🔑
                 </button>
 
-                <!-- Install App Button (Adaptive pill on desktop, sleek square button on small screens) -->
-                <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" title="تحميل وتثبيت التطبيق">
-                    📥 <span>تثبيت</span>
-                </button>
-
-                <!-- Quick Actions Box Toggle (Prominent on Mobile / Tablet) -->
-                <button type="button" onclick="toggleMobileActionsBox()" class="mobile-actions-toggle-btn" id="mobile-actions-toggle" aria-label="صندوق الأيقونات والأدوات السريعة" title="صندوق الأيقونات السريعة">
-                    ⚡ <span class="mobile-actions-toggle-text">الأيقونات السريعة</span> <span id="toggle-arrow" style="font-size: 0.65rem;">▼</span>
+                <!-- Dynamic PWA App Install Button (Visible for first-time users, hidden automatically once installed) -->
+                <button type="button" onclick="triggerPwaInstall()" class="btn-install-header pwa-install-trigger" id="header-pwa-install-btn" title="تنزيل وتثبيت التطبيق على جهازك">
+                    <span>📲</span> <span>تنزيل التطبيق</span>
                 </button>
 
                 <!-- User Profile / Auth -->
@@ -3645,8 +3681,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </div>
         </div>
     </header>
-    {mobile_actions_box_html}
-
+    
     {mobile_drawer_html}
     {mobile_bottom_nav_html}
 
@@ -4376,8 +4411,8 @@ async def home_page(request: Request):
         </div>
         <div class="card" style="border-top: 4px solid var(--gold); padding: 16px; box-sizing: border-box;">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; word-break: break-word;">{t("stat_current_plan", "باقة الاشتراك")}</div>
-            <div style="font-size: 1.2rem; font-weight: 800; color: var(--gold); margin-top: 4px;">{'⭐ PREMIUM VIP' if user and user.get('is_premium') else t('stat_standard_plan', 'النسخة القياسية')}</div>
-            <div style="font-size: 0.75rem; color: var(--gold); margin-top: 4px;"><a href="/premium" style="color: var(--gold); text-decoration: none; font-weight: 700;">{t('stat_upgrade_plan', 'ترقية وتفعيل المزايا ⭐')}</a></div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: var(--gold); margin-top: 4px;">طبيب بيطري معتمد 🩺</div>
+            <div style="font-size: 0.75rem; color: var(--gold); margin-top: 4px;"><span style="color: #059669; font-weight: 700;">كافة الخدمات مفتوحة مجاناً ✅</span></div>
         </div>
     </div>
 
@@ -4553,133 +4588,15 @@ async def process_verify_otp(email: str = Form(...), otp_code: str = Form(...), 
     return resp
 
 # ==============================================================================
-# ROUTE 3: PREMIUM UPGRADE & LOCALIZED PAYMENTS
+# ROUTE 3: MEMBERSHIP & TOOLS
 # ==============================================================================
-@app.get("/premium", response_class=HTMLResponse)
-async def premium_page(request: Request, selected_country: str = ""):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    t = lambda k, d="": get_text(lang, k, d)
-
-    user_country = selected_country or (user.get("country") if user else "مصر")
-
-    country_opts = "".join([f'<option value="{c}" {"selected" if c == user_country else ""}>{c}</option>' for c in ARAB_COUNTRIES])
-
-    payment_info = ""
-    if user_country == "مصر":
-        payment_info = f"""
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-            <div style="font-weight: 800; font-size: 1.1rem; color: #166534; margin-bottom: 6px;">🇪🇬 {t('pay_method_egypt')}</div>
-            <div style="font-size: 0.9rem; line-height: 1.7; color: #14532d;">
-                • التحويل الفوري عبر <strong>إنستاباي (InstaPay)</strong> أو <strong>فودافون كاش (Vodafone Cash)</strong>: 01000000000<br>
-                • أو الدفع الإلكتروني عبر كود فوري (Fawry Pay): <strong>772910</strong><br>
-                • السعر الرسمي: <strong>350 جنيه مصري شهرياً</strong> (شامل كافة ميزات الرؤية والتقارير والذكاء الاصطناعي).
-            </div>
-        </div>
-        """
-    elif user_country == "السعودية":
-        payment_info = f"""
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-            <div style="font-weight: 800; font-size: 1.1rem; color: #166534; margin-bottom: 6px;">🇸🇦 {t('pay_method_saudi')}</div>
-            <div style="font-size: 0.9rem; line-height: 1.7; color: #14532d;">
-                • الدفع عبر بطاقة <strong>مدى (Mada)</strong> أو <strong>Apple Pay</strong> أو <strong>stc pay</strong>.<br>
-                • السعر الرسمي: <strong>75 ريال سعودي شهرياً</strong>.
-            </div>
-        </div>
-        """
-    elif user_country == "الإمارات":
-        payment_info = f"""
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-            <div style="font-weight: 800; font-size: 1.1rem; color: #166534; margin-bottom: 6px;">🇦🇪 {t('pay_method_uae')}</div>
-            <div style="font-size: 0.9rem; line-height: 1.7; color: #14532d;">
-                • الدفع عبر <strong>Apple Pay</strong> أو نظام <strong>كليك (Klip)</strong> أو البطاقات المصرفية.<br>
-                • السعر الرسمي: <strong>75 درهم إماراتي شهرياً</strong>.
-            </div>
-        </div>
-        """
-    elif user_country == "الأردن":
-        payment_info = f"""
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-            <div style="font-weight: 800; font-size: 1.1rem; color: #166534; margin-bottom: 6px;">🇯🇴 {t('pay_method_jordan')}</div>
-            <div style="font-size: 0.9rem; line-height: 1.7; color: #14532d;">
-                • التحويل عبر <strong>كليك (CliQ)</strong> أو محفظة <strong>زين كاش (Zain Cash)</strong>.<br>
-                • السعر الرسمي: <strong>15 دينار أردني شهرياً</strong>.
-            </div>
-        </div>
-        """
-    else:
-        payment_info = f"""
-        <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-            <div style="font-weight: 800; font-size: 1.1rem; color: #166534; margin-bottom: 6px;">🌐 {t('pay_method_global')}</div>
-            <div style="font-size: 0.9rem; line-height: 1.7; color: #14532d;">
-                • Secure International Payment via <strong>Stripe, Visa, Mastercard, or PayPal</strong>.<br>
-                • Price: <strong>$20.00 USD / Month</strong>.
-            </div>
-        </div>
-        """
-
-    is_already_premium = user and user.get("is_premium")
-    status_box = ""
-    if is_already_premium:
-        status_box = """
-        <div style="background: #fef08a; border: 1px solid #facc15; padding: 14px; border-radius: 10px; margin-bottom: 20px; font-weight: 700; color: #854d0e; text-align: center;">
-            🌟 حسابك مفعل بباقة VetMind AI Enterprise Premium VIP مدى الحياة!
-        </div>
-        """
-
-    body = f"""
-    <div style="max-width: 800px; margin: 20px auto;">
-        {status_box}
-        <div class="card" style="border-top: 6px solid var(--gold);">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <span style="font-size: 3rem;">⭐</span>
-                <h1 style="margin: 6px 0; font-size: 1.7rem; color: var(--gold);">{t('premium_upgrade_title')}</h1>
-                <p style="color: var(--text-muted); font-size: 0.95rem;">{t('premium_upgrade_subtitle')}</p>
-            </div>
-
-            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                <h3 style="margin-top: 0; color: var(--primary);">✨ مميزات باقة Premium الحصرية:</h3>
-                <ul style="padding-right: 20px; line-height: 1.9; font-size: 0.95rem; margin: 0;">
-                    <li><strong>{t('premium_feature_1')}</strong></li>
-                    <li><strong>{t('premium_feature_2')}</strong></li>
-                    <li><strong>{t('premium_feature_3')}</strong></li>
-                    <li><strong>{t('premium_feature_4')}</strong></li>
-                </ul>
-            </div>
-
-            <form action="/premium" method="GET" style="margin-bottom: 18px;">
-                <label style="display: block; font-weight: 700; margin-bottom: 6px;">{t('premium_select_country')}</label>
-                <div style="display: flex; gap: 10px;">
-                    <select name="selected_country" onchange="this.form.submit()" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600;">
-                        {country_opts}
-                    </select>
-                </div>
-            </form>
-
-            {payment_info}
-
-            <form action="/premium/activate" method="POST">
-                <input type="hidden" name="country" value="{user_country}">
-                <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1.1rem; justify-content: center; font-weight: 800;">
-                    ⭐ {t('premium_pay_btn')}
-                </button>
-            </form>
-        </div>
-    </div>
-    """
-    return HTMLResponse(content=get_base_html(t("nav_premium"), body, user, lang), media_type="text/html; charset=utf-8")
+@app.get("/premium")
+async def premium_page():
+    return RedirectResponse("/", status_code=302)
 
 @app.post("/premium/activate")
-async def activate_premium(request: Request):
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=303)
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("UPDATE users SET is_premium = 1 WHERE id = ?", (user["id"],))
-    conn.commit()
-    conn.close()
-    return RedirectResponse("/premium", status_code=303)
+async def activate_premium():
+    return RedirectResponse("/", status_code=302)
 
 # ==============================================================================
 # ROUTE 4: TIME DEMAND & CLIENT OPERATIONS (LAST 3 DAYS)
@@ -5903,23 +5820,57 @@ async def vision_detect_page(request: Request):
     lang = get_user_lang(request)
     t = lambda k, d="": get_text(lang, k, d)
 
+    api_key_stored = get_effective_groq_api_key(request)
+    is_groq_connected = bool(api_key_stored and api_key_stored.startswith("gsk_"))
+    
+    groq_badge = '''
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; color: #065f46; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🟢</span>
+            <div>
+                <strong style="color: #047857;">محرك الرؤية بالذكاء الاصطناعي متصل (Groq Llama-3.2 Vision)</strong>
+                <div style="font-size: 0.8rem; color: #065f46;">المفتاح مفعل وجاهز لتحليل الصور وفحص الآفات الحقيقية بالذكاء الاصطناعي فائق الدقة.</div>
+            </div>
+        </div>
+        <button type="button" onclick="openApiModal()" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 14px; background: white;">تغيير المفتاح 🔑</button>
+    </div>
+    ''' if is_groq_connected else '''
+    <div style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid #f59e0b; color: #92400e; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem;">🔑</span>
+                <div>
+                    <strong style="color: #b45309;">ربط محرك Groq Vision بالذكاء الاصطناعي</strong>
+                    <div style="font-size: 0.82rem; color: #92400e;">لضمان دقة التحليل البصري وعدم قبول الصور العشوائية، اربط مفتاح Groq مجاناً بنقرة واحدة من <a href="https://console.groq.com/keys" target="_blank" style="color: #b45309; font-weight: 800; text-decoration: underline;">console.groq.com/keys</a></div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <input type="password" id="inline_groq_key" placeholder="ألصق مفتاحك يبدأ بـ gsk_..." style="flex: 1; min-width: 240px; padding: 9px 14px; border: 1.5px solid #d97706; border-radius: 8px; font-family: monospace; font-size: 0.88rem; background: white; color: #1e293b;">
+            <button type="button" onclick="saveInlineGroqKey()" class="btn" style="background: #d97706; color: white; font-weight: 700; padding: 9px 18px; border-radius: 8px;">حفظ وتفعيل المفتاح ⚡</button>
+        </div>
+    </div>
+    '''
+
     body = f"""
     <div style="max-width: 850px; margin: 0 auto;">
         <!-- Header Banner -->
-        <div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 22px; text-align: center; border: 1px solid #38bdf8;">
+        <div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 20px; text-align: center; border: 1px solid #38bdf8;">
             <div style="font-size: 2.8rem; margin-bottom: 6px;">👁️</div>
-            <h1 style="margin: 0; font-size: 1.7rem; color: #ffffff;">فاحص الصور والآفات السريرية بالذكاء الاصطناعي</h1>
+            <h1 style="margin: 0; font-size: 1.7rem; color: #ffffff;">فاحص الصور السريرية بالذكاء الاصطناعي (AI Vision)</h1>
             <p style="color: #bae6fd; font-size: 0.95rem; margin-top: 6px; line-height: 1.5;">
-                ارفع صورة الآفة السريرية (جلد، فم، حوافر، عيون، أعضاء بعد الصفة التشريحية، طيور أو مواشي) لتحليلها بصرية واستخراج التشخيص والعلاج المعتمد
+                فحص بصري دقيق لآفات الحيوانات (الجلد، الفم، الحوافر، العيون، الضرع) مدعوم بنماذج Llama-3.2 Vision ومحرك الأدوية المتخصص
             </p>
         </div>
 
+        {groq_badge}
+
         <div class="card" style="border-top: 6px solid var(--accent); padding: 24px;">
             <form action="/vision-detect" method="POST" enctype="multipart/form-data">
-                <div style="border: 2px dashed var(--accent); padding: 36px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 22px; transition: border-color 0.2s;">
+                <div style="border: 2px dashed var(--accent); padding: 36px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 22px;">
                     <div style="font-size: 3.2rem; margin-bottom: 10px;">📸</div>
-                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">اضغط هنا لالتقاط أو اختيار صورة الآفة السريرية</div>
-                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">يدعم كاميرا الهاتف، ملفات JPEG، PNG، WEBP لكافة الحيوانات والطيور</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">اختر صورة الآفة السريرية أو التقطها بكاميرا الهاتف</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">يجب رفع صورة طبية واضحة للحيوان المصاب أو موضع الإصابة (JPEG, PNG, WEBP)</div>
                     <input type="file" name="image" accept="image/*" required style="margin-top: 16px; font-size: 0.95rem; width: 100%; max-width: 380px;">
                 </div>
 
@@ -5939,8 +5890,8 @@ async def vision_detect_page(request: Request):
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">📝 ملاحظات سريرية إضافية (اختياري):</label>
-                        <input type="text" name="notes" placeholder="مثال: حرارة 40°C، سيلان لعاب، عرج من 3 أيام..." style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text-main);">
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">📝 ملاحظات سريرية أو موضع الآفة (اختياري):</label>
+                        <input type="text" name="notes" placeholder="مثال: آفة بالجلد، عرج، ورم بالضرع، تقرحات فم..." style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text-main);">
                     </div>
                 </div>
 
@@ -5950,9 +5901,32 @@ async def vision_detect_page(request: Request):
             </form>
         </div>
     </div>
+
+    <script>
+    function saveInlineGroqKey() {{
+        const input = document.getElementById('inline_groq_key');
+        if (!input) return;
+        const key = input.value.trim();
+        if (!key || !key.startsWith('gsk_')) {{
+            alert('يرجى إدخال مفتاح Groq صالح يبدأ بـ gsk_');
+            return;
+        }}
+        document.cookie = 'groq_api_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000';
+        fetch('/api/validate-key', {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/x-www-form-urlencoded'}},
+            body: 'api_key=' + encodeURIComponent(key)
+        }}).then(() => {{
+            alert('✅ تم تفعيل وربط مفتاح Groq بنجاح!');
+            location.reload();
+        }}).catch(() => {{
+            alert('✅ تم حفظ المفتاح بنجاح!');
+            location.reload();
+        }});
+    }}
+    </script>
     """
     return HTMLResponse(content=get_base_html("فاحص الصور بالذكاء الاصطناعي", body, user, lang), media_type="text/html; charset=utf-8")
-
 @app.post("/vision-detect", response_class=HTMLResponse)
 async def process_vision_detect(
     request: Request,
@@ -5985,28 +5959,10 @@ async def process_vision_detect(
     
     clinical_report = ask_ai_chat(api_key, effective_notes, [], image_full_path, lang, user_country)
 
-    body = f"""
-    <div style="max-width: 900px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
-            <a href="/vision-detect" class="btn btn-outline" style="font-weight: 700;">📸 فحص صورة جديدة</a>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="/rx-prescription?species={species}&notes={notes}" class="btn btn-primary" style="font-weight: 700;">📋 تحويل إلى روشتة معتمدة بالباركود</a>
-                <a href="/symptom-checker" class="btn btn-gold" style="font-weight: 700;">🩺 فحص الأعراض التفصيلي</a>
-            </div>
-        </div>
+    is_clinical_detected = v_metrics.get("is_clinical", True) and ("تنبيه: الصورة المرفقة ليست حالة" not in clinical_report)
 
-        <div class="card" style="border-top: 6px solid var(--accent); padding: 24px; margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
-                <h2 style="margin: 0; color: var(--accent); font-size: 1.35rem;">👁️ نتائج الفحص البصري والتشخيص السريري</h2>
-                <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">الفصيلة: {species}</span>
-            </div>
-
-            <!-- Image Viewport -->
-            <div style="text-align: center; margin: 16px 0; background: #0f172a; padding: 12px; border-radius: 12px;">
-                <img src="/uploads/{safe_name}" alt="صورة الآفة" style="max-width: 100%; max-height: 480px; border-radius: 8px; object-fit: contain;">
-            </div>
-
-            <!-- Vision Metric Gauges -->
+    if is_clinical_detected:
+        gauges_html = f'''
             <div class="grid-3" style="margin: 20px 0; gap: 12px;">
                 <div class="card" style="background: #fef2f2; border: 1.5px solid #fecaca; text-align: center; padding: 14px;">
                     <div style="font-size: 0.85rem; color: #991b1b; font-weight: 700;">درجة الاحتقان والالتهاب</div>
@@ -6024,6 +5980,39 @@ async def process_vision_detect(
                     <div style="font-size: 0.75rem; color: #92400e;">إفرازات قيحية ومخاطية</div>
                 </div>
             </div>
+        '''
+        rx_btn_html = f'<a href="/rx-prescription?species={species}&notes={notes}" class="btn btn-primary" style="font-weight: 700;">📋 تحويل إلى روشتة معتمدة بالباركود</a>'
+    else:
+        gauges_html = '''
+            <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: #991b1b; font-weight: 700; text-align: center; font-size: 0.95rem;">
+                ❌ تم تصنيف الصورة كـ (خلفية أو منظر عام أو غير بيطرية) ولذلك تم إلغاء المؤشرات النسيجية والأدوية تلقائياً.
+            </div>
+        '''
+        rx_btn_html = ""
+
+    body = f"""
+    <div style="max-width: 900px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
+            <a href="/vision-detect" class="btn btn-outline" style="font-weight: 700;">📸 فحص صورة جديدة</a>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {rx_btn_html}
+                <a href="/symptom-checker" class="btn btn-gold" style="font-weight: 700;">🩺 فحص الأعراض التفصيلي</a>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 6px solid var(--accent); padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                <h2 style="margin: 0; color: var(--accent); font-size: 1.35rem;">👁️ نتائج الفحص البصري والتشخيص السريري</h2>
+                <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">الفصيلة: {species}</span>
+            </div>
+
+            <!-- Image Viewport -->
+            <div style="text-align: center; margin: 16px 0; background: #0f172a; padding: 12px; border-radius: 12px;">
+                <img src="/uploads/{safe_name}" alt="صورة الآفة" style="max-width: 100%; max-height: 480px; border-radius: 8px; object-fit: contain;">
+            </div>
+
+            <!-- Vision Metric Gauges -->
+            {gauges_html}
 
             <!-- AI Clinical Diagnosis Report Body -->
             <div class="card" style="background: var(--bg); border: 1.5px solid var(--border); line-height: 1.8; white-space: pre-wrap; font-size: 0.96rem; padding: 20px; border-radius: 12px; color: var(--text-main);">
@@ -6107,15 +6096,15 @@ async def symptom_checker_page(request: Request):
 
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">الوزن التقريبي (كجم):</label>
-                        <input type="number" step="0.5" min="0.1" max="1500" name="weight_kg" value="250" required placeholder="مثال: 350 كجم" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
-                        <span style="font-size: 0.72rem; color: var(--text-muted);">لحساب الجرعات الدوائية بدقة</span>
+                        <input type="number" step="any" min="0.01" max="10000" name="weight_kg" value="250" required placeholder="أدخل الوزن (مثال: 45 أو 350)" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
+                        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 3px;">يقبل أي رقم صحيح أو عشري لحساب الجرعات بدقة</span>
                     </div>
                 </div>
 
                 <div class="grid-3" style="gap: 14px;">
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">🌡️ درجة حرارة الجسم (°C):</label>
-                        <input type="number" step="0.1" min="30" max="45" name="temperature_c" id="diag_temp" value="39.8" required style="width: 100%; padding: 11px; border: 1.5px solid #f87171; border-radius: 10px; font-weight: 800; font-size: 1.05rem; background: var(--card-bg); color: var(--danger);">
+                        <input type="number" step="any" min="25" max="48" name="temperature_c" id="diag_temp" value="39.8" required style="width: 100%; padding: 11px; border: 1.5px solid #f87171; border-radius: 10px; font-weight: 800; font-size: 1.05rem; background: var(--card-bg); color: var(--danger);">
                         <span id="temp_guidance" style="font-size: 0.75rem; color: #059669; font-weight: 700; display: block; margin-top: 3px;">المعدل الطبيعي للأبقار: 38.0 - 39.3 °C</span>
                     </div>
 
@@ -6141,59 +6130,15 @@ async def symptom_checker_page(request: Request):
                 </div>
             </div>
 
-            <!-- 2. Symptoms Checklist Grid -->
+            <!-- 2. Patient Clinical Symptoms Input Box (Dedicated Text Box - Checkboxes Removed) -->
             <div class="card" style="border-top: 5px solid var(--emerald); padding: 22px; margin-bottom: 20px;">
-                <h2 style="margin: 0 0 16px 0; font-size: 1.25rem; color: var(--emerald-dark); display: flex; align-items: center; gap: 8px;">
-                    <span>📋</span> <span>2. حدد الأعراض والعلامات السريرية المشاهدة (اختر ما ينطبق):</span>
+                <h2 style="margin: 0 0 10px 0; font-size: 1.25rem; color: var(--emerald-dark); display: flex; align-items: center; gap: 8px;">
+                    <span>📝</span> <span>2. الأعراض والعلامات السريرية المشاهدة على الحيوان (اكتبها هنا):</span>
                 </h2>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-                    <!-- Respiratory & Head -->
-                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
-                        <div style="font-weight: 800; color: #0284c7; margin-bottom: 10px;">🫁 أعراض تنفسية ورأس:</div>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="صعوبة تنفس ونهجان"> صعوبة تنفس ونهجان (Dyspnea)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="سعال وحشرجة صدرية"> سعال وحشرجة صدرية (Cough)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إفرازات أنفية صديدية"> إفرازات أنفية صديدية أو رغوية</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إفرازات عينية ودمع"> إفرازات عينية والتهاب ملتحمة</label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="وذمة الحلق واللبب"> وذمة وتورم الحلق أو أسفل الفك</label>
-                    </div>
-
-                    <!-- Digestive & Mouth -->
-                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
-                        <div style="font-weight: 800; color: #d97706; margin-bottom: 10px;">🍽️ أعراض هضمية وفم:</div>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="سيلان لعاب غزير"> سيلان لعاب رغوي غزير (Salivation)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تقرحات وحويصلات بالفم واللسان"> حويصلات وتقرحات باللسان واللثة</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إسهال مائي غزير"> إسهال مائي كريه الرائحة</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إسهال دموي أسود"> إسهال دموي أو نزف معوي</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="نفاخ بالكرش ومغص"> نفاخ حاد بالكرش أو مغص معوي</label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="توقف الاجترار والشهية"> فقدان تام للشهية وتوقف الاجترار</label>
-                    </div>
-
-                    <!-- Locomotor & Skin -->
-                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
-                        <div style="font-weight: 800; color: #7c3aed; margin-bottom: 10px;">🐾 حركية، جلد ومناعة:</div>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عرج وتقرحات حوافر"> عرج وتقرحات بين شقي الحافر</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عقد جلدية بارزة"> عقد جلدية صلبة أو دمامل (Nodules)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="عدم القدرة على الوقوف والربوض"> عدم القدرة على النهوض (Downer)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تضخم الغدد الليمفاوية"> تضخم واضح بالغدد الليمفاوية</label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="شحوب واصفرار يرقان"> شحوب الأغشية المخاطية أو يرقان</label>
-                    </div>
-
-                    <!-- Nervous & Urinary -->
-                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
-                        <div style="font-weight: 800; color: #dc2626; margin-bottom: 10px;">🧠 عصبية، بولية وتناسلية:</div>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="بول أحمر مدمم"> بول مدمم أحمر داكن (Red water)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="تشنجات ورجوع الرأس للخلف"> تشنجات وصمل بالرقبة (Opisthotonos)</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="ترنح ودوران"> ترنح واختلال توازن ودوران</label>
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="طحن أسنان وغيبوبة"> طحن الأسنان وخمول شديد</label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="checkbox" name="symptoms" value="إجهاض الحوامل"> إجهاض أو ولادة مبكرة للأجنة</label>
-                    </div>
-                </div>
-
-                <div style="margin-top: 16px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px;">📝 ملاحظات ووصف سريري إضافي من الطبيب:</label>
-                    <textarea name="notes" rows="3" placeholder="صف أي ملاحظات أخرى مثل: طبيعة التغذية، استجابة سابقة لعلاج، تطعيمات القطيع..." style="width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.92rem; background: var(--card-bg); color: var(--text-main);"></textarea>
-                </div>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0 0 12px 0; line-height: 1.5;">
+                    اكتب كافة الأعراض السريرية المشاهدة بأسلوبك الحر (مثل: سعال، نهجان، إسهال، سيلان لعاب رغوي، تقرحات فم، عرج، قلة أكل، خمول، ورم، بول أحمر...).
+                </p>
+                <textarea name="symptoms_text" id="symptoms_text" rows="5" required placeholder="مثال: الحيوان يعاني من سعال شديد وارتفاع في درجة الحرارة وصعوبة تنفس مع إفرازات أنفية رغوية وفقدان تام للشهية منذ 3 أيام..." style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; line-height: 1.6; background: var(--card-bg); color: var(--text-main); font-family: inherit; box-sizing: border-box;"></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 16px rgba(15,76,129,0.25);">
@@ -6222,31 +6167,54 @@ async def symptom_checker_page(request: Request):
     </script>
     """
     return HTMLResponse(content=get_base_html("المشخص البيطري بناءً على الأعراض", body, user, lang), media_type="text/html; charset=utf-8")
-
 @app.post("/symptom-checker", response_class=HTMLResponse)
 async def process_symptom_checker(
     request: Request,
     species: str = Form("أبقار"),
     age_stage: str = Form("بالغ"),
-    weight_kg: float = Form(250.0),
-    temperature_c: float = Form(39.5),
+    weight_kg: Any = Form(250.0),
+    temperature_c: Any = Form(39.5),
     pregnancy_status: str = Form("عادي"),
     duration: str = Form("حاد"),
-    symptoms: List[str] = Form([]),
+    symptoms_text: str = Form(""),
+    symptoms: Optional[List[str]] = Form(None),
     notes: str = Form("")
 ):
     from symptom_diagnostician import diagnose_clinical_case
     user = get_current_user(request)
     lang = get_user_lang(request)
 
+    # Allow entering any integer or decimal weight
+    try:
+        weight_val = float(str(weight_kg).replace(",", ".").strip())
+    except Exception:
+        weight_val = 250.0
+
+    try:
+        temp_val = float(str(temperature_c).replace(",", ".").strip())
+    except Exception:
+        temp_val = 39.5
+
+    symptoms_list = []
+    if symptoms:
+        symptoms_list.extend(symptoms)
+    if symptoms_text and symptoms_text.strip():
+        text_clean = symptoms_text.replace("،", ",").replace("؛", ",").replace("\n", ",").replace(".", ",")
+        for part in text_clean.split(","):
+            p = part.strip()
+            if p:
+                symptoms_list.append(p)
+        if not notes:
+            notes = symptoms_text.strip()
+
     res = diagnose_clinical_case(
         species=species,
         age_str=age_stage,
-        temp_c=temperature_c,
-        weight_kg=weight_kg,
+        temp_c=temp_val,
+        weight_kg=weight_val,
         pregnancy_status=pregnancy_status,
         duration=duration,
-        symptoms_list=symptoms,
+        symptoms_list=symptoms_list,
         notes=notes
     )
 
@@ -6333,14 +6301,15 @@ async def process_symptom_checker(
 
             <!-- Quick Action: Convert to Prescription -->
             <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
-                <a href="/rx-prescription?species={species}&weight={weight_kg}&notes={diag['name_ar']}" class="btn btn-primary" style="font-weight: 700; font-size: 0.88rem;">
+                <a href="/rx-prescription?species={species}&weight={weight_val}&notes={diag['name_ar']}" class="btn btn-primary" style="font-weight: 700; font-size: 0.88rem;">
                     🖨️ تحويل إلى روشتة معتمدة بالباركود
                 </a>
             </div>
         </div>
         """
 
-    symptoms_badges = "".join([f'<span style="background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">{s}</span> ' for s in symptoms])
+    symptoms_for_display = symptoms_list if symptoms_list else ["فحص سريري شامل"]
+    symptoms_badges = "".join([f'<span style="background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">{s}</span> ' for s in symptoms_for_display])
 
     body = f"""
     <div style="max-width: 950px; margin: 0 auto;">
@@ -6359,12 +6328,12 @@ async def process_symptom_checker(
                 <div>
                     <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">📋 ملخص بيانات الحالة السريرية المفحوصة</h2>
                     <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
-                        الفصيلة: <strong>{species}</strong> | المرحلة: <strong>{age_stage}</strong> | الوزن: <strong>{weight_kg} كجم</strong> | الحالة: <strong>{pregnancy_status}</strong>
+                        الفصيلة: <strong>{species}</strong> | المرحلة: <strong>{age_stage}</strong> | الوزن: <strong>{weight_val} كجم</strong> | الحالة: <strong>{pregnancy_status}</strong>
                     </div>
                 </div>
                 <!-- Temperature Evaluation Badge -->
                 <div style="background: {temp_eval['color']}15; border: 1.5px solid {temp_eval['color']}; color: {temp_eval['color']}; padding: 10px 18px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.75rem; font-weight: 700;">حرارة الجسم: {temperature_c} °C</div>
+                    <div style="font-size: 0.75rem; font-weight: 700;">حرارة الجسم: {temp_val} °C</div>
                     <div style="font-size: 0.95rem; font-weight: 800; margin-top: 2px;">{temp_eval['label']}</div>
                     <div style="font-size: 0.7rem; opacity: 0.9;">{temp_eval['norm_text']}</div>
                 </div>
@@ -7687,7 +7656,7 @@ async def profile_page(request: Request):
                 <div><strong>{t('profile_country', 'الدولة المسجلة')}:</strong> {user['country']}</div>
                 <div><strong>{t('profile_clinic', 'العيادة')}:</strong> {user['clinic_name']}</div>
                 <div><strong>{t('profile_syndicate', 'رقم القيد بالنقابة')}:</strong> {user['syndicate_id']}</div>
-                <div><strong>{t('profile_plan', 'الباقة')}:</strong> {'⭐ PREMIUM VIP' if user.get('is_premium') else t('stat_standard_plan', 'النسخة المجانية')}</div>
+                <div><strong>{t('profile_plan', 'الباقة')}:</strong> عضوية كاملة معتمدة (مجانية) ✅</div>
                 <div><strong>{t('profile_status', 'حالة الاعتماد')}:</strong> {t('profile_status_approved', '✅ معتمد رسمياً وموثق') if user['verification_status'] == 'approved' else t('profile_status_pending', '⏳ قيد مراجعة الترخيص')}</div>
             </div>
 

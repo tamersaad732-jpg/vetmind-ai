@@ -1,56 +1,80 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#064e3b" />
       <stop offset="50%" stop-color="#065f46" />
       <stop offset="100%" stop-color="#022c22" />
     </linearGradient>
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef08a" />
-      <stop offset="50%" stop-color="#f59e0b" />
-      <stop offset="100%" stop-color="#d97706" />
-    </linearGradient>
-    <linearGradient id="snakeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="vGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#34d399" />
       <stop offset="50%" stop-color="#10b981" />
       <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-    <linearGradient id="staffGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f8fafc" />
-      <stop offset="50%" stop-color="#e2e8f0" />
+    <linearGradient id="cowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#f1f5f9" />
       <stop offset="100%" stop-color="#cbd5e1" />
     </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35"/>
+    <linearGradient id="goldHorns" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.4"/>
     </filter>
   </defs>
 
-  <!-- Outer Circle Badge -->
-  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#34d399" stroke-width="10" filter="url(#shadow)"/>
-  <circle cx="256" cy="256" r="225" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="10 8" opacity="0.6"/>
+  <!-- Background Squircle / Modern Rounded Badge -->
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#bgGrad)" stroke="#10b981" stroke-width="6" filter="url(#softGlow)"/>
+  
+  <!-- Subtle Medical Cross Accent Background -->
+  <path d="M 256 50 L 256 95 M 256 417 L 256 462 M 50 256 L 95 256 M 417 256 L 462 256" stroke="#34d399" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
 
-  <!-- Veterinary 'V' Emblem -->
-  <path d="M 120 140 L 256 420 L 392 140" fill="none" stroke="url(#goldGrad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+  <!-- The Bold Stylized Letter 'V' -->
+  <!-- Left arm of V -->
+  <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="url(#vGrad)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
+  
+  <!-- Inner Glow Stroke for V -->
+  <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#6ee7b7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
 
-  <!-- Staff of Asclepius (Central Rod) -->
-  <line x1="256" y1="80" x2="256" y2="435" stroke="url(#staffGrad)" stroke-width="20" stroke-linecap="round"/>
-  <!-- Staff Top Golden Orb Knob -->
-  <circle cx="256" cy="78" r="24" fill="url(#goldGrad)" stroke="#ffffff" stroke-width="4"/>
+  <!-- Cow Figure Inside the 'V' -->
+  <g id="cow-silhouette" transform="translate(256, 235)">
+    <!-- Golden Horns (Majestic Curved) -->
+    <path d="M -55 -40 C -85 -75, -95 -115, -70 -130 C -55 -125, -45 -95, -35 -65" fill="url(#goldHorns)" stroke="#b45309" stroke-width="2"/>
+    <path d="M 55 -40 C 85 -75, 95 -115, 70 -130 C 55 -125, 45 -95, 35 -65" fill="url(#goldHorns)" stroke="#b45309" stroke-width="2"/>
 
-  <!-- The Coiled Serpent (Smooth Double Helix Wave) -->
-  <path d="M 200 155 
-           C 310 140, 315 195, 256 220 
-           C 195 245, 190 300, 256 325 
-           C 320 350, 310 405, 250 420" 
-        fill="none" stroke="url(#snakeGrad)" stroke-width="26" stroke-linecap="round"/>
+    <!-- Cow Ears (Alert, Horizontal/Drooping) -->
+    <path d="M -45 -35 C -85 -45, -115 -25, -100 -5 C -85 5, -60 -10, -40 -15" fill="url(#cowGrad)" stroke="#065f46" stroke-width="3"/>
+    <path d="M -85 -25 C -95 -15, -80 -5, -65 -15" fill="#fbcfe8" opacity="0.8"/> <!-- inner ear pink -->
 
-  <!-- Snake Head (Majestic & Medical) -->
-  <g transform="translate(198, 155)">
-    <ellipse cx="0" cy="0" rx="20" ry="16" fill="url(#snakeGrad)" stroke="#065f46" stroke-width="3" transform="rotate(-25)"/>
-    <!-- Snake Eye -->
-    <circle cx="4" cy="-3" r="4.5" fill="#fef08a"/>
-    <circle cx="4" cy="-3" r="2.5" fill="#0f172a"/>
-    <!-- Snake Forked Tongue -->
-    <path d="M -16 2 L -28 6 M -16 2 L -26 -3" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 45 -35 C 85 -45, 115 -25, 100 -5 C 85 5, 60 -10, 40 -15" fill="url(#cowGrad)" stroke="#065f46" stroke-width="3"/>
+    <path d="M 85 -25 C 95 -15, 80 -5, 65 -15" fill="#fbcfe8" opacity="0.8"/> <!-- inner ear pink -->
+
+    <!-- Cow Forehead & Crown -->
+    <path d="M -50 -45 C -25 -55, 25 -55, 50 -45 C 55 -15, 52 25, 40 55 C 25 70, -25 70, -40 55 C -52 25, -55 -15, -50 -45 Z" fill="url(#cowGrad)" stroke="#065f46" stroke-width="4"/>
+
+    <!-- Cow Facial Patch / Spot (Modern Holstein Pattern) -->
+    <path d="M -20 -48 C 5 -45, 25 -30, 18 -10 C 10 10, -5 5, -15 -15 Z" fill="#064e3b" opacity="0.9"/>
+
+    <!-- Cow Eyes (Intelligent, Expressive) -->
+    <ellipse cx="-28" cy="2" rx="6.5" ry="5" fill="#0f172a"/>
+    <circle cx="-29" cy="0" r="2" fill="#ffffff"/>
+    <ellipse cx="28" cy="2" rx="6.5" ry="5" fill="#0f172a"/>
+    <circle cx="27" cy="0" r="2" fill="#ffffff"/>
+
+    <!-- Broad Muzzle / Nose (Soft Pinkish Slate) -->
+    <path d="M -35 50 C -35 42, 35 42, 35 50 C 38 68, 30 88, 0 90 C -30 88, -38 68, -35 50 Z" fill="#fed7aa" stroke="#065f46" stroke-width="3.5"/>
+    
+    <!-- Nostrils -->
+    <ellipse cx="-15" cy="68" rx="5" ry="4" fill="#7c2d12" transform="rotate(-10, -15, 68)"/>
+    <ellipse cx="15" cy="68" rx="5" ry="4" fill="#7c2d12" transform="rotate(10, 15, 68)"/>
+
+    <!-- Subtle Smile / Mouth Line -->
+    <path d="M -12 82 Q 0 87 12 82" stroke="#7c2d12" stroke-width="2.5" stroke-linecap="round" fill="none"/>
   </g>
+
+  <!-- Glowing Stethoscope or Star Badge at bottom V apex -->
+  <circle cx="256" cy="440" r="16" fill="#f59e0b" stroke="#ffffff" stroke-width="3"/>
+  <circle cx="256" cy="440" r="6" fill="#ffffff"/>
 </svg>

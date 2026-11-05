@@ -377,10 +377,34 @@ def diagnose_clinical_case(
     """
     temp_eval = evaluate_temperature_status(species, temp_c)
     
-    # Combined search tokens
+    # Combined search tokens & Arabic clinical synonym expansion
     combined_tokens = [s.lower() for s in symptoms_list]
     if notes:
         combined_tokens.extend(notes.lower().split())
+
+    full_text = " ".join(combined_tokens)
+    synonym_map = {
+        "كحة": ["سعال", "صدر", "تنفس", "نهجان"],
+        "سخونة": ["حمى", "حرارة", "سخونية"],
+        "سخونية": ["حمى", "حرارة"],
+        "ريالة": ["لعاب", "سيلان لعاب", "فم"],
+        "تطويح": ["ترنح", "دوران", "عصبية"],
+        "دم": ["مدمم", "نزف", "أحمر", "بول أحمر"],
+        "انتفاخ": ["نفاخ", "كرش", "غازات"],
+        "خراريج": ["خراج", "صديد", "دمامل"],
+        "عرج": ["حوافر", "حافر", "قلاعية"],
+        "قرف": ["فقدان شهية", "امتناع عن الأكل", "هزال"],
+        "إسهال": ["اسهال", "روث مائي", "إسهال دموي"],
+        "اسهال": ["إسهال", "روث مائي"],
+        "تشنج": ["تشنجات", "صرع", "صمل"],
+        "ورم": ["وذمة", "عقد", "تضخم"],
+        "عين": ["عيون", "دمع", "ملتحمة"],
+        "جلد": ["عقد جلدية", "جرب", "قراع", "حكة"],
+        "ضرع": ["حليب", "التهاب ضرع", "حلمات"]
+    }
+    for trigger, added_kws in synonym_map.items():
+        if trigger in full_text:
+            combined_tokens.extend(added_kws)
 
     scored_candidates = []
 
