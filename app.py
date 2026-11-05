@@ -2341,7 +2341,152 @@ html.dark-theme .prayer-indicator-pill .prayer-pill-countdown,
     }
 }
 
+
+/* ========================================================================== */
+/* MOBILE STACKED QUICK-ACTIONS BOX (Icons Placed Vertically One Under Other) */
+/* ========================================================================== */
+.mobile-actions-toggle-btn {
+    display: none;
+}
+.mobile-quick-actions-drawer {
+    display: none;
+    width: 100%;
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--primary-border);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    animation: slideDownActions 0.25s ease-out;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 1000;
+}
+@keyframes slideDownActions {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.mobile-actions-vertical-box {
+    padding: 14px 16px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.actions-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.actions-vertical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+.action-vertical-item {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: var(--transition-smooth);
+    text-align: right;
+}
+.action-vertical-item:hover, .action-vertical-item:active {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+    transform: translateY(-1px);
+}
+.action-item-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.action-item-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.action-item-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.4;
+    word-break: break-word;
+}
+.action-item-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-top: 2px;
+    word-break: break-word;
+}
+.action-item-arrow {
+    font-size: 1rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* Universal text & container fitting rule */
+*, *::before, *::after {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+}
+table {
+    max-width: 100%;
+}
+.container, main, article, section, div, p, span, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+
 @media (max-width: 768px) {
+    .mobile-actions-toggle-btn {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px !important;
+        background: var(--primary-light) !important;
+        border: 1.5px solid var(--primary-border) !important;
+        color: var(--primary) !important;
+        border-radius: 9px !important;
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .topbar-right .prayer-indicator-pill,
+    .topbar-right .topbar-search-icon-compact,
+    .topbar-right .lang-selector-pill,
+    .topbar-right .icon-action-btn,
+    .topbar-right .btn-install-header {
+        display: none !important;
+    }
+    .topbar-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
     .brand-badge {
         display: none !important;
     }
@@ -2666,6 +2811,20 @@ function toggleTheme() {
 // ---------------------------------------------------------------------------
 // 3. UI Navigation & Drawer Controls
 // ---------------------------------------------------------------------------
+
+function toggleMobileActionsBox() {
+    const box = document.getElementById('mobile-quick-actions-drawer');
+    const arrow = document.getElementById('toggle-arrow');
+    if (!box) return;
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+        if (arrow) arrow.innerText = '▲';
+    } else {
+        box.style.display = 'none';
+        if (arrow) arrow.innerText = '▼';
+    }
+}
+
 function openMobileDrawer() {
     const d = document.getElementById('mobile-drawer');
     const o = document.getElementById('mobile-drawer-overlay');
@@ -2813,7 +2972,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/static/sw.js').catch(function(e) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(e) {
             console.log('SW note:', e);
         });
     });
@@ -2871,8 +3030,6 @@ def render_not_found_page(request: Request, current_user, lang: str) -> str:
         <div class="card" style="text-align: right; background: var(--card-bg); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
             <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-main); margin-bottom: 10px;">روابط سريعة لأهم الأقسام:</div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
-                <a href="/chat" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💬</span> الشات الطبي</a>
-                
                 <a href="/pharmacy" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">💊</span> الصيدلية</a>
                 <a href="/clinic" class="mobile-menu-item" style="padding: 8px; font-size: 0.85rem;"><span class="m-icon">🏥</span> سجلات العيادة</a>
             </div>
@@ -2999,6 +3156,135 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
         </div>
         """
 
+    
+    vertical_user_item = f'''
+    <a href="/profile" class="action-vertical-item">
+        <div class="action-item-icon" style="background: #e0f2fe; color: #0369a1;">👤</div>
+        <div class="action-item-content">
+            <div class="action-item-title">الملف الشخصي والحساب</div>
+            <div class="action-item-desc">د. {current_user['name']} ({'طبيب موثق' if current_user.get('verification_status') == 'approved' else 'قيد المراجعة'})</div>
+        </div>
+        <div class="action-item-arrow">←</div>
+    </a>
+    <a href="/logout" class="action-vertical-item" style="color: var(--danger);">
+        <div class="action-item-icon" style="background: #fee2e2; color: #991b1b;">🚪</div>
+        <div class="action-item-content">
+            <div class="action-item-title" style="color: var(--danger);">تسجيل الخروج</div>
+            <div class="action-item-desc">الخروج الآمن من الحساب على هذا الجهاز</div>
+        </div>
+        <div class="action-item-arrow" style="color: var(--danger);">🚪</div>
+    </a>
+    ''' if current_user else f'''
+    <a href="/login" class="action-vertical-item">
+        <div class="action-item-icon" style="background: #dbeafe; color: #1d4ed8;">🔑</div>
+        <div class="action-item-content">
+            <div class="action-item-title">{t('nav_login', 'تسجيل الدخول')}</div>
+            <div class="action-item-desc">دخول حساب الطبيب البيطري</div>
+        </div>
+        <div class="action-item-arrow">←</div>
+    </a>
+    <a href="/register" class="action-vertical-item">
+        <div class="action-item-icon" style="background: #ecfdf5; color: #047857;">📝</div>
+        <div class="action-item-content">
+            <div class="action-item-title">{t('nav_register', 'إنشاء حساب جديد')}</div>
+            <div class="action-item-desc">تسجيل طبيب بيطري جديد وتفعيل المزايا</div>
+        </div>
+        <div class="action-item-arrow">←</div>
+    </a>
+    '''
+
+    mobile_actions_box_html = f'''
+    <!-- Mobile Stacked Quick-Actions Box (Icons Stacked Vertically One Under Other) -->
+    <div id="mobile-quick-actions-drawer" class="mobile-quick-actions-drawer" style="display: none;">
+        <div class="mobile-actions-vertical-box">
+            <div class="actions-box-header">
+                <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                    <span>⚡</span> <span>صندوق الأدوات والأيقونات السريعة</span>
+                </div>
+                <button type="button" onclick="toggleMobileActionsBox()" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted); padding: 4px 8px;">✕</button>
+            </div>
+            
+            <div class="actions-vertical-list">
+                <!-- 1. Prayer Times -->
+                <a href="/clinic/prayer-times" class="action-vertical-item">
+                    <div class="action-item-icon" style="background: #ecfdf5; color: #065f46;">🕌</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">مواقيت الصلاة والتنبيهات الإيمانية</div>
+                        <div class="action-item-desc">{prayer_full_tooltip}</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </a>
+
+                <!-- 2. Universal Search -->
+                <button type="button" onclick="toggleMobileActionsBox(); openSearchModal();" class="action-vertical-item" style="border: none; background: none; text-align: right; cursor: pointer;">
+                    <div class="action-item-icon" style="background: #e0f2fe; color: #0284c7;">🔍</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">البحث الشامل الفوري في المنصة</div>
+                        <div class="action-item-desc">ابحث في 1,005 دواء، 30 مرجع، الأدوات، والممنوعات (Ctrl+K)</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </button>
+
+                <!-- 3. Language Selector -->
+                <div class="action-vertical-item" style="cursor: default;">
+                    <div class="action-item-icon" style="background: #f3e8ff; color: #7e22ce;">🌐</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">لغة الواجهة (Interface Language)</div>
+                        <div style="margin-top: 6px;">
+                            <select id="lang-quick-select-vertical" onchange="changeLanguage(this.value)" style="width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
+                                {lang_options}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Theme Mode -->
+                <button type="button" onclick="toggleTheme()" class="action-vertical-item" style="border: none; background: none; text-align: right; cursor: pointer;">
+                    <div class="action-item-icon" style="background: #fef3c7; color: #b45309;">🌓</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">تبديل نمط العرض (الوضع الليلي / النهاري)</div>
+                        <div class="action-item-desc">التبديل الفوري بين المظهر الفاتح والداكن عالي التباين</div>
+                    </div>
+                    <div class="action-item-arrow">🌓</div>
+                </button>
+
+                <!-- 5. API Key -->
+                <button type="button" onclick="toggleMobileActionsBox(); openApiModal();" class="action-vertical-item" style="border: none; background: none; text-align: right; cursor: pointer;">
+                    <div class="action-item-icon" style="background: #e0e7ff; color: #4338ca;">🔑</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">مفتاح الذكاء الاصطناعي (API Key)</div>
+                        <div class="action-item-desc">إدخال واختبار مفتاح Groq / AI للاستشارات الفورية</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </button>
+
+                <!-- 6. PWA Install App -->
+                <button type="button" onclick="toggleMobileActionsBox(); triggerPwaInstall();" class="action-vertical-item pwa-install-trigger" style="border: none; background: none; text-align: right; cursor: pointer;">
+                    <div class="action-item-icon" style="background: #dcfce7; color: #15803d;">📥</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">تثبيت التطبيق على الهاتف (PWA App)</div>
+                        <div class="action-item-desc">تشغيل VetMind كتطبيق أصلي سريع والعمل بدون إنترنت</div>
+                    </div>
+                    <div class="action-item-arrow">📲</div>
+                </button>
+
+                <!-- 7. Local Offline Backup Export -->
+                <button type="button" onclick="if(window.exportLocalDataToFile) exportLocalDataToFile(); else alert('تم تفعيل الحفظ المحلي التلقائي على جهازك');" class="action-vertical-item" style="border: none; background: none; text-align: right; cursor: pointer;">
+                    <div class="action-item-icon" style="background: #fef08a; color: #854d0e;">💾</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title">النسخ الاحتياطي لبياناتك المحلية</div>
+                        <div class="action-item-desc">تصدير كافة سجلاتك ومواعيدك المحفوظة على جهازك كملف آمن</div>
+                    </div>
+                    <div class="action-item-arrow">📥</div>
+                </button>
+
+                <!-- 8. User Profile / Login -->
+                {vertical_user_item}
+            </div>
+        </div>
+    </div>
+    '''
+
     live_mobile_url = get_live_tunnel_url()
     mobile_admin_item = f'<a href="/admin" class="mobile-menu-item" style="color: #ea580c; font-weight: 700;"><span class="m-icon">⚙️</span><span class="m-label">{t("nav_admin")} (لوحة الإدارة الشاملة)</span></a>' if current_user and current_user.get("is_admin") else ""
     if current_user:
@@ -3054,18 +3340,10 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-icon">🏠</span>
                 <span class="m-label">{t('nav_home')}</span>
             </a>
-            <a href="/chat" class="mobile-menu-item">
-                <span class="m-icon">💬</span>
-                <span class="m-label">{t('nav_chat')}</span>
-            </a>
-            
+
             <a href="/clinic" class="mobile-menu-item">
                 <span class="m-icon">🏥</span>
                 <span class="m-label">{t('nav_clinic')}</span>
-            </a>
-            <a href="/clinic/cases-gallery" class="mobile-menu-item">
-                <span class="m-icon">🖼️</span>
-                <span class="m-label">{t("nav_cases_gallery", "معرض الحالات")}</span>
             </a>
             <a href="/rx-prescription" class="mobile-menu-item">
                 <span class="m-icon">📋</span>
@@ -3084,10 +3362,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                 <span class="m-icon">💊</span>
                 <span class="m-label">{t('nav_pharmacy')}</span>
                 <span class="m-badge">1,005 دواء</span>
-            </a>
-            <a href="/vision-detect" class="mobile-menu-item">
-                <span class="m-icon">👁️</span>
-                <span class="m-label">{t('nav_vision_detect')}</span>
             </a>
             <a href="/tools" class="mobile-menu-item">
                 <span class="m-icon">🛠️</span>
@@ -3152,7 +3426,6 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     # Active bottom nav items
     title_l = title.lower()
     is_home_active = "active" if title in [t('nav_home'), 'الرئيسية', 'Home', 'Accueil', 'Startseite', 'Inicio', 'Главная', '首页'] else ""
-    is_chat_active = "active" if "chat" in title_l or "شات" in title_l or "مساعد" in title_l or "ذكاء" in title_l else ""
     is_tools_active = "active" if "tool" in title_l or "أداة" in title_l or "أدوات" in title_l else ""
     is_clinic_active = "active" if "clinic" in title_l or "عيادة" in title_l or "حالات" in title_l else ""
 
@@ -3165,12 +3438,7 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             </span>
             <span class="bnav-label">{t('nav_home', 'الرئيسية')}</span>
         </a>
-        <a href="/chat" class="bnav-item {is_chat_active}" title="{t('nav_chat', 'الشات')}">
-            <span class="bnav-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>
-            </span>
-            <span class="bnav-label">{t('nav_chat', 'الذكاء')}</span>
-        </a>
+
         <a href="/tools" class="bnav-item {is_tools_active}" title="{t('nav_tools_30', 'الأدوات الـ 30')}">
             <span class="bnav-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -3295,11 +3563,17 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     📥 <span>تثبيت</span>
                 </button>
 
+                <!-- Quick Actions Box Toggle (Prominent on Mobile / Tablet) -->
+                <button type="button" onclick="toggleMobileActionsBox()" class="mobile-actions-toggle-btn" id="mobile-actions-toggle" aria-label="صندوق الأيقونات والأدوات السريعة" title="صندوق الأيقونات السريعة">
+                    ⚡ <span class="mobile-actions-toggle-text">الأيقونات السريعة</span> <span id="toggle-arrow" style="font-size: 0.65rem;">▼</span>
+                </button>
+
                 <!-- User Profile / Auth -->
                 {user_nav}
             </div>
         </div>
     </header>
+    {mobile_actions_box_html}
 
     {mobile_drawer_html}
     {mobile_bottom_nav_html}
@@ -3949,24 +4223,32 @@ async def home_page(request: Request):
     user_id = user["id"] if user else 4
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM cases WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
-    cases = c.fetchall()
 
-    c.execute("SELECT count(*) FROM cases WHERE user_id = ?", (user_id,))
-    total_cases = c.fetchone()[0]
+    try:
+        c.execute("SELECT count(*) FROM drug_inventory WHERE user_id = ? AND stock_quantity <= min_threshold", (user_id,))
+        low_stock_count = c.fetchone()[0]
+    except Exception:
+        low_stock_count = 0
 
-    c.execute("SELECT count(*) FROM drug_inventory WHERE user_id = ? AND stock_quantity <= min_threshold", (user_id,))
-    low_stock_count = c.fetchone()[0]
-
-    c.execute("SELECT count(*) FROM appointments WHERE user_id = ? AND status = 'scheduled'", (user_id,))
-    scheduled_appts = c.fetchone()[0]
+    try:
+        c.execute("SELECT count(*) FROM appointments WHERE user_id = ? AND status = 'scheduled'", (user_id,))
+        scheduled_appts = c.fetchone()[0]
+    except Exception:
+        scheduled_appts = 0
 
     # Active clients in last 3 days for this clinic
-    three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE user_id = ? AND performed_at >= ?", (user_id, three_days_ago))
-    active_clients_3d = c.fetchone()[0]
+    try:
+        three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+        c.execute("SELECT count(DISTINCT client_name) FROM client_operations WHERE user_id = ? AND performed_at >= ?", (user_id, three_days_ago))
+        active_clients_3d = c.fetchone()[0]
+    except Exception:
+        active_clients_3d = 0
 
-
+    try:
+        c.execute("SELECT count(*) FROM drug_inventory WHERE user_id = ?", (user_id,))
+        inventory_items_count = c.fetchone()[0]
+    except Exception:
+        inventory_items_count = 0
 
     conn.close()
 
@@ -3984,128 +4266,93 @@ async def home_page(request: Request):
         </div>
         """
 
-    cases_html = ""
-    for cs in cases:
-        img_badge = f'<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">📷 {t("case_img_badge", "مرفق صورة")}</span>' if cs["image_filename"] else ""
-        cases_html += f"""
-        <div class="card" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; box-sizing: border-box;">
-            <div style="flex: 1 1 240px; min-width: 0; word-break: break-word;">
-                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary); word-break: break-word;">
-                    {cs['animal_name']} <span style="font-size: 0.85rem; color: var(--text-muted);">({cs['species']})</span> {img_badge}
-                </div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; word-break: break-word;">
-                    {t('case_age_label', 'العمر')}: {cs['age']} | {t('case_weight_label', 'الوزن')}: {cs['weight']} {t('unit_kg', 'كجم')} | {t('case_date_label', 'التاريخ')}: {cs['created_at'][:16]}
-                </div>
-                <div style="font-size: 0.9rem; margin-top: 6px; word-break: break-word;">
-                    <strong>{t('case_symptoms_label', 'الأعراض')}:</strong> {cs['symptoms'][:120]}...
-                </div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <a href="/case/{cs['id']}" class="btn btn-primary" style="font-size: 0.85rem;">📋 {t('case_open_report', 'فتح التقرير السريري')}</a>
-                <form action="/delete/{cs['id']}" method="POST" onsubmit="return confirm('{t('confirm_delete_case', 'هل تريد حذف هذه الحالة؟')}');" style="margin: 0;">
-                    <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.85rem;">🗑️</button>
-                </form>
-            </div>
-        </div>
-        """
-
-    if not cases:
-        cases_html = f"""
-        <div class="card" style="text-align: center; padding: 40px 20px;">
-            <div style="font-size: 3rem;">🩺</div>
-            <div style="font-size: 1.2rem; font-weight: 700; margin-top: 10px;">{t('no_cases_title', 'لا توجد حالات سريرية مسجلة بعد')}</div>
-            <p style="color: var(--text-muted);">{t('no_cases_desc', 'ابدأ بفحص أول حالة سريرية لحيوان أو مزرعة لإنشاء التقرير الطبي والدوائي المعتمد.')}</p>
-            <a href="#new-case" class="btn btn-primary" style="margin-top: 10px;">➕ {t('new_case_btn', 'فحص حالة جديدة الآن')}</a>
-        </div>
-        """
-
-    spotlight_html = ""
-
     body = f"""
     {stock_alert_html}
-    
 
-    <div class="grid-4"  style="margin-bottom: 24px;">
-        <div class="card" style="border-top: 4px solid var(--primary); padding: 16px;">
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">{t("stat_total_exams", "إجمالي الفحوصات")}</div>
-            <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-top: 4px;">{total_cases}</div>
-            <div style="font-size: 0.75rem; color: var(--success); margin-top: 4px;">{t("stat_vision_badge", "فحص بالرؤية الحاسوبية")}</div>
+    <!-- Welcome & Status Banner -->
+    <div class="card" style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 24px; box-sizing: border-box; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="min-width: 0; flex: 1 1 280px;">
+                <h1 style="margin: 0; font-size: 1.6rem; color: #ffffff; word-break: break-word;">🏥 {t('welcome_vetmind', 'منصة VetMind AI الطبية البيطرية المتكاملة')}</h1>
+                <p style="color: #a7f3d0; margin: 6px 0 0 0; font-size: 0.95rem; line-height: 1.5; word-break: break-word;">
+                    {t('home_subtitle', 'نظام إدارة العيادة السريرية، الصيدلية الذكية، الروشتات المعتمدة، والمراجع الأصلية المحدثة')}
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <a href="/clinic" class="btn btn-gold" style="font-weight: 700; font-size: 0.9rem;">🏥 {t('nav_clinic', 'إدارة العيادة')}</a>
+                <a href="/references" class="btn btn-outline" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4); font-weight: 700;">📚 {t('nav_references', 'المراجع البيطرية')}</a>
+            </div>
         </div>
-        <div class="card" style="border-top: 4px solid var(--accent); padding: 16px;">
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">{t("stat_upcoming_appts", "المواعيد القادمة بالعيادة")}</div>
+    </div>
+
+    <!-- Quick KPIs -->
+    <div class="grid-4" style="margin-bottom: 24px; gap: 14px;">
+        <div class="card" style="border-top: 4px solid var(--primary); padding: 16px; box-sizing: border-box;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; word-break: break-word;">{t("stat_inventory_items", "أصناف صيدلية العيادة")}</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-top: 4px;">{inventory_items_count}</div>
+            <div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px;"><a href="/clinic" style="color: var(--primary); text-decoration: none;">إدارة المخزون 💊</a></div>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--accent); padding: 16px; box-sizing: border-box;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; word-break: break-word;">{t("stat_upcoming_appts", "المواعيد القادمة")}</div>
             <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-top: 4px;">{scheduled_appts}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;"><a href="/clinic" style="color: var(--accent); text-decoration: none;">{t('stat_manage_appts', 'إدارة المواعيد')}</a></div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;"><a href="/clinic" style="color: var(--accent); text-decoration: none;">{t('stat_manage_appts', 'جدول المواعيد 📅')}</a></div>
         </div>
-        <div class="card" style="border-top: 4px solid #8b5cf6; padding: 16px;">
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">{t("stat_active_clients_3d", "العملاء النشطين")}</div>
+        <div class="card" style="border-top: 4px solid #8b5cf6; padding: 16px; box-sizing: border-box;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; word-break: break-word;">{t("stat_active_clients_3d", "العملاء النشطين")}</div>
             <div style="font-size: 1.8rem; font-weight: 800; color: #8b5cf6; margin-top: 4px;">{active_clients_3d}</div>
             <div style="font-size: 0.75rem; color: #8b5cf6; margin-top: 4px;"><a href="/time-demand" style="color: #8b5cf6; text-decoration: none;">{t('stat_view_timedemand', 'عرض Time Demand 📊')}</a></div>
         </div>
-        <div class="card" style="border-top: 4px solid var(--gold); padding: 16px;">
-            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">{t("stat_current_plan", "باقة الاشتراك الحالية")}</div>
+        <div class="card" style="border-top: 4px solid var(--gold); padding: 16px; box-sizing: border-box;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; word-break: break-word;">{t("stat_current_plan", "باقة الاشتراك")}</div>
             <div style="font-size: 1.2rem; font-weight: 800; color: var(--gold); margin-top: 4px;">{'⭐ PREMIUM VIP' if user and user.get('is_premium') else t('stat_standard_plan', 'النسخة القياسية')}</div>
             <div style="font-size: 0.75rem; color: var(--gold); margin-top: 4px;"><a href="/premium" style="color: var(--gold); text-decoration: none; font-weight: 700;">{t('stat_upgrade_plan', 'ترقية وتفعيل المزايا ⭐')}</a></div>
         </div>
     </div>
 
-    <div class="grid-2">
-        <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                <h2 style="margin: 0; font-size: 1.3rem;">📋 {t('cases_title')}</h2>
-                <a href="/vision-detect" class="btn btn-accent" style="font-size: 0.85rem;">👁️ {t('nav_vision_detect')}</a>
-            </div>
-            {cases_html}
-        </div>
-
-        <div id="new-case">
-            <div class="card" style="border-top: 4px solid var(--primary);">
-                <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--primary);">🩺 {t('case_add_title', 'فحص وتسجيل حالة سريرية جديدة')}</h2>
-                <p style="font-size: 0.88rem; color: var(--text-muted);">{t('case_add_desc', 'ارفع صورة الحالة الظاهرية أو الآفة الجلدية لتحليلها تلقائياً واستخراج التشخيص التفريقي والأدوية المعتمدة.')}</p>
-
-                <form action="/add-case" method="POST" enctype="multipart/form-data">
-                    <div style="margin-bottom: 14px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('case_animal_name')}</label>
-                        <input type="text" name="animal_name" required placeholder="{t('case_animal_name_ph', 'مثال: بقرة حلوب رقم 412 / ماكس كلب بوليسي')}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                    </div>
-
-                    <div class="grid-2" style="margin-bottom: 14px;">
-                        <div>
-                            <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('case_species')}</label>
-                            <select name="species" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                                <option value="أبقار">{t('species_bovine', '🐄 أبقار (Cattle / Bovine)')}</option>
-                                <option value="أغنام وماعز">{t('species_ovine', '🐑 أغنام وماعز (Ovine / Caprine)')}</option>
-                                <option value="إبل وهجن">{t('species_camel', '🐪 إبل وهجن (Camels / Dromedary)')}</option>
-                                <option value="خيول">{t('species_equine', '🐎 خيول وفصيلة خيلية (Equine)')}</option>
-                                <option value="دواجن وطيور">{t('species_poultry', '🐔 دواجن وطيور (Poultry / Avian)')}</option>
-                                <option value="كلاب">{t('species_canine', '🐕 كلاب (Canine)')}</option>
-                                <option value="قطط">{t('species_feline', '🐈 قطط (Feline)')}</option>
-                                <option value="أرانب">{t('species_rabbit', '🐇 أرانب (Rabbits)')}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('case_age')} & {t('case_weight')}</label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <input type="text" name="age" placeholder="{t('case_age_label', 'العمر')}" style="flex: 1 1 90px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                                <input type="text" name="weight" placeholder="{t('case_weight_unit', 'الوزن كجم')}" style="flex: 1 1 90px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('case_symptoms')}</label>
-                        <textarea name="symptoms" rows="3" required placeholder="{t('case_symptoms_ph', 'صف الأعراض السريرية بالتفصيل (حرارة، إفرازات فموية، عرج، إسهال مائي، وذمة...)')}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;"></textarea>
-                    </div>
-
-                    <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-weight: 700; margin-bottom: 5px;">📸 {t('case_image')}</label>
-                        <input type="file" name="image" accept="image/*" style="width: 100%; padding: 10px; border: 1px dashed var(--primary); border-radius: 8px; background: var(--primary-light);">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; justify-content: center;">
-                        🚀 {t('case_submit')}
-                    </button>
-                </form>
-            </div>
+    <!-- Core Clinical & Knowledge Tools Grid -->
+    <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.3rem; margin: 0 0 16px 0; color: var(--text-main);">⚡ الخدمات والأقسام الرئيسية المعتمدة</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <a href="/clinic" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #059669; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">🏥</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">إدارة العيادة الشاملة</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">سجلات العيادة، إدارة المواعيد، التطعيمات، التحاليل المخبرية، والفواتير</div>
+            </a>
+            <a href="/pharmacy" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #0284c7; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">💊</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #0284c7;">الصيدلية البيطرية الكبرى</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">أكثر من 1,005 دواء بيطري معتمد بالجرعات الدقيقة وفترات السحب</div>
+            </a>
+            <a href="/rx-prescription" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #7c3aed; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">📋</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #7c3aed;">حاسبة الجرعات والروشتة</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">توليد الروشتات البيطرية الرسمية بالباركود والرقم التسلسلي والطباعة المباشرة</div>
+            </a>
+            <a href="/interactions" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #ea580c; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">🔄</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #ea580c;">فاحص التداخلات الدوائية</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">فحص التفاعلات الخطيرة بين الأدوية البيطرية وتجنب التسممات والتثبيط</div>
+            </a>
+            <a href="/contraindications" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #dc2626; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">⛔</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #dc2626;">الممنوعات البيطرية</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">الدليل الحصري لموانع استخدام الأدوية في الحيوانات والسميات الحرجة</div>
+            </a>
+            <a href="/references" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #059669; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">📚</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #059669;">مكتبة المراجع المعتمدة</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">المراجع الأصلية الكاملة بمئات الصفحات مع إمكانية المعاينة والتحميل المباشر</div>
+            </a>
+            <a href="/clinic/prayer-times" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #0d9488; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">🕌</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #0d9488;">مواقيت الصلاة بالعيادة</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">مواقيت الصلاة الدقيقة وتنسيق مواعيد العمليات والاستشارات البيطرية</div>
+            </a>
+            <a href="/tools" class="card" style="text-decoration: none; color: inherit; padding: 18px; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; border-right: 4px solid #d97706; box-sizing: border-box;">
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">🛠️</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #d97706;">دليل الـ 30 أداة البيطرية</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">ترسانة الأدوات التخصصية: حاسبات السوائل، درجات الترياج، ومعايير التشخيص</div>
+            </a>
         </div>
     </div>
     """
@@ -4693,20 +4940,15 @@ async def admin_page(request: Request):
     c.execute("SELECT COUNT(*) FROM users WHERE verification_status = 'approved' OR verified_vet = 1")
     verified_vets_count = c.fetchone()[0]
 
-    # 4. Total clinical cases
-    c.execute("SELECT COUNT(*) FROM cases")
-    total_cases_count = c.fetchone()[0]
+    total_cases_count = 0  # Cases gallery removed
 
     # 5. Total AI Consultations
-    c.execute("SELECT COUNT(*) FROM chat_messages WHERE role = 'user'")
-    total_ai_consults_count = c.fetchone()[0]
+    total_ai_consults_count = 0  # Smart Vet Advisor removed
 
     # Per-user activity statistics lookup
-    c.execute("SELECT user_id, COUNT(*) as cnt FROM cases GROUP BY user_id")
-    user_cases_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+    user_cases_map = {}  # Cases gallery removed
 
-    c.execute("SELECT user_id, COUNT(*) as cnt FROM chat_messages WHERE role = 'user' GROUP BY user_id")
-    user_chats_map = {row["user_id"]: row["cnt"] for row in c.fetchall()}
+    user_chats_map = {}  # Smart Vet Advisor removed
 
     c.execute("SELECT * FROM users ORDER BY id DESC")
     all_users = [dict(r) for r in c.fetchall()]
@@ -5563,592 +5805,6 @@ async def process_logout():
 # ==============================================================================
 # ROUTE 8: CASES, DETAILS, DELETE
 # ==============================================================================
-@app.post("/add-case")
-async def add_case(
-    request: Request,
-    animal_name: str = Form(...),
-    species: str = Form(...),
-    age: str = Form(""),
-    weight: str = Form(""),
-    symptoms: str = Form(...),
-    duration: str = Form(""),
-    image: UploadFile = File(None)
-):
-    user = get_current_user(request)
-    user_id = user["id"] if user else 0
-    user_country = user.get("country", "مصر") if user else "مصر"
-
-    conn = get_db()
-    image_filename = ""
-    image_full_path = None
-    if image and image.filename:
-        try:
-            from media_storage import store_media_permanently
-            raw_case_img = await image.read()
-            if raw_case_img:
-                m_res = store_media_permanently(
-                    conn, raw_case_img, image.filename,
-                    content_type=getattr(image, "content_type", ""),
-                    owner_id=user_id, is_private=0, allow_video=False
-                )
-                image_filename = m_res["filename"]
-                image_full_path = os.path.join(UPLOAD_DIR, image_filename)
-        except Exception:
-            image_filename = ""
-            image_full_path = None
-
-    vision_res = analyze_image_locally(image_full_path) if image_full_path else None
-    
-    differentials = [
-        {"condition": f"اشتباه وبائي / إكلينيكي في {species}: {vision_res['detected_lesion'] if vision_res else 'التهاب حاد'}", "confidence": "85% Clinical Match", "source": "Merck Veterinary Manual & WOAH Standards"},
-        {"condition": "عدوى بكتيرية ثانوية بالجهاز التنفسي أو الهضمي", "confidence": "70% Clinical Match", "source": "WSAVA & FAO Animal Health Guides"},
-        {"condition": "اعتلال أيضي أو نقص عناصر صغرى", "confidence": "45% Clinical Match", "source": "Cornell Veterinary Medicine Guidelines"}
-    ]
-
-    analysis_data = {
-        "engine": "VetMind Multi-Spectral Vision & Clinical Pharmacopeia",
-        "vision_metrics": vision_res,
-        "differentials": differentials,
-        "localized_drugs": get_localized_drugs(user_country),
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    c = conn.cursor()
-    c.execute("""
-    INSERT INTO cases (animal_name, species, age, weight, symptoms, duration, image_filename, triage_level, triage_note, created_at, analysis_json, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (animal_name, species, age, weight, symptoms, duration, image_filename, "urgent" if "نزيف" in symptoms or "صدمة" in symptoms else "routine", "تم التحليل السريري بمحرك الرؤية والمراجع الدولية", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), json.dumps(analysis_data, ensure_ascii=False), user_id))
-    case_id = c.lastrowid
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse(f"/case/{case_id}", status_code=303)
-
-@app.get("/case/{case_id}", response_class=HTMLResponse)
-async def view_case(request: Request, case_id: int):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    t = lambda k, d="": get_text(lang, k, d)
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM cases WHERE id = ?", (case_id,))
-    case_row = c.fetchone()
-    conn.close()
-
-    if not case_row:
-        raise HTTPException(status_code=404, detail="الحالة السريرية غير موجودة")
-    # Strict per-user private data access
-    if not user or (case_row["user_id"] != user["id"] and not user.get("is_admin") and user.get("role") != "admin"):
-        raise HTTPException(status_code=403, detail="هذه الحالة السريرية خاصة ومحمية للمستخدم صاحب السجل فقط.")
-
-    analysis = json.loads(case_row["analysis_json"]) if case_row["analysis_json"] else {}
-    vision = analysis.get("vision_metrics")
-    diffs = analysis.get("differentials", [])
-    drugs = analysis.get("localized_drugs", [])
-
-    img_html = ""
-    if case_row["image_filename"]:
-        img_html = f"""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src="/uploads/{case_row['image_filename']}" style="max-width: 100%; max-height: 400px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-        </div>
-        """
-
-    vision_box = ""
-    if vision:
-        vision_box = f"""
-        <div class="card" style="background: var(--primary-light); border-color: #99f6e4;">
-            <h3 style="margin-top: 0; color: var(--primary);">🔬 فحص محرك الرؤية الحاسوبية (Digital Vision Inspection)</h3>
-            <p><strong>الآفة المرصودة:</strong> {vision.get('detected_lesion')}</p>
-            <div class="grid-3" style="margin-top: 10px;">
-                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">مؤشر الاحمرار والالتهاب</div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--danger);">{vision.get('erythema_score')}%</div>
-                </div>
-                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">مؤشر التنخر واللون الداكن</div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #475569;">{vision.get('necrosis_score')}%</div>
-                </div>
-                <div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">مؤشر الإفرازات والنضح</div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #d97706;">{vision.get('exudate_score')}%</div>
-                </div>
-            </div>
-            <p style="margin-top: 12px; font-size: 0.88rem; color: var(--text-main);"><strong>الانطباع السريري:</strong> {vision.get('clinical_impression')}</p>
-        </div>
-        """
-
-    diff_html = ""
-    for d in diffs:
-        diff_html += f"""
-        <li style="margin-bottom: 10px; padding: 10px; background: var(--bg); border-radius: 8px;">
-            <div style="font-weight: 700; color: var(--primary);">{d.get('condition')}</div>
-            <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 4px;">
-                <span>المطابقة السريرية: <strong>{d.get('confidence')}</strong></span>
-                <span>المرجع: {d.get('source')}</span>
-            </div>
-        </li>
-        """
-
-    drugs_html = ""
-    for dg in drugs:
-        dosage_calc = calculate_precise_dosage(dg, case_row["weight"], case_row["species"])
-        fn_text = get_drug_concise_function(dg)
-        drugs_html += f"""
-        <div style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; background: var(--card-bg); box-shadow: var(--shadow);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <span style="font-weight: 800; font-size: 1.15rem; color: var(--primary);">{dg.get('trade_name')}</span>
-                    <span style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; margin-right: 6px;">({fn_text})</span>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;"><strong>{t('manufacturer_label', 'الشركة المصنعة')}:</strong> {dg.get('manufacturer')} | <strong>{t('active_ingredient_label', 'المادة الفعالة')}:</strong> {dg.get('active_ingredient')}</div>
-                </div>
-                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 8px; text-align: left;" dir="ltr">
-                    <div style="font-size: 0.72rem; color: #047857; font-weight: 700;">PRECISE CALCULATED DOSE:</div>
-                    <div style="font-size: 1.25rem; font-weight: 900; color: #047857;">{dosage_calc['exact_dose_formatted']}</div>
-                </div>
-            </div>
-
-            <!-- Dedicated Dosage Calculator Details Box -->
-            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 0.9rem;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
-                    <div>💉 <strong>{t('precise_dose_for_weight', 'الجرعة الدقيقة لوزن')} {case_row['weight']} {t('unit_kg', 'كجم')}:</strong> <span style="color: #ea580c; font-weight: 900;">{dosage_calc['exact_dose_formatted']}</span></div>
-                    <div>⏱️ <strong>{t('frequency_label', 'التكرار')}:</strong> {dosage_calc['frequency']}</div>
-                    <div>📍 <strong>{t('route_label', 'طريقة الإعطاء')}:</strong> {dosage_calc['route']}</div>
-                    <div>⏳ <strong>{t('duration_label', 'المدة')}:</strong> {dosage_calc['duration']}</div>
-                </div>
-                {f'<div style="color: #b91c1c; font-weight: 700; margin-top: 8px; font-size: 0.85rem;">{dosage_calc["site_split_warning"]}</div>' if dosage_calc.get("site_split_warning") else ''}
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 8px;">
-                <div style="color: var(--danger); font-weight: 600;">⚠️ <strong>{t('withdrawal_label', 'فترة السحب (Withdrawal)')}:</strong> {dg.get('withdrawal_period')} | رقم التسجيل: {dg.get('approval_reg_no')}</div>
-                <a href="/rx-prescription?animal_name={case_row['animal_name']}&species={case_row['species']}&weight={case_row['weight']}&selected_drug_id={dg.get('id', 1)}" class="btn btn-primary" style="padding: 5px 14px; font-size: 0.84rem; font-weight: 700;">
-                    {t('convert_to_rx_btn', '📋 تحويل لروشتة العيادة وطباعتها')}
-                </a>
-            </div>
-        </div>
-        """
-
-    body = f"""
-    <div style="margin-bottom: 16px;">
-        <a href="/" class="btn btn-outline">{t('back_to_cases_btn', '⬅️ العودة لسجل الحالات')}</a>
-        <button onclick="window.print()" class="btn btn-primary" style="margin-right: 8px;">{t('print_report_btn', '🖨️ طباعة التقرير الطبي المعتمد (PDF)')}</button>
-    </div>
-
-    <div class="card" style="border-top: 6px solid var(--primary);">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 14px; margin-bottom: 18px;">
-            <div>
-                <h1 style="margin: 0; font-size: 1.6rem; color: var(--primary);">{t('case_report_header', '📋 تقرير الفحص والتشخيص السريري المعتمد')}</h1>
-                <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">{t('case_num_label', 'رقم الحالة')}: #VET-{case_row['id']} | {t('exam_date_label', 'تاريخ الفحص')}: {case_row['created_at']}</div>
-            </div>
-            <div style="text-align: left;">
-                <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">VetMind Enterprise v4.1</span>
-            </div>
-        </div>
-
-        {img_html}
-
-        <div class="grid-2" style="margin-bottom: 20px;">
-            <div style="background: var(--bg); padding: 14px; border-radius: 10px;">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">{t('patient_demographics_title', 'بيانات الحيوان المفحوص')}</h3>
-                <p style="margin: 6px 0;"><strong>{t('patient_name_label', 'الاسم / الكود')}:</strong> {case_row['animal_name']}</p>
-                <p style="margin: 6px 0;"><strong>{t('patient_species_label', 'الفصيلة')}:</strong> {case_row['species']}</p>
-                <p style="margin: 6px 0;"><strong>{t('patient_age_weight_label', 'العمر والوزن')}:</strong> {case_row['age']} | {case_row['weight']} كجم</p>
-            </div>
-            <div style="background: var(--bg); padding: 14px; border-radius: 10px;">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">{t('clinical_symptoms_title', 'الأعراض والشكوى السريرية')}</h3>
-                <p style="margin: 6px 0;">{case_row['symptoms']}</p>
-            </div>
-        </div>
-
-        {vision_box}
-
-        <div class="card" style="margin-top: 20px;">
-            <h3 style="margin-top: 0; color: var(--primary);">{t('differentials_title', '📊 التشخيص التفريقي المحتمل (Differential Diagnoses)')}</h3>
-            <ul style="list-style: none; padding: 0;">
-                {diff_html}
-            </ul>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <h3 style="margin-top: 0; color: var(--accent);">{t('recommended_drugs_title', '💊 الأدوية البيطرية الوطنية المعتمدة الموصى بها')}</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">{t('recommended_drugs_subtitle', 'مستحضرات مسجلة رسمياً لدى هيئة الدواء ووزارة الزراعة المختصة لمطابقة هذه الحالة:')}</p>
-            {drugs_html}
-        </div>
-    </div>
-    """
-    return HTMLResponse(content=get_base_html(f"تقرير حالة #{case_row['id']}", body, user, lang), media_type="text/html; charset=utf-8")
-
-@app.post("/delete/{case_id}")
-async def delete_case(request: Request, case_id: int):
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=303)
-    conn = get_db()
-    c = conn.cursor()
-    if user.get("is_admin") or user.get("role") == "admin":
-        c.execute("DELETE FROM cases WHERE id = ?", (case_id,))
-    else:
-        c.execute("DELETE FROM cases WHERE id = ? AND user_id = ?", (case_id, user["id"]))
-    conn.commit()
-    conn.close()
-    return RedirectResponse("/", status_code=303)
-
-# ==============================================================================
-# ROUTE 9: COMPUTER VISION SCREENING
-# ==============================================================================
-@app.get("/vision-detect", response_class=HTMLResponse)
-async def vision_detect_page(request: Request):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    t = lambda k, d="": get_text(lang, k, d)
-
-    body = f"""
-    <div class="card" style="border-top: 6px solid var(--accent);">
-        <h1 style="margin-top: 0; font-size: 1.6rem; color: var(--accent);">👁️ {t('vision_detect_title')}</h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">{t('vision_detect_subtitle')}</p>
-
-        <form action="/vision-detect" method="POST" enctype="multipart/form-data" style="margin-top: 20px;">
-            <div style="border: 2px dashed var(--accent); padding: 30px; text-align: center; border-radius: 12px; background: #fff7ed; margin-bottom: 20px;">
-                <div style="font-size: 3rem; margin-bottom: 10px;">📸</div>
-                <div style="font-size: 1.1rem; font-weight: 700; color: #9a3412;">{t('vision_upload_btn')}</div>
-                <input type="file" name="image" accept="image/*" required style="margin-top: 15px; font-size: 1rem;">
-            </div>
-
-            <div class="grid-2" style="margin-bottom: 20px;">
-                <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('species_optional_label', 'فصيلة الحيوان (اختياري)')}</label>
-                    <select name="species" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                        <option value="غير محدد">فحص تلقائي للآفة</option>
-                        <option value="أبقار">أبقار / مواشي</option>
-                        <option value="أغنام وماعز">أغنام وماعز</option>
-                        <option value="إبل">إبل وهجن</option>
-                        <option value="خيول">خيول</option>
-                        <option value="كلاب وقطط">حيوانات أليفة (كلاب/قطط)</option>
-                        <option value="دواجن">دواجن وطيور</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="display: block; font-weight: 700; margin-bottom: 5px;">{t('notes_optional_label', 'ملاحظات سريرية إضافية (اختياري)')}</label>
-                    <input type="text" name="notes" placeholder="ملاحظات سريرية إضافية..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-accent" style="width: 100%; padding: 14px; font-size: 1.1rem; justify-content: center;">
-                ⚡ {t('vision_analyze_btn')}
-            </button>
-        </form>
-    </div>
-    """
-    return HTMLResponse(content=get_base_html(t("nav_vision_detect"), body, user, lang), media_type="text/html; charset=utf-8")
-
-@app.post("/vision-detect", response_class=HTMLResponse)
-async def process_vision_detect(
-    request: Request,
-    image: UploadFile = File(...),
-    species: str = Form("غير محدد"),
-    notes: str = Form("")
-):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    user_country = user.get("country", "مصر") if user else "مصر"
-    t = lambda k, d="": get_text(lang, k, d)
-
-    try:
-        safe_name = f"vision_{int(datetime.now().timestamp())}_{image.filename.replace(' ', '_')}"
-        image_full_path = os.path.join(UPLOAD_DIR, safe_name)
-        with open(image_full_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-    except Exception as img_err:
-        safe_name = "error_placeholder.png"
-        image_full_path = None
-
-    v_metrics = analyze_image_locally(image_full_path) if image_full_path else {
-        "summary": "لم يتم رفع الصورة بنجاح - يرجى المحاولة مرة أخرى",
-        "detected_lesion": "خطأ في رفع الصورة",
-        "erythema_score": 0, "necrosis_score": 0, "exudate_score": 0, "contrast_score": 0,
-        "clinical_impression": "يرجى إعادة رفع الصورة بتنسيق صالح (JPEG, PNG)"
-    }
-    api_key = get_effective_groq_api_key(request)
-    effective_notes = notes if notes and notes.strip() else "يرجى تحليل الآفة السريرية المرصودة في الصورة وتقديم التشخيص التفريقي."
-    clinical_report = ask_ai_chat(api_key, effective_notes, [], image_full_path, lang, user_country)
-
-    body = f"""
-    <div style="margin-bottom: 16px;">
-        <a href="/vision-detect" class="btn btn-outline">{t('scan_another_img', '⬅️ فحص صورة أخرى')}</a>
-    </div>
-
-    <div class="card" style="border-top: 6px solid var(--accent);">
-        <h2 style="margin-top: 0; color: var(--accent);">👁️ {t('vision_result_title')}</h2>
-
-        <div style="text-align: center; margin: 20px 0;">
-            <img src="/uploads/{safe_name}" style="max-width: 100%; max-height: 420px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
-        </div>
-
-        <!-- Vision Metrics or Rejection Alert -->
-        {"" if ("غير صالحة للتشخيص البيطري" in clinical_report or "❌" in clinical_report) else f'''
-        <div class="grid-3" style="margin-bottom: 24px;">
-            <div class="card" style="background: #fef2f2; border-color: #fecaca; text-align: center;">
-                <div style="font-size: 0.85rem; color: #991b1b; font-weight: 700;">{t('vision_metric_redness')}</div>
-                <div style="font-size: 2.2rem; font-weight: 800; color: #dc2626; margin-top: 4px;">{v_metrics['erythema_score']}%</div>
-                <div style="font-size: 0.8rem; color: #991b1b;">{t('vision_redness_sub', 'احتقان نسيجي وتآكل ظهاري')}</div>
-            </div>
-            <div class="card" style="background: #f8fafc; border-color: #cbd5e1; text-align: center;">
-                <div style="font-size: 0.85rem; color: #475569; font-weight: 700;">{t('vision_metric_necrosis')}</div>
-                <div style="font-size: 2.2rem; font-weight: 800; color: #334155; margin-top: 4px;">{v_metrics['necrosis_score']}%</div>
-                <div style="font-size: 0.8rem; color: #475569;">{t('vision_necrosis_sub', 'تنخر خلوي وجلبات قشرية')}</div>
-            </div>
-            <div class="card" style="background: #fffbeb; border-color: #fde68a; text-align: center;">
-                <div style="font-size: 0.85rem; color: #92400e; font-weight: 700;">{t('vision_metric_exudate')}</div>
-                <div style="font-size: 2.2rem; font-weight: 800; color: #d97706; margin-top: 4px;">{v_metrics['exudate_score']}%</div>
-                <div style="font-size: 0.8rem; color: #92400e;">{t('vision_exudate_sub', 'نضح قيحي وإفرازات مخاطية')}</div>
-            </div>
-        </div>
-        '''}
-
-        <div class="card" style="background: {'#fef2f2' if ('غير صالحة للتشخيص البيطري' in clinical_report or '❌' in clinical_report) else 'var(--bg)'}; border: 1px solid {'#f87171' if ('غير صالحة للتشخيص البيطري' in clinical_report or '❌' in clinical_report) else 'var(--border)'}; line-height: 1.8; white-space: pre-wrap; font-size: 0.95rem;">
-{clinical_report}
-        </div>
-    </div>
-    """
-    return HTMLResponse(content=get_base_html("نتيجة الفحص البصري للآفة", body, user, lang), media_type="text/html; charset=utf-8")
-
-# ==============================================================================
-# ROUTE 10: INTERACTIVE AI CHAT
-# ==============================================================================
-@app.get("/chat", response_class=HTMLResponse)
-async def chat_page(request: Request):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    user_id = user["id"] if user else 0
-    t = lambda k, d="": get_text(lang, k, d)
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM chat_messages WHERE user_id = ? ORDER BY id ASC LIMIT 50", (user_id,))
-    messages = c.fetchall()
-    conn.close()
-
-    msgs_html = ""
-    for m in messages:
-        is_user = m["role"] == "user"
-        box_style = "background: #f0fdf4; border: 1px solid #bbf7d0; margin-left: 40px;" if is_user else "background: #ffffff; border: 1px solid var(--border); margin-right: 40px;"
-        sender_title = f"{t('dr_prefix', 'د.')} {user['name'] if user else t('you_label', 'أنت')}" if is_user else "🤖 VetMind AI Enterprise"
-        
-        img_tag = ""
-        if m["image_path"]:
-            img_tag = f"""
-            <div style="margin-top: 10px; position: relative; display: inline-block;">
-                <img src="/uploads/{m['image_path']}" style="max-height: 240px; border-radius: 10px; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm); display: block;">
-                <form action="/chat/delete-image/{m['id']}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذه الصورة نهائياً من الذاكرة والخادم وقاعدة البيانات؟');" style="margin-top: 8px;">
-                    <button type="submit" class="btn" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                        🗑️ {t('delete_image_permanent', 'حذف الصورة نهائياً')}
-                    </button>
-                </form>
-            </div>
-            """
-
-        msgs_html += f"""
-        <div style="{box_style}; border-radius: 12px; padding: 14px 18px; margin-bottom: 14px;">
-            <div style="font-weight: 700; color: var(--primary); font-size: 0.9rem; margin-bottom: 4px;">{sender_title}</div>
-            <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7;">{m['content']}</div>
-            {img_tag}
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; text-align: left;">{m['created_at'][:16]}</div>
-        </div>
-        """
-
-    if not messages:
-        msgs_html = f"""
-        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-            <div style="font-size: 3rem;">💬</div>
-            <div style="font-size: 1.1rem; font-weight: 700; margin-top: 8px;">{t('chat_welcome')}</div>
-            <p style="max-width: 600px; margin: 8px auto;">{t('chat_welcome_sub', 'يمكنك رفع صورة أي آفة سريرية مباشرة بدون كتابة وسيقوم النظام بتشخيصها واقتراح الأدوية المعتمدة فوراً.')}</p>
-        </div>
-        """
-
-    api_key_stored = request.cookies.get("groq_api_key", "")
-    key_status = f"✅ {t('groq_active', 'مفتاح Groq AI مفعل')}" if api_key_stored else f"⚡ {t('ai_engine_active', 'يعمل بمحرك الذكاء الاصطناعي السريري المتقدم')}"
-
-    body = f"""
-    <div class="card" style="border-top: 6px solid var(--primary);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-            <div>
-                <h1 style="margin: 0; font-size: 1.5rem; color: var(--primary);">💬 {t('chat_title')}</h1>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">{t('chat_subtitle')}</div>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <span style="font-size: 0.8rem; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">{key_status}</span>
-                <form action="/chat/clear" method="POST" onsubmit="return confirm('هل أنت متأكد من مسح المحادثة وحذف كافة الصور المرفقة نهائياً؟');" style="margin: 0;">
-                    <button type="submit" class="btn btn-outline" style="font-size: 0.8rem; color: var(--danger);">{t('clear_chat_btn', '🗑️ مسح المحادثة بالكامل')}</button>
-                </form>
-            </div>
-        </div>
-
-        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; min-height: 400px; max-height: 600px; overflow-y: auto; margin-bottom: 20px;">
-            {msgs_html}
-        </div>
-
-        <form action="/chat/send" method="POST" enctype="multipart/form-data" id="chat-form">
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <textarea name="message" id="chat-msg-input" rows="3" placeholder="{t('chat_placeholder')}" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 0.95rem;"></textarea>
-                
-                <!-- Live Image Attachment Preview Box with Instant Cancellation -->
-                <div id="chat-preview-wrap" style="display: none; align-items: center; justify-content: space-between; background: var(--bg); border: 1.5px dashed var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 4px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <img id="chat-preview-img" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);">
-                        <div>
-                            <div id="chat-preview-filename" style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);"></div>
-                            <div id="chat-preview-filesize" style="font-size: 0.75rem; color: var(--text-muted);"></div>
-                        </div>
-                    </div>
-                    <button type="button" onclick="clearSelectedChatImage()" class="btn" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.80rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
-                        ❌ إلغاء / حذف الصورة المرفقة
-                    </button>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <label class="btn btn-outline" style="cursor: pointer; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
-                            📸 {t('chat_upload_image')}
-                            <input type="file" id="chat-image-input" name="image" accept="image/*" style="display: none;" onchange="previewChatImage(this)">
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem; display: inline-flex; align-items: center; gap: 6px;">
-                        🚀 {t('chat_send')}
-                    </button>
-                </div>
-            </div>
-        </form>
-
-        <script>
-        function previewChatImage(input) {{
-            if (input.files && input.files[0]) {{
-                const file = input.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {{
-                    document.getElementById('chat-preview-img').src = e.target.result;
-                    document.getElementById('chat-preview-filename').textContent = file.name;
-                    document.getElementById('chat-preview-filesize').textContent = (file.size / 1024).toFixed(1) + ' KB';
-                    document.getElementById('chat-preview-wrap').style.display = 'flex';
-                }};
-                reader.readAsDataURL(file);
-            }}
-        }}
-        function clearSelectedChatImage() {{
-            const input = document.getElementById('chat-image-input');
-            if (input) input.value = '';
-            const wrap = document.getElementById('chat-preview-wrap');
-            if (wrap) wrap.style.display = 'none';
-        }}
-        </script>
-    </div>
-    """
-    return HTMLResponse(content=get_base_html(t("nav_chat"), body, user, lang), media_type="text/html; charset=utf-8")
-
-@app.post("/chat/send")
-async def chat_send(
-    request: Request,
-    message: str = Form(""),
-    image: UploadFile = File(None)
-):
-    user = get_current_user(request)
-    lang = get_user_lang(request)
-    user_id = user["id"] if user else 0
-    user_country = user.get("country", "مصر") if user else "مصر"
-
-    saved_img_name = ""
-    saved_img_path = None
-    try:
-        if image and image.filename:
-            saved_img_name = f"chat_{int(datetime.now().timestamp())}_{image.filename.replace(' ', '_')}"
-            saved_img_path = os.path.join(UPLOAD_DIR, saved_img_name)
-            with open(saved_img_path, "wb") as buffer:
-                shutil.copyfileobj(image.file, buffer)
-    except Exception as img_err:
-        saved_img_name = ""
-        saved_img_path = None
-
-    conn = get_db()
-    c = conn.cursor()
-
-    user_text = message.strip() if message and message.strip() else ""
-    if not user_text and saved_img_path:
-        user_text = "تم إرسال صورة سريرية للفحص والتشخيص المباشر 📸"
-    elif not user_text:
-        user_text = "مرحباً"
-
-    try:
-        c.execute("""
-        INSERT INTO chat_messages (user_id, role, content, image_filename, image_path, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (user_id, "user", user_text, saved_img_name, saved_img_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
-        c.execute("SELECT role, content FROM chat_messages WHERE user_id = ? ORDER BY id DESC LIMIT 6", (user_id,))
-        raw_history = c.fetchall()
-        chat_history = [{"role": r["role"], "content": r["content"]} for r in reversed(raw_history)]
-
-        api_key = get_effective_groq_api_key(request)
-        ai_response = ask_ai_chat(api_key, user_text, chat_history, saved_img_path, lang, user_country)
-
-        c.execute("""
-        INSERT INTO chat_messages (user_id, role, content, image_filename, image_path, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (user_id, "assistant", ai_response, None, None, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-    finally:
-        conn.close()
-
-    return RedirectResponse("/chat", status_code=303)
-
-@app.post("/chat/delete-image/{msg_id}")
-async def chat_delete_image(request: Request, msg_id: int):
-    """
-    Permanently deletes an attached image from disk and database storage,
-    ensuring zero residue and preventing it from entering any future AI context.
-    """
-    user = get_current_user(request)
-    user_id = user["id"] if user else 0
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM chat_messages WHERE id = ?", (msg_id,))
-    msg = c.fetchone()
-    if msg and (msg["user_id"] == user_id or (user and user.get("is_admin"))):
-        img_name = msg["image_path"] or msg["image_filename"]
-        if img_name:
-            from media_storage import delete_media_permanently
-            delete_media_permanently(conn, img_name)
-        c.execute("UPDATE chat_messages SET image_filename = NULL, image_path = NULL WHERE id = ?", (msg_id,))
-        conn.commit()
-    conn.close()
-    return RedirectResponse("/chat", status_code=303)
-
-@app.post("/chat/clear")
-async def chat_clear(request: Request):
-    """
-    Clears all chat history and permanently deletes all user uploaded images
-    from server disks, cache, and database media files.
-    """
-    user = get_current_user(request)
-    user_id = user["id"] if user else 0
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT image_path, image_filename FROM chat_messages WHERE user_id = ?", (user_id,))
-    rows = c.fetchall()
-    from media_storage import delete_media_permanently
-    for r in rows:
-        fname = r["image_path"] or r["image_filename"]
-        if fname:
-            delete_media_permanently(conn, fname)
-    c.execute("DELETE FROM chat_messages WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-    return RedirectResponse("/chat", status_code=303)
-
-# ROUTE 11: 30 SCIENTIFIC REFERENCES WITH DIRECT DOWNLOAD & INTERACTIVE READER
-# ==============================================================================
 def generate_reference_standalone_html(ref_id: str) -> str:
     """Generates a complete, beautiful standalone HTML document for any reference book."""
     from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
@@ -6901,6 +6557,20 @@ async def universal_search_page(
 # ==============================================================================
 # ROUTE 14: FAST AUTOCOMPLETE & ALL-DRUGS API
 # ==============================================================================
+
+@app.get("/sw.js")
+async def get_root_service_worker():
+    sw_file = os.path.join(STATIC_DIR, "sw.js")
+    return FileResponse(sw_file, media_type="application/javascript", headers={
+        "Service-Worker-Allowed": "/",
+        "Cache-Control": "no-cache"
+    })
+
+@app.get("/manifest.json")
+async def get_root_manifest():
+    mf_file = os.path.join(STATIC_DIR, "manifest.json")
+    return FileResponse(mf_file, media_type="application/manifest+json")
+
 @app.get("/api/universal-search/autocomplete")
 async def api_universal_search_autocomplete(q: str = ""):
     import universal_search
@@ -7042,7 +6712,6 @@ async def clinic_hub_page(request: Request):
                 <p style="color: #a7f3d0; margin: 4px 0 0 0; font-size: 0.9rem;">معرض صور الحالات المباشر، مواقيت الصلاة، طباعة الروشتات برقم تسلسلي، وباقة الـ 30 أداة</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="/clinic/cases-gallery" class="btn btn-gold" style="font-weight: 700;">🖼️ معرض صور الحالات</a>
                 <a href="/clinic/prayer-times" class="btn btn-outline" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4); font-weight: 700;">🕌 مواقيت الصلاة</a>
                 <a href="/clinic/prescription/print" class="btn btn-outline" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4); font-weight: 700;">🖨️ طباعة الروشتة الرسمية</a>
                 <a href="/tools" class="btn btn-outline" style="background: #ffffff; color: #047857; font-weight: 800;">🛠️ دليل الـ 30 أداة</a>

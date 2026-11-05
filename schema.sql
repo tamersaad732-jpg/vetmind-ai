@@ -25,32 +25,6 @@ CREATE TABLE IF NOT EXISTS broadcast_notifications (
         created_at TEXT NOT NULL
     );
 
--- Object: table cases
-CREATE TABLE IF NOT EXISTS cases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            animal_name TEXT NOT NULL,
-            species TEXT NOT NULL,
-            age TEXT,
-            weight TEXT,
-            symptoms TEXT NOT NULL,
-            duration TEXT NOT NULL,
-            image_filename TEXT,
-            triage_level TEXT NOT NULL,
-            triage_note TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        , analysis_json TEXT, user_id INTEGER DEFAULT 1, diagnosis TEXT DEFAULT '', client_name TEXT DEFAULT '');
-
--- Object: table chat_messages
-CREATE TABLE IF NOT EXISTS chat_messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        image_filename TEXT,
-        created_at TEXT NOT NULL, image_path TEXT,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-    );
-
 -- Object: table client_operations
 CREATE TABLE IF NOT EXISTS client_operations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
