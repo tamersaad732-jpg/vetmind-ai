@@ -16,6 +16,7 @@ import random
 import urllib.request
 import urllib.error
 import urllib.parse
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from PIL import Image, ImageStat
 from fastapi import FastAPI, Form, File, UploadFile, Request, Response, HTTPException

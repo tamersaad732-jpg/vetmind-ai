@@ -50,3 +50,5 @@ uploads/
 *.bat
 *.zip
 backups_vetbook_upgrade/
+
+.vercel
