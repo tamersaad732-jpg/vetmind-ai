@@ -302,3 +302,37 @@ def get_media_from_db(conn, filename: str) -> dict | None:
         }
     except Exception:
         return None
+
+
+def delete_media_permanently(conn, filename: str) -> bool:
+    """
+    Permanently deletes a media file from:
+    1. Local uploads directory and temporary directories
+    2. Database media_files table
+    Ensuring zero residue on disk or database.
+    """
+    if not filename:
+        return False
+    clean_name = os.path.basename(filename.strip())
+    if not clean_name:
+        return False
+
+    # 1. Physical disk & temp removal
+    for d in [UPLOAD_DIR, os.path.join(BASE_DIR, "uploads"), "/tmp/uploads"]:
+        try:
+            fpath = os.path.join(d, clean_name)
+            if os.path.exists(fpath) and os.path.isfile(fpath):
+                os.remove(fpath)
+        except Exception:
+            pass
+
+    # 2. Database permanent record removal
+    if conn is not None:
+        try:
+            c = conn.cursor()
+            c.execute("DELETE FROM media_files WHERE filename = ?", (clean_name,))
+            conn.commit()
+        except Exception:
+            pass
+
+    return True

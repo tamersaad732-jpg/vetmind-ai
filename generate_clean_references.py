@@ -11,6 +11,9 @@ except Exception:
 ARAB_REFS = [
     {
         "id": "arab_1",
+        "pages_count": 221,
+        "file_size_mb": 19.71,
+        "file_name": "01_دليلك_إلى_رعاية_الأبقار_والإنتاج_الحيواني.pdf",
         "name": "دليلك إلى رعاية الأبقار وإنتاج الحليب وتسمين العجول (الدليل الإكلينيكي والحقلي)",
         "category": "رعاية وإنتاج المجترات الكبيرة (19.71 ميجابايت - 221 صفحة)",
         "url": "https://archive.org/details/your-guide-to-cow-care",
@@ -24,6 +27,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_2",
+        "pages_count": 168,
+        "file_size_mb": 12.83,
+        "file_name": "02_علاج_أمراض_المجترات_هاشم.pdf",
         "name": "علاج أمراض المجترات السريرية (الأبقار، الجاموس، الأغنام، والماعز)",
         "category": "أمراض الباطنة والمجترات (12.83 ميجابايت)",
         "url": "https://archive.org/details/AAskZad-1148444",
@@ -37,6 +43,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_3",
+        "pages_count": 476,
+        "file_size_mb": 27.19,
+        "file_name": "03_الجراحة_البيطرية_العامة_مكتبة_الإسكندرية.pdf",
         "name": "الجراحة البيطرية العامة (General Veterinary Surgery)",
         "category": "الجراحة والعمليات البيطرية (27.19 ميجابايت)",
         "url": "https://archive.org/details/AAlexandrina-439789",
@@ -50,6 +59,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_4",
+        "pages_count": 300,
+        "file_size_mb": 13.1,
+        "file_name": "04_التخدير_في_الطب_البيطري.pdf",
         "name": "التخدير في الطب البيطري (Veterinary Anesthesia & Resuscitation)",
         "category": "التخدير والإنعاش البيطري (13.10 ميجابايت)",
         "url": "https://archive.org/details/AAlexandrina-439761",
@@ -63,6 +75,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_5",
+        "pages_count": 410,
+        "file_size_mb": 136.31,
+        "file_name": "05_موسوعة_الأدوية_البيطرية_عزيزة_محروس_وأمين_شتا.pdf",
         "name": "موسوعة الأدوية البيطرية الشاملة (الأطلس الدوائي البيطري الكامل)",
         "category": "الفارماكولوجيا والأدوية البيطرية (136.31 ميجابايت)",
         "url": "https://archive.org/details/AAskZad-1152159",
@@ -76,6 +91,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_6",
+        "pages_count": 688,
+        "file_size_mb": 44.24,
+        "file_name": "06_الطفيليات_البيطرية.pdf",
         "name": "الطفيليات البيطرية والأمراض الطفيلية (Veterinary Parasitology)",
         "category": "الطفيليات وأمراض الدم البيطرية (44.24 MB)",
         "url": "https://archive.org/details/AAlexandrina-428715",
@@ -89,6 +107,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_7",
+        "pages_count": 190,
+        "file_size_mb": 35.47,
+        "file_name": "07_الإبل_العربية_فسيولوجيا_ورعاية_وطب_الإبل_والهجن_الصانع.pdf",
         "name": "الإبل العربية: فسيولوجيا ورعاية وطب الإبل والهجن",
         "category": "طب ورعاية الإبل والهجن السريري (35.47 ميجابايت)",
         "url": "https://archive.org/details/1403-1983",
@@ -102,6 +123,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_8",
+        "pages_count": 192,
+        "file_size_mb": 10.07,
+        "file_name": "08_صحة_ورعاية_الأغنام_فايز_وحامد_سماحة.pdf",
         "name": "صحة ورعاية الأغنام والماعز والمجترات الصغيرة",
         "category": "طب وأمراض المجترات الصغيرة (10.07 ميجابايت)",
         "url": "https://archive.org/details/AAskZad-1184764",
@@ -115,6 +139,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_9",
+        "pages_count": 284,
+        "file_size_mb": 53.65,
+        "file_name": "09_صحة_الحيوان_والطب_الوقائي_عبدالحميد.pdf",
         "name": "صحة الحيوان والطب الوقائي البيطري",
         "category": "الصحة الحيوانية والطب الوقائي (53.65 ميجابايت)",
         "url": "https://archive.org/details/AAskZad-1129345",
@@ -128,6 +155,9 @@ ARAB_REFS = [
     },
     {
         "id": "arab_10",
+        "pages_count": 653,
+        "file_size_mb": 46.07,
+        "file_name": "10_تسمين_الدواجن_وصناعتها_د_ابراهيم_سلامة.pdf",
         "name": "تسمين الدواجن وصناعتها ورعايتها الحقلية الشاملة بين النظرية والتطبيق",
         "category": "صناعة ورعاية وتسمين الدواجن (46.07 ميجابايت - 653 صفحة)",
         "url": "https://archive.org/details/20230104_20230104_1634",
@@ -144,6 +174,9 @@ ARAB_REFS = [
 GLOBAL_REFS = [
     {
         "id": "global_1",
+        "pages_count": 487,
+        "file_size_mb": 97.32,
+        "file_name": "01_Blood_Radostits_Veterinary_Medicine_10th_Ed.pdf",
         "name": "Blood & Radostits - Veterinary Medicine: Diseases of Cattle, Horses, Sheep, Pigs & Goats (10th Ed)",
         "category": "Internal Medicine & Large Animal Practice (97.32 MB - 2,156 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -157,6 +190,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_2",
+        "pages_count": 343,
+        "file_size_mb": 15.4,
+        "file_name": "02_Veterinary_Anasthesia_and_Pain_Management_Secrets.pdf",
         "name": "Veterinary Anesthesia and Pain Management Secrets",
         "category": "Anesthesiology & Analgesia (15.40 MB)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -170,6 +206,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_3",
+        "pages_count": 3846,
+        "file_size_mb": 70.74,
+        "file_name": "03_Clinical_Veterinary_Advisor_Dog_And_Cat.pdf",
         "name": "Clinical Veterinary Advisor: Dogs and Cats (2nd Edition)",
         "category": "Small Animal Clinical Practice (70.74 MB - 1,400 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -183,6 +222,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_4",
+        "pages_count": 554,
+        "file_size_mb": 17.45,
+        "file_name": "04_Kuby_Immunology_Veterinary_Benchmark.pdf",
         "name": "Kuby Immunology - Veterinary Benchmark Edition",
         "category": "Immunology & Immunopathology (17.45 MB - 674 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -196,6 +238,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_5",
+        "pages_count": 523,
+        "file_size_mb": 36.01,
+        "file_name": "05_Duncan_and_Prasse_Veterinary_Laboratory_Medicine.pdf",
         "name": "Duncan & Prasse's Veterinary Laboratory Medicine: Clinical Pathology (5th Ed)",
         "category": "Clinical Pathology & Hematology (36.01 MB - 400 Pages)",
         "url": "https://archive.org/details/DuncanPrassesVeterinaryLaboratoryMedicineClinicalPathology",
@@ -209,6 +254,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_6",
+        "pages_count": 640,
+        "file_size_mb": 26.85,
+        "file_name": "06_Fundamentals_of_Veterinary_Clinical_Pathology.pdf",
         "name": "Fundamentals of Veterinary Clinical Pathology (2nd Edition)",
         "category": "Veterinary Clinical Pathology (26.85 MB - 500 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -222,6 +270,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_7",
+        "pages_count": 1431,
+        "file_size_mb": 54.38,
+        "file_name": "07_Veterinary_Microbiology_Quinn.pdf",
         "name": "Clinical Veterinary Microbiology (2nd Edition - Quinn)",
         "category": "Veterinary Microbiology & Mycology (54.38 MB - 600+ Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -235,6 +286,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_8",
+        "pages_count": 600,
+        "file_size_mb": 29.56,
+        "file_name": "08_Textbook_of_Veterinary_General_Pathology.pdf",
         "name": "Textbook of Veterinary General Pathology (2nd Edition)",
         "category": "General Veterinary Pathology (29.56 MB - 450 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -248,6 +302,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_9",
+        "pages_count": 482,
+        "file_size_mb": 12.85,
+        "file_name": "09_Veterinary_Microbiology_Comprehensive.pdf",
         "name": "Veterinary Microbiology Comprehensive Edition",
         "category": "Microbial Pathogenesis & Virology (12.85 MB - 350 Pages)",
         "url": "https://archive.org/details/BLOODRADOSTITSVeterinaryMedicine10thEdition",
@@ -261,6 +318,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_10",
+        "pages_count": 210,
+        "file_size_mb": 28.63,
+        "file_name": "10_Color_Atlas_of_the_Horse_Foot.pdf",
         "name": "Color Atlas of the Horse's Foot",
         "category": "Equine Podiatry & Orthopedics (28.63 MB - Full-Color Atlas)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -274,6 +334,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_11",
+        "pages_count": 494,
+        "file_size_mb": 34.01,
+        "file_name": "11_Current_Therapy_in_Equine_Reproduction.pdf",
         "name": "Current Therapy in Equine Reproduction",
         "category": "Equine Theriogenology (34.01 MB - 500 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -287,6 +350,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_12",
+        "pages_count": 332,
+        "file_size_mb": 35.26,
+        "file_name": "12_Manual_of_Equine_Reproduction_3rd_Ed.pdf",
         "name": "Manual of Equine Reproduction (3rd Edition)",
         "category": "Equine Reproduction Field Manual (35.26 MB - 350 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -300,6 +366,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_13",
+        "pages_count": 110,
+        "file_size_mb": 45.21,
+        "file_name": "13_Guide_to_Equine_Injection_and_Regional_Anesthesia.pdf",
         "name": "A Guide to Equine Injection Techniques and Regional Anesthesia",
         "category": "Equine Clinical Procedures & Anesthesia (45.21 MB - Illustrated)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -313,6 +382,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_14",
+        "pages_count": 395,
+        "file_size_mb": 48.07,
+        "file_name": "14_Equine_Dentistry_3rd_Edition.pdf",
         "name": "Equine Dentistry (3rd Edition)",
         "category": "Equine Dentistry & Maxillofacial Surgery (48.07 MB - 400 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -326,6 +398,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_15",
+        "pages_count": 545,
+        "file_size_mb": 62.33,
+        "file_name": "15_Equine_Dermatology_2nd_Edition.pdf",
         "name": "Equine Dermatology (2nd Edition)",
         "category": "Equine Dermatology (62.33 MB - 500 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -339,6 +414,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_16",
+        "pages_count": 220,
+        "file_size_mb": 12.72,
+        "file_name": "16_Handbook_of_Equine_Anaesthesia_2nd_Ed.pdf",
         "name": "Handbook of Equine Anaesthesia (2nd Edition)",
         "category": "Equine Anaesthesia Clinical Manual (12.72 MB - 250 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -352,6 +430,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_17",
+        "pages_count": 547,
+        "file_size_mb": 8.28,
+        "file_name": "17_Veterinary_Anaesthesia_Clinical_Manual.pdf",
         "name": "Veterinary Anaesthesia: Principles to Practice",
         "category": "Veterinary Anesthesiology (8.28 MB - 300 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -365,6 +446,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_18",
+        "pages_count": 1442,
+        "file_size_mb": 7.89,
+        "file_name": "18_The_Equine_Manual_2nd_Edition.pdf",
         "name": "The Equine Manual (2nd Edition)",
         "category": "Equine Clinical Medicine & Surgery (7.89 MB - 400 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -378,6 +462,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_19",
+        "pages_count": 460,
+        "file_size_mb": 4.76,
+        "file_name": "19_The_Equine_Veterinary_Nursing_Manual.pdf",
         "name": "The Equine Veterinary Nursing Manual (2nd Edition)",
         "category": "Equine Veterinary Nursing (4.76 MB - 350 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
@@ -391,6 +478,9 @@ GLOBAL_REFS = [
     },
     {
         "id": "global_20",
+        "pages_count": 211,
+        "file_size_mb": 66.78,
+        "file_name": "20_Rooney_Guide_to_Dissection_of_the_Horse_7th_Ed.pdf",
         "name": "Rooney's Guide to the Dissection of the Horse (7th Edition)",
         "category": "Equine Anatomy & Dissection (66.78 MB - 300 Pages)",
         "url": "https://archive.org/details/largeanimalinternalmedicine",
