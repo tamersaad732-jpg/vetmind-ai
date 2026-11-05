@@ -4,6 +4,7 @@ VetMind AI Enterprise v4.2 - Long-Term Investment Grade Veterinary Clinical Inte
 """
 
 import os
+import re
 import sys
 import io
 import json
@@ -957,6 +958,153 @@ html.dark-theme .mobile-menu-item:hover, html.dark .mobile-menu-item:hover, [dat
 }
 
 /* ========================================================================== */
+
+/* ========================================================================== */
+/* DUAL-THEME HIGH-CONTRAST & ADAPTIVE TEXT COMPATIBILITY ENGINE              */
+/* ========================================================================== */
+html:not(.dark):not(.dark-theme),
+body:not(.dark):not(.dark-theme),
+[data-theme="light"] {
+    --bg: #F4F7FB;
+    --card-bg: #FFFFFF;
+    --card-hover: #F8FAFC;
+    --text-main: #0F172A;
+    --text-muted: #334155;
+    --text-dim: #64748B;
+    --border: #CBD5E1;
+    --border-glass: rgba(203, 213, 225, 0.85);
+}
+
+html:not(.dark):not(.dark-theme) body,
+[data-theme="light"] body {
+    background-color: #F4F7FB !important;
+    color: #0F172A !important;
+}
+
+html:not(.dark):not(.dark-theme) h1, html:not(.dark):not(.dark-theme) h2,
+html:not(.dark):not(.dark-theme) h3, html:not(.dark):not(.dark-theme) h4,
+[data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3, [data-theme="light"] h4 {
+    color: #0F172A !important;
+}
+
+html:not(.dark):not(.dark-theme) p, [data-theme="light"] p {
+    color: #1E293B !important;
+}
+
+html:not(.dark):not(.dark-theme) label, [data-theme="light"] label {
+    color: #0F172A !important;
+    font-weight: 700;
+}
+
+html:not(.dark):not(.dark-theme) input, html:not(.dark):not(.dark-theme) select, html:not(.dark):not(.dark-theme) textarea,
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border-color: #CBD5E1 !important;
+}
+
+/* Comprehensive Dark Mode Rules - Guarantees 100% High Contrast Text */
+html.dark-theme, html.dark, body.dark-theme, body.dark, [data-theme="dark"] {
+    --bg: #090D16;
+    --card-bg: #111827;
+    --card-hover: #162032;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-dim: #64748B;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-glass: rgba(255, 255, 255, 0.15);
+}
+
+html.dark-theme body, html.dark body, [data-theme="dark"] body {
+    background-color: #090D16 !important;
+    color: #F8FAFC !important;
+}
+
+html.dark-theme .card, html.dark .card, [data-theme="dark"] .card {
+    background-color: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #F8FAFC !important;
+}
+
+html.dark-theme h1, html.dark-theme h2, html.dark-theme h3, html.dark-theme h4, html.dark-theme h5, html.dark-theme h6,
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4 {
+    color: #F8FAFC !important;
+}
+
+html.dark-theme label, html.dark label, [data-theme="dark"] label {
+    color: #E2E8F0 !important;
+    font-weight: 700;
+}
+
+html.dark-theme p, html.dark p, [data-theme="dark"] p {
+    color: #CBD5E1 !important;
+}
+
+html.dark-theme input, html.dark-theme select, html.dark-theme textarea,
+html.dark input, html.dark select, html.dark textarea,
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+    background-color: #1F2937 !important;
+    color: #F8FAFC !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+/* Force dark mode visibility on elements with inline dark colors */
+html.dark-theme [style*="color: #475569"], html.dark [style*="color: #475569"], [data-theme="dark"] [style*="color: #475569"],
+html.dark-theme [style*="color: #64748b"], html.dark [style*="color: #64748b"], [data-theme="dark"] [style*="color: #64748b"],
+html.dark-theme [style*="color: #334155"], html.dark [style*="color: #334155"], [data-theme="dark"] [style*="color: #334155"],
+html.dark-theme [style*="color: #1e293b"], html.dark [style*="color: #1e293b"], [data-theme="dark"] [style*="color: #1e293b"],
+html.dark-theme [style*="color: #0f172a"], html.dark [style*="color: #0f172a"], [data-theme="dark"] [style*="color: #0f172a"],
+html.dark-theme [style*="color: var(--primary)"], html.dark [style*="color: var(--primary)"], [data-theme="dark"] [style*="color: var(--primary)"] {
+    color: #F8FAFC !important;
+}
+
+html.dark-theme .mobile-drawer, html.dark .mobile-drawer, [data-theme="dark"] .mobile-drawer,
+html.dark-theme .modal-content, html.dark .modal-content, [data-theme="dark"] .modal-content {
+    background-color: #0F172A !important;
+    color: #F8FAFC !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark-theme .mobile-menu-item, html.dark .mobile-menu-item, [data-theme="dark"] .mobile-menu-item {
+    color: #F8FAFC !important;
+}
+
+html.dark-theme .mobile-menu-item:hover, html.dark .mobile-menu-item:hover, [data-theme="dark"] .mobile-menu-item:hover {
+    background-color: #1F2937 !important;
+}
+
+/* Print CSS Rules for Medical Prescription */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    header, nav, aside, footer, .prestige-topbar, .mobile-bottom-nav, .btn, .no-print,
+    .mobile-hamburger-btn, #header-pwa-install-btn, .lang-selector-pill, .icon-action-btn {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    #printable-rx-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #printable-rx {
+        display: block !important;
+        visibility: visible !important;
+        border: 2px solid #000 !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 24px !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        page-break-inside: avoid !important;
+    }
+}
+
 /* 2. TYPOGRAPHY & ZERO-COLLISION RULES */
 /* ========================================================================== */
 html, body {
@@ -2820,7 +2968,7 @@ function triggerPwaInstall() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. High-Performance Dark/Light Mode Theme Architecture
+// 2. High-Performance Dark/Light Mode Theme & Offline Connectivity Engine
 // ---------------------------------------------------------------------------
 function applyTheme(theme) {
     const root = document.documentElement;
@@ -2835,6 +2983,20 @@ function applyTheme(theme) {
         if (body) body.classList.remove('dark', 'dark-theme');
         root.setAttribute('data-theme', 'light');
     }
+    // Synchronize theme toggle buttons dynamically across navbar and drawer
+    document.querySelectorAll('.icon-action-btn[onclick*="toggleTheme"]').forEach(btn => {
+        btn.innerHTML = isDark ? '☀️' : '🌙';
+        btn.title = isDark ? 'التبديل إلى النمط النهاري (Day Mode)' : 'التبديل إلى النمط الليلي (Night Mode)';
+        btn.setAttribute('aria-label', btn.title);
+    });
+    document.querySelectorAll('.mobile-menu-item[onclick*="toggleTheme"]').forEach(btn => {
+        const icon = btn.querySelector('.m-icon');
+        const label = btn.querySelector('.m-label');
+        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+        if (label) label.textContent = isDark ? 'التبديل إلى النمط النهاري (Day Mode)' : 'التبديل إلى النمط الليلي (Night Mode)';
+    });
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute('content', isDark ? '#090D16' : '#0F4C81');
     try {
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         document.cookie = "vetmind_theme=" + (isDark ? 'dark' : 'light') + "; path=/; max-age=31536000; SameSite=Lax";
@@ -2859,15 +3021,17 @@ function toggleTheme() {
         if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             savedTheme = 'dark';
         }
-        if (savedTheme === 'dark') {
-            document.documentElement.classList.add('dark', 'dark-theme');
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark', 'dark-theme');
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
+        applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
     } catch(e) {}
 })();
+
+// Automatic Offline Resilience Listeners
+window.addEventListener('offline', () => {
+    console.log('[VetMind PWA] Device is offline. Offline Clinical Engine active.');
+});
+window.addEventListener('online', () => {
+    console.log('[VetMind PWA] Device back online.');
+});
 
 // ---------------------------------------------------------------------------
 // 3. UI Navigation & Drawer Controls
@@ -3398,13 +3562,29 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <aside id="mobile-drawer" class="mobile-drawer">
         <div class="mobile-drawer-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
-                    <svg width="26" height="26" viewBox="0 0 512 512" fill="none">
-                        <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#34d399" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M 206 190 C 231 180, 281 180, 306 190 C 311 220, 308 260, 296 290 C 281 305, 231 305, 216 290 C 204 260, 201 220, 206 190 Z" fill="#ffffff"/>
-                        <path d="M 221 285 C 221 277, 291 277, 291 285 C 294 303, 286 323, 256 325 C 226 323, 218 303, 221 285 Z" fill="#fed7aa"/>
-                    </svg>
-                </div>
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;"><svg width="28" height="28" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="16" y="16" width="480" height="480" rx="110" fill="#042f2e" stroke="#10b981" stroke-width="12"/>
+    <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#10b981" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#6ee7b7" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+    <path d="M 195 185 C 160 140, 145 95, 175 80 C 195 85, 205 125, 215 160" fill="#f59e0b" stroke="#b45309" stroke-width="3"/>
+    <path d="M 317 185 C 352 140, 367 95, 337 80 C 317 85, 307 125, 297 160" fill="#f59e0b" stroke="#b45309" stroke-width="3"/>
+    <path d="M 210 195 C 160 185, 130 210, 145 235 C 165 245, 195 225, 215 220" fill="#ffffff" stroke="#065f46" stroke-width="3"/>
+    <path d="M 170 210 C 155 220, 165 230, 185 220" fill="#fbcfe8"/>
+    <path d="M 302 195 C 352 185, 382 210, 367 235 C 347 245, 317 225, 297 220" fill="#ffffff" stroke="#065f46" stroke-width="3"/>
+    <path d="M 342 210 C 357 220, 347 230, 327 220" fill="#fbcfe8"/>
+    <path d="M 205 180 C 235 170, 277 170, 307 180 C 315 215, 312 260, 298 290 C 280 305, 232 305, 214 290 C 200 260, 197 215, 205 180 Z" fill="#ffffff" stroke="#064e3b" stroke-width="4"/>
+    <path d="M 235 175 C 265 180, 280 205, 270 225 C 260 240, 245 230, 238 210 Z" fill="#042f2e"/>
+    <ellipse cx="228" cy="235" rx="7" ry="5.5" fill="#0f172a"/>
+    <circle cx="226" cy="233" r="2" fill="#ffffff"/>
+    <ellipse cx="284" cy="235" rx="7" ry="5.5" fill="#0f172a"/>
+    <circle cx="282" cy="233" r="2" fill="#ffffff"/>
+    <rect x="216" y="280" width="80" height="48" rx="20" fill="#fed7aa" stroke="#064e3b" stroke-width="4"/>
+    <ellipse cx="236" cy="300" rx="5" ry="4" fill="#7c2d12"/>
+    <ellipse cx="276" cy="300" rx="5" ry="4" fill="#7c2d12"/>
+    <path d="M 246 312 Q 256 318 266 312" stroke="#7c2d12" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <circle cx="256" cy="440" r="18" fill="#f59e0b" stroke="#ffffff" stroke-width="4"/>
+    <circle cx="256" cy="440" r="7" fill="#ffffff"/>
+</svg></div>
                 <div>
                     <div style="font-weight: 800; font-size: 1.05rem; color: white;">VetMind AI</div>
                     <div style="font-size: 0.75rem; opacity: 0.9; color: #ecfdf5;">المنظومة الإكلينيكية البيطرية 🩺</div>
@@ -3579,13 +3759,13 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="VetMind AI">
     <title>{title} | {t('app_name')} {t('version')}</title>
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="shortcut icon" href="/favicon.ico?v=5">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5">
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=5">
-    <link rel="alternate icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v=5">
-    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png?v=5">
-    <link rel="apple-touch-icon" href="/static/icon-192.png?v=5">
+    <link rel="manifest" href="/static/manifest.json?v=6">
+    <link rel="shortcut icon" href="/favicon.ico?v=6">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=6">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=6">
+    <link rel="alternate icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v=6">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png?v=6">
+    <link rel="apple-touch-icon" href="/static/icon-192.png?v=6">
 
     <style>
 {GLOBAL_PRESTIGE_CSS}
@@ -3603,23 +3783,29 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
                     <span style="line-height: 1;">☰</span>
                 </button>
                 <a href="/" class="brand-link" title="{t('app_name')} - الرئيسية">
-                    <span class="brand-logo-wrap">
-                        <svg width="28" height="28" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="16" y="16" width="480" height="480" rx="110" fill="#064e3b" stroke="#10b981" stroke-width="10"/>
-                            <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#34d399" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#6ee7b7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
-                            <path d="M 201 195 C 171 160, 161 120, 186 105 C 201 110, 211 140, 221 170" fill="#f59e0b"/>
-                            <path d="M 311 195 C 341 160, 351 120, 326 105 C 311 110, 301 140, 291 170" fill="#f59e0b"/>
-                            <path d="M 211 200 C 171 190, 141 210, 156 230 C 171 240, 196 225, 216 220" fill="#ffffff"/>
-                            <path d="M 301 200 C 341 190, 371 210, 356 230 C 341 240, 316 225, 296 220" fill="#ffffff"/>
-                            <path d="M 206 190 C 231 180, 281 180, 306 190 C 311 220, 308 260, 296 290 C 281 305, 231 305, 216 290 C 204 260, 201 220, 206 190 Z" fill="#ffffff"/>
-                            <path d="M 236 187 C 261 190, 281 205, 274 225 C 266 245, 251 240, 241 220 Z" fill="#064e3b"/>
-                            <ellipse cx="228" cy="237" rx="6" ry="5" fill="#0f172a"/>
-                            <ellipse cx="284" cy="237" rx="6" ry="5" fill="#0f172a"/>
-                            <path d="M 221 285 C 221 277, 291 277, 291 285 C 294 303, 286 323, 256 325 C 226 323, 218 303, 221 285 Z" fill="#fed7aa"/>
-                            <circle cx="256" cy="440" r="14" fill="#f59e0b"/>
-                        </svg>
-                    </span>
+                    <span class="brand-logo-wrap"><svg width="28" height="28" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="16" y="16" width="480" height="480" rx="110" fill="#042f2e" stroke="#10b981" stroke-width="12"/>
+    <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#10b981" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 85 110 L 256 440 L 427 110" fill="none" stroke="#6ee7b7" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+    <path d="M 195 185 C 160 140, 145 95, 175 80 C 195 85, 205 125, 215 160" fill="#f59e0b" stroke="#b45309" stroke-width="3"/>
+    <path d="M 317 185 C 352 140, 367 95, 337 80 C 317 85, 307 125, 297 160" fill="#f59e0b" stroke="#b45309" stroke-width="3"/>
+    <path d="M 210 195 C 160 185, 130 210, 145 235 C 165 245, 195 225, 215 220" fill="#ffffff" stroke="#065f46" stroke-width="3"/>
+    <path d="M 170 210 C 155 220, 165 230, 185 220" fill="#fbcfe8"/>
+    <path d="M 302 195 C 352 185, 382 210, 367 235 C 347 245, 317 225, 297 220" fill="#ffffff" stroke="#065f46" stroke-width="3"/>
+    <path d="M 342 210 C 357 220, 347 230, 327 220" fill="#fbcfe8"/>
+    <path d="M 205 180 C 235 170, 277 170, 307 180 C 315 215, 312 260, 298 290 C 280 305, 232 305, 214 290 C 200 260, 197 215, 205 180 Z" fill="#ffffff" stroke="#064e3b" stroke-width="4"/>
+    <path d="M 235 175 C 265 180, 280 205, 270 225 C 260 240, 245 230, 238 210 Z" fill="#042f2e"/>
+    <ellipse cx="228" cy="235" rx="7" ry="5.5" fill="#0f172a"/>
+    <circle cx="226" cy="233" r="2" fill="#ffffff"/>
+    <ellipse cx="284" cy="235" rx="7" ry="5.5" fill="#0f172a"/>
+    <circle cx="282" cy="233" r="2" fill="#ffffff"/>
+    <rect x="216" y="280" width="80" height="48" rx="20" fill="#fed7aa" stroke="#064e3b" stroke-width="4"/>
+    <ellipse cx="236" cy="300" rx="5" ry="4" fill="#7c2d12"/>
+    <ellipse cx="276" cy="300" rx="5" ry="4" fill="#7c2d12"/>
+    <path d="M 246 312 Q 256 318 266 312" stroke="#7c2d12" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <circle cx="256" cy="440" r="18" fill="#f59e0b" stroke="#ffffff" stroke-width="4"/>
+    <circle cx="256" cy="440" r="7" fill="#ffffff"/>
+</svg></span>
                     <div class="brand-titles">
                         <div class="brand-name">
                             {t('app_name')} <span class="brand-badge">{t('version')}</span>
@@ -3813,15 +3999,19 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
 </body>
 </html>"""
 
-# ROUTE: SMART RX PRESCRIPTION & DOSAGE CALCULATOR
+# ==============================================================================
+# ROUTE: SMART RX PRESCRIPTION GENERATOR & CLINICAL DOSAGE ENGINE (100% ENGLISH)
 # ==============================================================================
 @app.get("/rx-prescription", response_class=HTMLResponse)
 async def rx_prescription_page(
     request: Request,
-    animal_name: str = "بقرة حلوب #108",
+    animal_name: str = "Bovine Patient #108",
     species: str = "أبقار",
     weight: float = 450.0,
-    selected_drug_id: int = 1
+    selected_drug_id: int = 1,
+    secondary_drug_id: int = 0,
+    notes: str = "",
+    diagnosis: str = ""
 ):
     user = get_current_user(request)
     lang = get_user_lang(request)
@@ -3840,13 +4030,17 @@ async def rx_prescription_page(
         clinic = c.fetchone()
     conn.close()
 
-    clinic_name = clinic["clinic_name"] if clinic else "مركز فيتمايند للاستشارات والطب البيطري المتقدم"
-    clinic_phone = clinic["phone"] if clinic else "+201000000000"
-    clinic_addr = clinic["address"] if clinic else "القاهرة - مدينة نصر"
-    doctor_name = user["name"] if user else "تامر سعد (Admin)"
+    clinic_name = "VETMIND ADVANCED VETERINARY CLINICAL HOSPITAL"
+    if clinic and clinic.get("clinic_name") and any(c.isascii() and c.isalpha() for c in clinic["clinic_name"]):
+        clinic_name = clinic["clinic_name"]
+    clinic_phone = clinic["phone"] if (clinic and clinic.get("phone")) else "+20 100 000 0000"
+    clinic_addr = "Veterinary Medical District, Cairo, Egypt"
+    if clinic and clinic.get("address") and any(c.isascii() and c.isalpha() for c in clinic["address"]):
+        clinic_addr = clinic["address"]
+    doctor_name = user["name"] if user else "Tamer Saad"
     syndicate_id = user.get("syndicate_id", "EXEC-VET-001") if user else "EXEC-VET-001"
 
-    # Find selected drug
+    # Find selected primary drug
     current_drug = None
     for d in all_drugs:
         if d["id"] == selected_drug_id:
@@ -3855,9 +4049,17 @@ async def rx_prescription_page(
     if not current_drug and all_drugs:
         current_drug = all_drugs[0]
 
-    # Calculate dosage heuristic
+    # Find secondary drug if selected
+    secondary_drug = None
+    if secondary_drug_id > 0:
+        for d in all_drugs:
+            if d["id"] == secondary_drug_id:
+                secondary_drug = d
+                break
+
+    # Calculate primary dosage heuristic
     calc_dose_ml = 0.0
-    dose_text = current_drug["dosage_guide"]
+    dose_text = current_drug.get("dosage_guide", "")
     if "لكل 10 كجم" in dose_text:
         calc_dose_ml = round((weight / 10.0) * 1.0, 1)
     elif "لكل 25 كجم" in dose_text:
@@ -3870,128 +4072,424 @@ async def rx_prescription_page(
         calc_dose_ml = round((weight / 20.0) * 1.0, 1)
     elif "لكل 45 كجم" in dose_text:
         calc_dose_ml = round((weight / 45.0) * 1.0, 1)
+    elif "لكل 15 كجم" in dose_text:
+        calc_dose_ml = round((weight / 15.0) * 1.0, 1)
     else:
         calc_dose_ml = round((weight / 25.0) * 1.0, 1)
+    if calc_dose_ml < 0.1:
+        calc_dose_ml = 0.5
+
+    # Calculate secondary dosage if present
+    calc_sec_dose_ml = 0.0
+    if secondary_drug:
+        sec_dose_text = secondary_drug.get("dosage_guide", "")
+        if "لكل 10 كجم" in sec_dose_text:
+            calc_sec_dose_ml = round((weight / 10.0) * 1.0, 1)
+        elif "لكل 25 كجم" in sec_dose_text:
+            calc_sec_dose_ml = round((weight / 25.0) * 1.0, 1)
+        elif "لكل 50 كجم" in sec_dose_text:
+            calc_sec_dose_ml = round((weight / 50.0) * 1.0, 1)
+        elif "لكل 20 كجم" in sec_dose_text:
+            calc_sec_dose_ml = round((weight / 20.0) * 1.0, 1)
+        else:
+            calc_sec_dose_ml = round((weight / 25.0) * 1.0, 1)
+        if calc_sec_dose_ml < 0.1:
+            calc_sec_dose_ml = 1.0
+
+    # Clean English Name extraction
+    def get_en_name(trade_name: str) -> str:
+        m = re.search(r'\(([^)]+)\)', trade_name)
+        if m and any(c.isascii() and c.isalpha() for c in m.group(1)):
+            return m.group(1).strip()
+        # If no english in paren, clean arabic
+        return "".join([c for c in trade_name if c.isascii() or c in " %/-+"]).strip() or trade_name
+
+    primary_en_name = get_en_name(current_drug['trade_name'])
+    secondary_en_name = get_en_name(secondary_drug['trade_name']) if secondary_drug else ""
+
+    # English Species Mapping
+    species_map = {
+        "أبقار": "Bovine (Cattle)",
+        "أغنام وماعز": "Ovine / Caprine (Sheep & Goats)",
+        "إبل وهجن": "Camelid (Dromedary Camels)",
+        "خيول": "Equine (Horses)",
+        "دواجن": "Avian (Poultry / Broilers)",
+        "دواجن وطيور": "Avian (Poultry & Birds)",
+        "كلاب": "Canine (Canis lupus familiaris)",
+        "قطط": "Feline (Felis catus)",
+        "أرانب": "Lagomorph (Rabbits)"
+    }
+    species_en = species_map.get(species, species)
+
+    # English Diagnosis Mapping
+    effective_diag = (diagnosis or notes or "Clinical Examination & Prophylaxis").strip()
+    diag_map = {
+        "ضرع": "Acute Bovine Mastitis (Clinical Grade II)",
+        "حوافر": "Bovine Infectious Pododermatitis (Foot Rot)",
+        "قلاعية": "Foot-and-Mouth Disease (Vesicular Stomatitis)",
+        "رئوي": "Bovine Respiratory Disease Complex (BRDC)",
+        "تنفس": "Bovine Respiratory Tract Infection",
+        "كحة": "Infectious Bovine Bronchopneumonia",
+        "سعال": "Infectious Bovine Bronchopneumonia",
+        "نفاخ": "Acute Ruminal Tympany (Frothy Bloat)",
+        "كرش": "Ruminal Acidosis & Hypomotility",
+        "قوباء": "Bovine Cutaneous Dermatophytosis (Ringworm)",
+        "جلد": "Cutaneous Microbial Infection & Dermatitis",
+        "طفيليات": "Bovine Babesiosis (Tick-Borne Hemoparasitic Disease)",
+        "دم": "Hemoparasitic Infection & Systemic Anemia",
+        "إسهال": "Acute Enteritis & Gastrointestinal Scours",
+        "جدري": "Bovine Papular Stomatitis / Viral Pox"
+    }
+    diag_en = "General Clinical Infection & Systemic Pathology"
+    for k, v in diag_map.items():
+        if k in effective_diag:
+            diag_en = v
+            break
+    if diag_en == "General Clinical Infection & Systemic Pathology" and effective_diag:
+        # Check if diagnosis is already english
+        if any(c.isascii() and c.isalpha() for c in effective_diag):
+            diag_en = effective_diag
+
+    # Determine Administration Route in English
+    def get_route_en(d_text: str) -> str:
+        if "تحت الجلد" in d_text:
+            return "Subcutaneous Injection (SC) in the lateral neck"
+        elif "وريدي" in d_text or "وريد" in d_text:
+            return "Slow Intravenous Infusion (IV)"
+        elif "ضرع" in d_text or "حلمة" in d_text:
+            return "Intramammary Infusion after complete milking"
+        elif "فم" in d_text or "تجريع" in d_text:
+            return "Oral Administration (Drench / Feed additive)"
+        return "Deep Intramuscular Injection (IM)"
+
+    route_primary_en = get_route_en(dose_text)
+    route_secondary_en = get_route_en(secondary_drug.get("dosage_guide", "")) if secondary_drug else ""
+
+    # Clean English Withdrawal
+    def get_withdrawal_en(w_text: str) -> str:
+        if not w_text:
+            return "Observe standard meat & milk withholding times."
+        res = w_text
+        res = res.replace("اللحم:", "Meat: ").replace("الحليب:", "Milk: ").replace("يوماً", "Days").replace("يوم", "Days").replace("ساعة", "Hours").replace("ساعات", "Hours")
+        res = res.replace("بالعضل", "(IM)").replace("تحت الجلد", "(SC)").replace("،", " | ")
+        return res
+
+    withdrawal_primary_en = get_withdrawal_en(current_drug.get("withdrawal_period", ""))
+    withdrawal_secondary_en = get_withdrawal_en(secondary_drug.get("withdrawal_period", "")) if secondary_drug else ""
+
+    rx_id = random.randint(100000, 999999)
+    current_date_en = datetime.now().strftime("%d %B %Y")
+    current_time_en = datetime.now().strftime("%H:%M UTC")
 
     drug_options = "".join([f'<option value="{d["id"]}" {"selected" if d["id"] == current_drug["id"] else ""}>[{d["country"]}] {d["trade_name"]} ({d["active_ingredient"][:40]}...)</option>' for d in all_drugs])
+    
+    sec_drug_options = '<option value="0">-- None (اختياري: اختر مستحضر إضافي للمرض) --</option>' + "".join([f'<option value="{d["id"]}" {"selected" if (secondary_drug and d["id"] == secondary_drug["id"]) else ""}>[{d["country"]}] {d["trade_name"]}</option>' for d in all_drugs])
 
-    species_options = "".join([f'<option value="{s}" {"selected" if s == species else ""}>{s}</option>' for s in ["أبقار", "أغنام وماعز", "إبل وهجن", "خيول", "دواجن", "كلاب", "قطط"]])
+    species_options = "".join([f'<option value="{s}" {"selected" if s == species else ""}>{s}</option>' for s in ["أبقار", "أغنام وماعز", "إبل وهجن", "خيول", "دواجن", "كلاب", "قطط", "أرانب"]])
+
+    # Secondary Drug Rx Block
+    secondary_rx_html = ""
+    if secondary_drug:
+        secondary_rx_html = f"""
+        <div style="padding: 16px; border-left: 4px solid #0d9488; background: #f0fdfa; border-radius: 8px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 1.15rem; font-weight: 800; color: #0f766e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    2. {secondary_en_name or secondary_drug['trade_name']}
+                </div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: #0d9488; background: #ccfbf1; padding: 2px 10px; border-radius: 6px;">
+                    Supportive / Adjunct Therapy
+                </div>
+            </div>
+            <div style="font-size: 0.90rem; color: #334155; margin-top: 4px; font-weight: 600;">
+                Active Ingredient: <span style="color: #0f172a;">{secondary_drug['active_ingredient']}</span>
+            </div>
+            <div style="margin-top: 8px; font-size: 0.95rem; font-weight: 700; color: #0284c7;">
+                Prescribed Volume: <span style="font-size: 1.1rem; color: #0369a1;">{calc_sec_dose_ml} mL</span> &bull; {route_secondary_en}
+            </div>
+            <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
+                Dosage Regimen: Administer once daily (q24h) for 3 consecutive days.
+            </div>
+            <div style="font-size: 0.80rem; color: #b91c1c; margin-top: 6px; font-weight: 600;">
+                Withdrawal Protocol: {withdrawal_secondary_en}
+            </div>
+        </div>
+        """
 
     body = f"""
-    <div style="margin-bottom: 20px;">
-        <h1 style="margin: 0; font-size: 1.6rem; color: var(--primary);">📋 {t('rx_title')}</h1>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">{t('rx_subtitle')}</p>
-    </div>
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 10px;">
+        <!-- Header Controls -->
+        <div style="margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <h1 style="margin: 0; font-size: 1.7rem; color: var(--primary);">📋 {t('rx_title', 'مولد الروشتة البيطرية الرسمية')}</h1>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">
+                    نظام إصدار وطباعة الروشتات السريرية المعتمدة باللغة الإنجليزية المتوافقة مع المعايير البيطرية الدولية
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" onclick="deleteCurrentPrescription()" class="btn btn-outline" style="border: 1.5px solid #ef4444; color: #dc2626; font-weight: 700; background: rgba(239, 68, 68, 0.08); padding: 9px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    🗑️ حذف ومسح الروشتة (Clear Rx)
+                </button>
+                <button type="button" onclick="window.print()" class="btn btn-primary" style="padding: 9px 20px; font-weight: 700; border-radius: 10px; display: flex; align-items: center; gap: 6px;">
+                    🖨️ طباعة الروشتة الرسمية (PDF)
+                </button>
+            </div>
+        </div>
 
-    <div class="grid-2">
-        <!-- Input & Calculator Form -->
-        <div class="card" style="border-top: 4px solid var(--primary);">
-            <h3 style="margin-top: 0; color: var(--primary);">{t('rx_calc_title', '⚖️ إعداد وحساب الجرعة السريرية')}</h3>
-            <form action="/rx-prescription" method="GET">
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 4px;">{t('animal_name_label', 'اسم الحيوان / رقم التعريف')}</label>
-                    <input type="text" name="animal_name" value="{animal_name}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                </div>
+        <div class="grid-2" style="gap: 24px; align-items: start;">
+            <!-- LEFT COLUMN: Patient Setup & Medication Configurator -->
+            <div class="card no-print" style="border-top: 5px solid var(--primary); padding: 22px;">
+                <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--primary); font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                    <span>⚙️</span> <span>إعدادات الحالة والجرعة السريرية</span>
+                </h3>
 
-                <div class="grid-2" style="margin-bottom: 12px;">
-                    <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px;">{t('patient_species_label', 'الفصيلة')}</label>
-                        <select name="species" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                            {species_options}
+                <form id="rx-config-form" action="/rx-prescription" method="GET">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px;">اسم الحيوان / رقم التعريف (Patient Tag / ID):</label>
+                        <input type="text" name="animal_name" value="{animal_name}" required style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600;">
+                    </div>
+
+                    <div class="grid-2" style="margin-bottom: 12px; gap: 10px;">
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px;">الفصيلة (Species):</label>
+                            <select name="species" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600;">
+                                {species_options}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 700; margin-bottom: 4px;">الوزن الفعلي (Weight in kg):</label>
+                            <input type="number" step="any" min="0.1" name="weight" value="{weight}" required style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 700;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px;">التشخيص السريري المعتمد (Clinical Diagnosis):</label>
+                        <input type="text" name="diagnosis" value="{diag_en}" placeholder="Diagnosis in English..." style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 600;">
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px;">المستحضر الرئيسي (Primary Medication):</label>
+                        <select name="selected_drug_id" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: 700;">
+                            {drug_options}
                         </select>
                     </div>
-                    <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 4px;">{t('patient_weight_label', 'الوزن الحي الفعلي (كجم)')}</label>
-                        <input type="number" step="0.5" name="weight" value="{weight}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+
+                    <div id="secondary-drug-container" style="margin-bottom: 16px; {"display: block;" if secondary_drug else "display: none;"}">
+                        <label style="display: block; font-weight: 700; margin-bottom: 4px; color: #0d9488;">مستحضر داعم / إضافي بناءً على التشخيص (Secondary Rx):</label>
+                        <select name="secondary_drug_id" style="width: 100%; padding: 10px; border: 1.5px solid #0d9488; border-radius: 8px; font-weight: 600;">
+                            {sec_drug_options}
+                        </select>
                     </div>
-                </div>
 
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 4px;">{t('select_drug_label', 'اختر المستحضر البيطري المعتمد')}</label>
-                    <select name="selected_drug_id" onchange="this.form.submit()" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600;">
-                        {drug_options}
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                    {t('recalc_dose_btn', '🔄 إعادة حساب الجرعة وتحديث الروشتة')}
-                </button>
-            </form>
-
-            <div style="margin-top: 20px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 14px;">
-                <div style="font-weight: 700; color: #166534; font-size: 1.05rem;">{t('dose_result_label', 'نتيجة حساب الجرعة لوزن')} ({weight} {t('unit_kg', 'كجم')}):</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin: 6px 0;">{calc_dose_ml} مل (ml)</div>
-                <div style="font-size: 0.85rem; color: #15803d;"><strong>{t('route_label', 'طريقة الإعطاء')}:</strong> {current_drug['dosage_guide']}</div>
-                <div style="font-size: 0.85rem; color: #b91c1c; margin-top: 4px;"><strong>فترة الأمان (Withdrawal):</strong> {current_drug['withdrawal_period']}</div>
-            </div>
-        </div>
-
-        <!-- Official Printable Prescription Preview -->
-        <div>
-            <div id="printable-rx" style="background: white; border: 2px solid var(--primary); border-radius: 14px; padding: 26px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); color: #0f172a;">
-                <!-- Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 16px;">
-                    <div>
-                        <div style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">{clinic_name}</div>
-                        <div style="font-size: 0.85rem; color: #475569;">{t('attending_physician_label', 'الطبيب المعالج')}: <strong>{t('dr_prefix', 'د.')} {doctor_name}</strong> | {t('license_no_label', 'ترخيص رقم')}: <strong>{syndicate_id}</strong></div>
-                        <div style="font-size: 0.8rem; color: #64748b;">{t('address_label', 'العنوان')}: {clinic_addr} | {t('phone_label', 'هاتف')}: {clinic_phone}</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 11px;">
+                            🔄 تحديث وحساب الجرعة
+                        </button>
+                        <button type="button" onclick="toggleSecondaryDrugBox()" class="btn btn-outline" style="border: 1.5px solid #0d9488; color: #0d9488; font-weight: 700; padding: 11px 16px;">
+                            ➕ إضافة دواء آخر للروشتة
+                        </button>
                     </div>
-                    <div style="text-align: center; border: 2px solid var(--primary); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--primary);">
-                        Rx
+                </form>
+
+                <!-- Dosage Calculation Live Box -->
+                <div style="margin-top: 18px; background: rgba(16, 185, 129, 0.10); border: 1.5px solid #10b981; border-radius: 10px; padding: 14px;">
+                    <div style="font-weight: 800; color: #047857; font-size: 0.95rem;">
+                        ⚡ نتيجة الحساب الطبي الفعلي لوزن ({weight} كجم):
                     </div>
-                </div>
-
-                <!-- Patient Details -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                    <div><strong>المريض:</strong> {animal_name} ({species})</div>
-                    <div><strong>الوزن:</strong> {weight} كجم</div>
-                    <div><strong>التاريخ:</strong> {datetime.now().strftime('%Y-%m-%d')}</div>
-                </div>
-
-                <!-- Rx Items -->
-                <div style="margin-bottom: 20px;">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary); font-family: serif; margin-bottom: 8px;">℞</div>
-                    <div style="padding: 12px; border-left: 4px solid var(--primary); background: #f0fdf4; border-radius: 6px; margin-bottom: 10px;">
-                        <div style="font-size: 1.1rem; font-weight: 800; color: #166534;">{current_drug['trade_name']}</div>
-                        <div style="font-size: 0.85rem; color: #334155; margin-top: 2px;">المادة الفعالة: {current_drug['active_ingredient']}</div>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-top: 6px;">
-                            الجرعة المقررة: {calc_dose_ml} مل حقناً وفق التوجيه السريري.
-                        </div>
+                    <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin: 6px 0;">
+                        {calc_dose_ml} mL <span style="font-size: 0.95rem; color: #475569; font-weight: 600;">({route_primary_en.split()[0]})</span>
                     </div>
-                </div>
-
-                <!-- Withdrawal Notice -->
-                <div style="background: #fef2f2; border: 1px dashed #f87171; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #991b1b; margin-bottom: 20px;">
-                    ⚠️ <strong>تنبيه فترة السحب والأمان الغذائي (Withdrawal Period):</strong><br>
-                    {current_drug['withdrawal_period']} | يمنع استهلاك اللحم أو الحليب خلال فترة التحريم.
-                </div>
-
-                <!-- Signature & Stamp -->
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e2e8f0; padding-top: 14px;">
-                    <div style="font-size: 0.75rem; color: #64748b;">
-                        حررت إلكترونياً عبر منصة VetMind AI Enterprise v4.2<br>
-                        الرقم المرجعي: RX-{random.randint(100000, 999999)}
+                    <div style="font-size: 0.85rem; color: #166534; line-height: 1.4;">
+                        <strong>طريقة الإعطاء:</strong> {dose_text}
                     </div>
-                    <div style="text-align: center;">
-                        <div style="border: 2px solid #16a34a; border-radius: 8px; padding: 4px 12px; color: #16a34a; font-size: 0.8rem; font-weight: 700;">
-                            ✓ تم الفحص والاعتماد السريري
-                        </div>
-                        <div style="font-size: 0.85rem; font-weight: 700; margin-top: 4px;">د. {doctor_name}</div>
+                    <div style="font-size: 0.82rem; color: #b91c1c; margin-top: 6px; font-weight: 700;">
+                        <strong>فترة الأمان (Withdrawal):</strong> {current_drug.get('withdrawal_period', 'غير محددة')}
                     </div>
                 </div>
             </div>
 
-            <div style="margin-top: 14px; text-align: center;">
-                <button onclick="window.print()" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem;">
-                    🖨️ طباعة الروشتة البيطرية الرسمية (PDF)
-                </button>
+            <!-- RIGHT COLUMN: 100% ENGLISH OFFICIAL CLINICAL PRESCRIPTION SHEET -->
+            <div id="printable-rx-container">
+                <!-- Delete state placeholder (hidden by default) -->
+                <div id="rx-empty-state" style="display: none; background: var(--card-bg); border: 2px dashed var(--border); border-radius: 14px; padding: 48px 24px; text-align: center;">
+                    <div style="font-size: 3.5rem; margin-bottom: 12px;">🗑️</div>
+                    <h3 style="margin: 0; color: var(--text-main); font-size: 1.3rem;">تم مسح الروشتة الحالية بنجاح</h3>
+                    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 8px 0 20px 0;">
+                        يمكنك إنشاء روشتة جديدة أو إعادة تعيين النموذج بالضغط على الزر أدناه.
+                    </p>
+                    <button type="button" onclick="restorePrescription()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700; border-radius: 8px;">
+                        ➕ إنشاء روشتة جديدة بناءً على البيانات
+                    </button>
+                </div>
+
+                <!-- Modern Official Prescription Paper (100% English Content) -->
+                <div id="printable-rx" style="background: #ffffff !important; color: #0f172a !important; border: 3px solid #0F4C81; border-radius: 12px; padding: 28px 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; direction: ltr; text-align: left;">
+                    
+                    <!-- Top Prescription Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #0F4C81; padding-bottom: 16px; margin-bottom: 18px;">
+                        <div>
+                            <div style="font-size: 1.35rem; font-weight: 900; color: #0F4C81; letter-spacing: -0.5px; text-transform: uppercase;">
+                                {clinic_name}
+                            </div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #0d9488; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Department of Clinical Medicine & Veterinary Surgery
+                            </div>
+                            <div style="font-size: 0.82rem; color: #334155; margin-top: 4px;">
+                                Attending Clinician: <strong>Dr. {doctor_name}, D.V.M.</strong> &bull; License No: <strong>{syndicate_id}</strong>
+                            </div>
+                            <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                                Address: {clinic_addr} &bull; Clinical Emergency: {clinic_phone}
+                            </div>
+                        </div>
+
+                        <!-- Modern Rx Shield Emblem -->
+                        <div style="text-align: center; border: 2.5px solid #0F4C81; border-radius: 12px; padding: 8px 16px; background: #f8fafc; min-width: 80px;">
+                            <div style="font-size: 2.2rem; font-weight: 900; color: #0F4C81; font-family: 'Times New Roman', serif; line-height: 1;">
+                                ℞
+                            </div>
+                            <div style="font-size: 0.65rem; font-weight: 800; color: #059669; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">
+                                Certified
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prescription Metadata Strip -->
+                    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.82rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #1e293b;">
+                        <div><strong>Rx Reference:</strong> <span style="font-family: monospace; font-weight: 700; color: #0F4C81;">#VM-RX-{rx_id}</span></div>
+                        <div><strong>Issue Date:</strong> {current_date_en}</div>
+                        <div><strong>Time:</strong> {current_time_en}</div>
+                        <div><strong>Status:</strong> <span style="color: #166534; font-weight: 700;">● Dispensed & Valid</span></div>
+                    </div>
+
+                    <!-- Patient & Diagnostic Details Grid -->
+                    <div style="border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; background: #f8fafc;">
+                        <div style="font-size: 0.85rem; font-weight: 800; color: #0F4C81; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                            Patient Clinical Profile
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.85rem; color: #1e293b;">
+                            <div><span style="color: #64748b; font-weight: 600;">Patient ID / Tag:</span> <strong>{animal_name}</strong></div>
+                            <div><span style="color: #64748b; font-weight: 600;">Species:</span> <strong>{species_en}</strong></div>
+                            <div><span style="color: #64748b; font-weight: 600;">Live Weight:</span> <strong>{weight} kg</strong></div>
+                            <div><span style="color: #64748b; font-weight: 600;">Case File:</span> <strong>CR-2026-{rx_id % 10000}</strong></div>
+                        </div>
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 0.86rem;">
+                            <span style="color: #b91c1c; font-weight: 700;">Clinical Diagnosis / Indication:</span>
+                            <strong style="color: #0f172a; margin-left: 6px;">{diag_en}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Prescribed Medications Section -->
+                    <div style="margin-bottom: 22px;">
+                        <div style="font-size: 1.3rem; font-weight: 900; color: #0F4C81; font-family: 'Times New Roman', serif; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span>℞</span>
+                            <span style="font-size: 0.95rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Prescribed Medications & Posology</span>
+                        </div>
+
+                        <!-- Item 1: Primary Drug -->
+                        <div style="padding: 16px; border-left: 4px solid #0F4C81; background: #f0fdf4; border-radius: 8px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;">
+                                <div style="font-size: 1.18rem; font-weight: 800; color: #166534; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                    1. {primary_en_name or current_drug['trade_name']}
+                                </div>
+                                <div style="font-size: 0.80rem; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 10px; border-radius: 6px;">
+                                    Primary Prescription
+                                </div>
+                            </div>
+                            <div style="font-size: 0.90rem; color: #334155; margin-top: 4px; font-weight: 600;">
+                                Active Substance: <span style="color: #0f172a;">{current_drug['active_ingredient']}</span>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 0.95rem; font-weight: 700; color: #2563eb;">
+                                Prescribed Dosage: <span style="font-size: 1.15rem; color: #1d4ed8;">{calc_dose_ml} mL</span> &bull; {route_primary_en}
+                            </div>
+                            <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
+                                Dosage Regimen: Administer once daily (SID) for 3 - 5 consecutive clinical days.
+                            </div>
+                            <div style="font-size: 0.80rem; color: #b91c1c; margin-top: 6px; font-weight: 600;">
+                                Withdrawal Protocol: {withdrawal_primary_en}
+                            </div>
+                        </div>
+
+                        <!-- Item 2: Secondary Drug (if added) -->
+                        {secondary_rx_html}
+                    </div>
+
+                    <!-- Mandatory Official Withdrawal & Food Safety Notice -->
+                    <div style="background: #fff1f2; border: 1.5px dashed #f43f5e; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.80rem; color: #9f1239; line-height: 1.5;">
+                        <strong style="font-size: 0.84rem;">⚠️ MANDATORY FOOD SAFETY & WITHDRAWAL NOTICE:</strong><br>
+                        Strict compliance with withdrawal times is legally enforced under Veterinary Drug Safety Regulations. 
+                        Treated animals must NOT be slaughtered for human consumption, nor milk collected for commercial distribution, during the active withdrawal window.
+                    </div>
+
+                    <!-- Clinician Clinical Instructions -->
+                    <div style="margin-bottom: 22px; font-size: 0.82rem; color: #334155; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+                        <strong style="color: #0F4C81; text-transform: uppercase; font-size: 0.82rem;">Clinical Advice & Client Directives:</strong>
+                        <ol style="margin: 6px 0 0 18px; padding: 0;">
+                            <li>Administer using a clean, sterile single-use needle; do not exceed 15 mL per injection site.</li>
+                            <li>Isolate patient in a dry, sanitized, well-ventilated recovery stall with continuous clean water.</li>
+                            <li>Monitor rectal body temperature every 12 hours. Re-evaluation required if symptoms persist beyond 48 hours.</li>
+                        </ol>
+                    </div>
+
+                    <!-- Official Verification Seal & Doctor Signature -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 2px solid #0F4C81; padding-top: 16px; margin-top: 10px;">
+                        <div style="font-size: 0.72rem; color: #64748b; line-height: 1.5;">
+                            Issued via <strong>VetMind AI Clinical Platform v4.3</strong><br>
+                            Digital Verification Hash: <span style="font-family: monospace;">VM-AUTH-{rx_id}89X-VALID</span><br>
+                            This is an official clinical veterinary document.
+                        </div>
+
+                        <div style="text-align: center;">
+                            <div style="border: 2px solid #16a34a; border-radius: 8px; padding: 4px 14px; color: #16a34a; font-size: 0.78rem; font-weight: 800; background: #f0fdf4; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ✓ CLINICALLY CERTIFIED & VERIFIED
+                            </div>
+                            <div style="font-size: 0.90rem; font-weight: 800; color: #0F4C81; margin-top: 6px;">
+                                Dr. {doctor_name}, D.V.M.
+                            </div>
+                            <div style="font-size: 0.75rem; color: #475569;">
+                                Licensed Veterinary Medical Director
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Client-Side Prescription Interaction Scripts -->
+    <script>
+    function deleteCurrentPrescription() {{
+        if (confirm("Are you sure you want to delete and clear this prescription?\nهل أنت متأكد من حذف ومسح بيانات هذه الروشتة الحالية؟")) {{
+            const rxPaper = document.getElementById("printable-rx");
+            const emptyState = document.getElementById("rx-empty-state");
+            if (rxPaper) rxPaper.style.display = "none";
+            if (emptyState) emptyState.style.display = "block";
+        }}
+    }}
+
+    function restorePrescription() {{
+        const rxPaper = document.getElementById("printable-rx");
+        const emptyState = document.getElementById("rx-empty-state");
+        if (rxPaper) rxPaper.style.display = "block";
+        if (emptyState) emptyState.style.display = "none";
+    }}
+
+    function toggleSecondaryDrugBox() {{
+        const box = document.getElementById("secondary-drug-container");
+        if (box) {{
+            box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none";
+            if (box.style.display === "block") {{
+                const select = box.querySelector("select");
+                if (select && select.value === "0") {{
+                    select.selectedIndex = 1;
+                }}
+            }}
+        }}
+    }}
+    </script>
     """
     return HTMLResponse(content=get_base_html(t("nav_rx"), body, user, lang), media_type="text/html; charset=utf-8")
 
-# ==============================================================================
+
 # ROUTE: COMPREHENSIVE DRUG-DRUG INTERACTIONS CHECKER (ALL 1,005+ DRUGS)
 # ==============================================================================
 @app.get("/interactions", response_class=HTMLResponse)

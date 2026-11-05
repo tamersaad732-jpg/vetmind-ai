@@ -3,23 +3,29 @@
  * Enables full offline functionality, asset caching, and offline-first performance.
  */
 
-const CACHE_NAME = 'vetmind-offline-v5';
+const CACHE_NAME = 'vetmind-offline-v6';
 
 // Core routes and assets to pre-cache on install
 const PRECACHE_ASSETS = [
   '/',
+  '/symptom-checker',
+  '/vision-detect',
+  '/rx-prescription',
   '/dashboard',
   '/pharmacy',
   '/references',
   '/contraindications',
   '/interactions',
   '/clinic',
-  '/rx-prescription',
   '/tools',
   '/clinic/prayer-times',
   '/about',
   '/terms',
   '/static/manifest.json',
+  '/static/favicon.svg',
+  '/static/icon-192.png',
+  '/static/icon-512.png',
+  '/static/apple-touch-icon.png',
   '/static/offline-storage.js',
   '/favicon.ico'
 ];
@@ -110,10 +116,12 @@ self.addEventListener('fetch', (event) => {
                 <h1>أنت تعمل الآن في وضع بدون إنترنت (Offline)</h1>
                 <p>جميع بياناتك وسجلات عيادتك مخزنة محلياً بأمان على هاتفك / جهازك. يمكنك متابعة استخدام الأدوات المحفوظة.</p>
                 <div style="margin-top: 24px;">
-                  <a href="/" class="btn">🏠 الصفحة الرئيسية</a>
-                  <a href="/clinic" class="btn btn-outline">🏥 سجلات العيادة</a>
+                  <a href="/" class="btn">🏠 الرئيسية</a>
+                  <a href="/symptom-checker" class="btn btn-outline">🩺 المشخص السريري</a>
+                  <a href="/vision-detect" class="btn btn-outline">🔬 فاحص الصور</a>
+                  <a href="/rx-prescription" class="btn btn-outline">📋 الروشتة</a>
                   <a href="/pharmacy" class="btn btn-outline">💊 الصيدلية</a>
-                  <a href="/references" class="btn btn-outline">📚 المراجع</a>
+                  <a href="/clinic" class="btn btn-outline">🏥 العيادة</a>
                 </div>
               </div>
             </body>
