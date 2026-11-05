@@ -23,6 +23,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, File
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if _APP_DIR not in sys.path:
+    sys.path.insert(0, _APP_DIR)
+
 from translations_data import DATA as TRANSLATIONS_DB
 from references_db import get_all_references, get_arab_references, get_global_references, get_reference_by_id, resolve_reference_pdf_path, get_reference_original_filename
 from dosage_engine import calculate_precise_dosage, format_drug_display, get_drug_concise_function
