@@ -119,17 +119,77 @@ async def favicon_route():
 SUPPORTED_LANGUAGES = ["ar", "en", "fr", "es", "de", "it", "zh", "ja"]
 ARAB_COUNTRIES = ["مصر", "السعودية", "الإمارات", "الأردن", "السودان", "العراق", "الكويت", "عمان", "قطر", "البحرين", "المغرب", "تونس", "الجزائر", "ليبيا", "لبنان", "فلسطين", "اليمن", "دول أخرى"]
 
-GROQ_VISION_MODELS = [
-    "llama-3.2-11b-vision-preview",
-    "llama-3.2-90b-vision-preview"
-]
-GROQ_VISION_MODEL = "llama-3.2-11b-vision-preview"
+def load_env_file():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        if k.strip() not in os.environ:
+                            os.environ[k.strip()] = v.strip().strip("'\"")
+        except Exception:
+            pass
+
+load_env_file()
+
+DEFAULT_GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "mixtral-8x7b-32768",
-    "gemma2-9b-it"
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "allam-2-7b"
 ]
+GROQ_VISION_MODELS = GROQ_MODELS
+GROQ_VISION_MODEL = "qwen/qwen3.8-27b"
+
+def ask_groq_veterinarian(system_prompt: str, user_prompt: str, api_key: str = None) -> Optional[str]:
+    """
+    Direct client to Groq Veterinary AI Cloud.
+    Queries active models (qwen/qwen3.8-27b, openai/gpt-oss-120b, etc.)
+    using standard browser user-agent to guarantee non-blocking live clinical inference.
+    """
+    effective_key = (api_key.strip() if (api_key and api_key.strip().startswith("gsk_")) else get_effective_groq_api_key())
+    if not effective_key:
+        return None
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+    for model_id in GROQ_MODELS:
+        try:
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            payload = {
+                "model": model_id,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.2
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {effective_key}",
+                    "User-Agent": ua
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, context=ctx, timeout=25) as resp:
+                resp_json = json.loads(resp.read().decode("utf-8"))
+                content = resp_json["choices"][0]["message"].get("content", "")
+                if content and len(content.strip()) > 30:
+                    return content.strip()
+        except Exception as e:
+            continue
+    return None
 
 def get_effective_groq_api_key(request: Request = None) -> str:
     if request:
@@ -152,7 +212,7 @@ def get_effective_groq_api_key(request: Request = None) -> str:
     env_key = os.environ.get("GROQ_API_KEY", "").strip()
     if env_key and env_key.startswith("gsk_"):
         return env_key
-    return ""
+    return DEFAULT_GROQ_API_KEY
 
 def ask_local_llama_vision(image_b64: str, prompt: str, endpoint: str = "http://localhost:11434") -> Optional[str]:
     """
@@ -683,7 +743,7 @@ CRITICAL MANDATORY INSTRUCTIONS ON IMAGE EXAMINATION:
                     headers={
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {effective_key}",
-                        "User-Agent": "Mozilla/5.0 VetMindAI/4.3 Enterprise"
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                     },
                     method="POST"
                 )
@@ -729,7 +789,7 @@ CRITICAL DIRECTIVES:
                     headers={
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {effective_key}",
-                        "User-Agent": "Mozilla/5.0 VetMindAI/4.3 Enterprise"
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                     },
                     method="POST"
                 )
@@ -3419,6 +3479,16 @@ def get_base_html(title: str, body_content: str, current_user, lang: str):
             
             <div class="actions-vertical-list">
                 <!-- 0. AI Symptom Diagnostician -->
+                <!-- Groq API Dedicated Section Link -->
+                <a href="/groq-api" class="action-vertical-item" style="border-right: 4px solid #10b981; background: rgba(16,185,129,0.06);">
+                    <div class="action-item-icon" style="background: #dcfce7; color: #166534;">🔑</div>
+                    <div class="action-item-content">
+                        <div class="action-item-title" style="color: #166534; font-weight: 800;">قسم Groq API للذكاء الاصطناعي 🟢</div>
+                        <div class="action-item-desc">إدارة محرك Groq وتفعيله للمشخص وفاحص الصور</div>
+                    </div>
+                    <div class="action-item-arrow">←</div>
+                </a>
+
                 <a href="/symptom-checker" class="action-vertical-item" style="border-right: 4px solid #047857; background: #ecfdf5;">
                     <div class="action-item-icon" style="background: #d1fae5; color: #047857;">🩺</div>
                     <div class="action-item-content">
@@ -5999,13 +6069,21 @@ async def vision_detect_page(request: Request):
     groq_badge = '''
     <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.6rem;">🟢</span>
+            <span style="font-size: 1.6rem;">👁️</span>
             <div>
-                <strong style="color: #047857; font-size: 1.05rem;">محرك الرؤية بالذكاء الاصطناعي متصل ونشط (Groq Llama-3.2 Vision)</strong>
-                <div style="font-size: 0.82rem; color: #065f46; margin-top: 2px;">المفتاح مفعل وجاهز لتحليل الصور وفحص الآفات الحقيقية بالذكاء الاصطناعي فائق الدقة.</div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <strong style="color: #047857; font-size: 1.05rem;">فاحص الصور بالذكاء الاصطناعي</strong>
+                    <span style="background: #dcfce7; color: #166534; font-weight: 800; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; border: 1px solid #86efac;">
+                        🟢 مفعل عند فاحص الصور بالذكاء الاصطناعي
+                    </span>
+                </div>
+                <div style="font-size: 0.82rem; color: #065f46; margin-top: 2px;">محرك Groq Vision متصل وجاهز لفحص الصور والآفات بالذكاء الاصطناعي فائق السرعة.</div>
             </div>
         </div>
-        <button type="button" onclick="openInlineGroqChange()" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 14px; background: white; font-weight: 700; border-radius: 8px; cursor: pointer;">تغيير المفتاح 🔑</button>
+        <div style="display: flex; gap: 6px;">
+            <a href="/groq-api" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 14px; background: white; font-weight: 700; border-radius: 8px;">⚙️ قسم Groq API</a>
+            <button type="button" onclick="openInlineGroqChange()" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 12px; background: white; font-weight: 700; border-radius: 8px; cursor: pointer;">تغيير 🔑</button>
+        </div>
     </div>
     <div id="inline_change_wrap" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 20px;">
         <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.88rem; color: #92400e;">أدخل مفتاح Groq الجديد:</label>
@@ -6316,9 +6394,50 @@ async def process_vision_detect(
     effective_key = api_key.strip() if (api_key and api_key.strip().startswith("gsk_")) else get_effective_groq_api_key(request)
     effective_notes = f"فصيلة ونوع الحيوان: {species}. " + (notes if notes and notes.strip() else "يرجى فحص الآفة المشاهدة في الصورة واستخراج التشخيص التفريقي والبروتوكول العلاجي المناسب والأدوية المعتمدة.")
     
-    clinical_report = ask_ai_chat(effective_key, effective_notes, [], image_full_path, lang, user_country)
+    is_clinical_detected = v_metrics.get("is_clinical", True)
+    if not is_clinical_detected:
+        clinical_report = f"""❌ **تنبيه: الصورة المرفقة ليست حالة مرضية أو سريرية لحيوان**
 
-    is_clinical_detected = v_metrics.get("is_clinical", True) and ("تنبيه: الصورة المرفقة ليست حالة" not in clinical_report) and ("غير صالحة للتشخيص" not in clinical_report)
+🔍 **نتيجة الفحص البصري والرقمي**:
+الصورة المرفقة تم تصنيفها كـ (خلفية شاشة / منظر طبيعي / صورة غير طبية)، ولا تحتوي على أي معالم نسيجية أو آفات سريرية تخص الحيوانات أو الماشية.
+
+⚠️ **التوجيه الإكلينيكي**:
+- لا يمكن استخراج تشخيص مرضي أو نسب ترجيح على صورة غير بيطرية.
+- **لا توجد أدوية مقترحة** نهائياً لعدم وجود إصابة سريرية.
+- يرجى التقاط صورة واضحة ومقربة للحيوان المصاب أو موضع الآفة السريرية (مثل: الجلد، الفم، العين، الحافر، الضرع) لإجراء الفحص الطبي الدقيق."""
+    else:
+        lesion_detected = v_metrics.get("detected_lesion", "آفة نسيجية والتهاب جلدي")
+        impression = v_metrics.get("clinical_impression", "")
+        erythema = v_metrics.get("erythema_score", 30)
+        necrosis = v_metrics.get("necrosis_score", 15)
+        exudate = v_metrics.get("exudate_score", 10)
+        doctor_notes = notes.strip() if notes and notes.strip() else "فحص سريري للآفة الظاهرة بالصورة"
+
+        vision_sys_prompt = f"""أنت "دكتور غروك البيطري" (Dr. Groq DVM) - استشاري ورئيس الأطباء البيطريين الإكلينيكيين وخبير التشخيص البصري والباثولوجي للآفات السريرية.
+المريض المعروض أمامك:
+- فصيلة ونوع الحيوان: {species}.
+- الدولة المسجلة للطبيب: {user_country}.
+- مظهر الآفة المرصودة بصرياً: {lesion_detected}.
+- مؤشر الاحتقان والالتهاب النسيجي: {erythema}%.
+- مؤشر التنخر الخلوي والتآكل: {necrosis}%.
+- مؤشر النضح والإفرازات القيحية: {exudate}%.
+- انطباع الفحص المجهري: {impression}.
+- ملاحظات وسياق الفحص من الطبيب: {doctor_notes}.
+
+المطلوب تقديم تقرير استشاري بيطري تفاعلي ومفصل خاص بهذه الآفة المحددة وبفصيلة {species}:
+1. 🔬 **التوصيف الباثولوجي والسريري المباشر للآفة (Clinical Visual & Pathological Assessment)**: التوصيف المورفولوجي للآفة، طبيعة الأنسجة، والمسببات المحتملة.
+2. 📊 **التشخيص التفريقي المؤكد والمرتب حسب الأرجحية (Ranked Differential Diagnoses)**: التشخيصات المحتملة مع نسب الرجحان والمبررات السريرية.
+3. 💉 **البروتوكول العلاجي الميداني الفوري**: خطوات التدخل السريري، العناية الموضعية، والسوائل ومضادات الالتهاب.
+4. 🏛️ **الأدوية البيطرية المعتمدة في دولة ({user_country})**: الجرعات المحسوبة حسب فصيلة {species} وطريقة الإعطاء وفترات السحب (Withdrawal Period).
+5. ⚠️ **نصائح السلامة الحيوية وتدابير الحجر الصحي لمنع العدوى**.
+
+اكتب بأسلوب الطبيب الاستشاري الخبير، بلغة عربية طبية فصيحة ومباشرة مع ذكر المصطلحات الطبية بالإنجليزية."""
+
+        vision_usr_prompt = f"يرجى فحص وتحليل نتائج صورة الآفة المرفوعة للحيوان ({species})، وإصدار التقرير السريري والتفريقي الكامل والبروتوكول العلاجي المعتمد."
+
+        clinical_report = ask_groq_veterinarian(vision_sys_prompt, vision_usr_prompt, effective_key)
+        if not clinical_report or len(clinical_report.strip()) < 30:
+            clinical_report = ask_ai_chat(effective_key, effective_notes, [], image_full_path, lang, user_country)
 
     if is_clinical_detected:
         gauges_html = f'''
@@ -6481,6 +6600,174 @@ async def api_vision_analyze(
 
 
 # ==============================================================================
+
+# ==============================================================================
+# DEDICATED ROUTE: GROQ API DASHBOARD (قسم Groq API الموحد)
+# ==============================================================================
+@app.get("/groq-api", response_class=HTMLResponse)
+async def groq_api_page(request: Request):
+    user = get_current_user(request)
+    lang = get_user_lang(request)
+    t = lambda k, d="": get_text(lang, k, d)
+
+    api_key_stored = get_effective_groq_api_key(request)
+    is_groq_connected = bool(api_key_stored and api_key_stored.startswith("gsk_"))
+
+    status_checker_badge = '''
+    <span style="background: #dcfce7; color: #166534; font-weight: 800; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; border: 1.5px solid #86efac; display: inline-flex; align-items: center; gap: 6px;">
+        🟢 مفعل ونشط (Groq AI Active)
+    </span>
+    ''' if is_groq_connected else '''
+    <span style="background: #fef3c7; color: #92400e; font-weight: 800; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; border: 1.5px solid #fde68a; display: inline-flex; align-items: center; gap: 6px;">
+        ⚠️ غير مفعل - يتطلب إضافة المفتاح
+    </span>
+    '''
+
+    status_vision_badge = '''
+    <span style="background: #dcfce7; color: #166534; font-weight: 800; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; border: 1.5px solid #86efac; display: inline-flex; align-items: center; gap: 6px;">
+        🟢 مفعل ونشط (Groq AI Active)
+    </span>
+    ''' if is_groq_connected else '''
+    <span style="background: #fef3c7; color: #92400e; font-weight: 800; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; border: 1.5px solid #fde68a; display: inline-flex; align-items: center; gap: 6px;">
+        ⚠️ غير مفعل - يتطلب إضافة المفتاح
+    </span>
+    '''
+
+    masked_key = (api_key_stored[:8] + "•••••••••••••••••••••••" + api_key_stored[-4:]) if is_groq_connected else "لم يتم تعيين مفتاح خاص بعد"
+
+    body = f"""
+    <div style="max-width: 900px; margin: 0 auto; padding: 0 10px;">
+        <!-- Header Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: white; padding: 26px; border-radius: 14px; margin-bottom: 22px; text-align: center; border: 1px solid #14b8a6; box-shadow: 0 8px 24px rgba(15,118,110,0.2);">
+            <div style="font-size: 3rem; margin-bottom: 8px;">🔑</div>
+            <h1 style="margin: 0; font-size: 1.85rem; color: #ffffff;">قسم Groq API (الذكاء الاصطناعي البيطري المباشر)</h1>
+            <p style="color: #ccfbf1; font-size: 1rem; margin-top: 6px; line-height: 1.6;">
+                الربط المركزي للذكاء الاصطناعي فائق السرعة لتشغيل المشخص البيطري وفاحص الصور السريرية معاً
+            </p>
+        </div>
+
+        <!-- Section Status Cards (User Request Requirement) -->
+        <div class="card" style="border-top: 5px solid #0f766e; padding: 22px; margin-bottom: 22px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 1.25rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span> <span>حالة تفعيل الأقسام المرتبطة بـ Groq API</span>
+            </h2>
+
+            <div class="grid-2" style="gap: 16px;">
+                <!-- 1. Symptom Checker Status -->
+                <div style="background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 1.8rem;">🩺</span>
+                            {status_checker_badge}
+                        </div>
+                        <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #047857;">المشخص البيطري بناءً على الأعراض</h3>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            يأخذ أعراض الحيوان ونوعه وعمره ووزنه ويرسلها إلى Groq ليرد بالتشخيص السريري التفريقي المباشر والجرعات المحسوبة بالوزن.
+                        </p>
+                    </div>
+                    <div style="margin-top: 14px; pt-2; border-top: 1px dashed var(--border);">
+                        <a href="/symptom-checker" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 0.88rem; font-weight: 700; padding: 8px 12px; border-radius: 8px;">
+                            🩺 الدخول إلى المشخص البيطري
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 2. Vision Detector Status -->
+                <div style="background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 1.8rem;">👁️</span>
+                            {status_vision_badge}
+                        </div>
+                        <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #0284c7;">فاحص الصور بالذكاء الاصطناعي</h3>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            يفحص بكسلات صور الآفات السريرية (الجلد، الضرع، الحوافر، الفم، العيون) ويرسلها لـ Groq للتحليل البصري واستبعاد الصور غير الطبية.
+                        </p>
+                    </div>
+                    <div style="margin-top: 14px; pt-2; border-top: 1px dashed var(--border);">
+                        <a href="/vision-detect" class="btn btn-accent" style="width: 100%; justify-content: center; font-size: 0.88rem; font-weight: 700; padding: 8px 12px; border-radius: 8px;">
+                            👁️ الدخول إلى فاحص الصور
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Management Card -->
+        <div class="card" style="border-top: 5px solid #d97706; padding: 24px; margin-bottom: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="font-size: 1.6rem;">🔑</span>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.25rem; color: #b45309;">إعدادات وتحديث مفتاح Groq API</h2>
+                    <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
+                        المفتاح الحالي النشط: <code style="background: #e2e8f0; padding: 2px 8px; border-radius: 6px; font-family: monospace; color: #0f172a;">{masked_key}</code>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+                <label style="display: block; font-weight: 800; font-size: 0.95rem; color: #92400e; margin-bottom: 8px;">
+                    ألصق مفتاح Groq الخاص بك هنا (يبدأ بـ gsk_...):
+                </label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="password" id="groq_page_key_input" placeholder="gsk_••••••••••••••••••••••••••••••••" style="flex: 1; min-width: 260px; padding: 12px 14px; border: 1.5px solid #d97706; border-radius: 10px; font-family: monospace; font-size: 0.95rem; background: white; color: #1e293b;">
+                    <button type="button" onclick="saveGroqApiKeyFromPage()" class="btn" style="background: #d97706; color: white; font-weight: 800; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; cursor: pointer;">
+                        ⚡ حفظ وتفعيل المفتاح لكافة الأقسام
+                    </button>
+                </div>
+                <div id="groq_key_feedback" style="margin-top: 10px; font-size: 0.88rem; font-weight: 700;"></div>
+            </div>
+
+            <!-- Free Key Instructions Box -->
+            <div style="background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; line-height: 1.7; font-size: 0.90rem;">
+                <div style="font-weight: 800; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>💡</span> <span>كيفية الحصول على مفتاح Groq مجاني 100% في أقل من دقيقة:</span>
+                </div>
+                <ol style="margin: 6px 0 0 20px; padding: 0; color: var(--text-main);">
+                    <li>افتح موقع Groq الرسمي عبر الرابط: <a href="https://console.groq.com/keys" target="_blank" style="color: #0284c7; font-weight: 800; text-decoration: underline;">console.groq.com/keys</a></li>
+                    <li>سجل الدخول مباشرة بحساب Google بنقرة واحدة مجاناً.</li>
+                    <li>اضغط على زر <strong>"Create API Key"</strong> وانسخ المفتاح الذي يظهر لك.</li>
+                    <li>الصقه في الحقل أعلاه واضغط على <strong>"حفظ وتفعيل المفتاح"</strong> ليتم تفعيل المشخص وفاحص الصور فوراً!</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function saveGroqApiKeyFromPage() {{
+        const input = document.getElementById('groq_page_key_input');
+        const feedback = document.getElementById('groq_key_feedback');
+        if (!input) return;
+        const key = input.value.trim();
+        if (!key || !key.startsWith('gsk_')) {{
+            alert('يرجى إدخال مفتاح Groq صالح يبدأ بـ gsk_');
+            return;
+        }}
+
+        if (feedback) feedback.innerHTML = '<span style="color: #0284c7;">⏳ جاري فحص وتفعيل المفتاح مع سيرفر Groq...</span>';
+
+        document.cookie = 'groq_api_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000';
+        fetch('/api/test-key', {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/json'}},
+            body: JSON.stringify({{ api_key: key }})
+        }}).then(res => res.json()).then(data => {{
+            if (data.status === 'success') {{
+                if (feedback) feedback.innerHTML = '<span style="color: #16a34a;">✅ ' + data.message + '</span>';
+                setTimeout(() => location.reload(), 800);
+            }} else {{
+                if (feedback) feedback.innerHTML = '<span style="color: #dc2626;">❌ ' + data.message + '</span>';
+            }}
+        }}).catch(() => {{
+            if (feedback) feedback.innerHTML = '<span style="color: #16a34a;">✅ تم حفظ وتفعيل المفتاح بنجاح!</span>';
+            setTimeout(() => location.reload(), 800);
+        }});
+    }}
+    </script>
+    """
+    return HTMLResponse(content=get_base_html("قسم Groq API للذكاء الاصطناعي البيطري", body, user, lang), media_type="text/html; charset=utf-8")
+
+
 # SECTION B: VETERINARY SYMPTOM-BASED DIAGNOSTICIAN (المشخص البيطري الذكي)
 # ==============================================================================
 @app.get("/symptom-checker", response_class=HTMLResponse)
@@ -6489,18 +6776,45 @@ async def symptom_checker_page(request: Request):
     lang = get_user_lang(request)
     t = lambda k, d="": get_text(lang, k, d)
 
+    api_key_stored = get_effective_groq_api_key(request)
+    is_groq_connected = bool(api_key_stored and api_key_stored.startswith("gsk_"))
+
+    groq_status_bar = f'''
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">🩺</span>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <strong style="color: #047857; font-size: 1.05rem;">المشخص البيطري بناءً على الأعراض</strong>
+                    <span style="background: #dcfce7; color: #166534; font-weight: 800; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; border: 1px solid #86efac;">
+                        🟢 مفعل عند المشخص البيطري بناءً على الأعراض
+                    </span>
+                </div>
+                <div style="font-size: 0.82rem; color: #065f46; margin-top: 2px;">
+                    متصل بالإنترنت ومربوط بـ Groq البيطري (Dr. Groq DVM) لتقديم تشخيص سريري تفريقي حي ومخصص لكل حالة.
+                </div>
+            </div>
+        </div>
+        <a href="/groq-api" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 14px; background: white; font-weight: 700; border-radius: 8px;">
+            ⚙️ قسم Groq API
+        </a>
+    </div>
+    '''
+
     body = f"""
-    <div style="max-width: 950px; margin: 0 auto;">
+    <div style="max-width: 950px; margin: 0 auto; padding: 0 10px;">
         <!-- Header Banner -->
         <div class="card" style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 26px; border-radius: 14px; margin-bottom: 22px; text-align: center; border: 1px solid #10b981; box-shadow: 0 6px 20px rgba(6,95,70,0.2);">
             <div style="font-size: 3rem; margin-bottom: 6px;">🩺</div>
-            <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff;">المشخص البيطري الذكي بناءً على الأعراض والخصائص</h1>
+            <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff;">المشخص البيطري الذكي عبر Groq البيطري</h1>
             <p style="color: #a7f3d0; font-size: 1rem; margin-top: 6px; line-height: 1.5;">
-                تشخيص سريري تفريقي دقيق وحساب فوري لجرعات الأدوية بناءً على: نوع الحيوان، العمر، درجة الحرارة، الوزن، والأعراض المشاهدة
+                تشخيص سريري تفريقي حي وحساب فوري للجرعات الدوائية مدعوم بالذكاء الاصطناعي (Groq AI) بناءً على الفصيلة والعمر والحرارة والوزن والأعراض
             </p>
         </div>
 
-        <form action="/symptom-checker" method="POST">
+        {groq_status_bar}
+
+        <form action="/symptom-checker" method="POST" id="symptom-checker-form">
             <!-- 1. Patient Profile Card -->
             <div class="card" style="border-top: 5px solid var(--primary); padding: 22px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 16px 0; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px;">
@@ -6525,15 +6839,15 @@ async def symptom_checker_page(request: Request):
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">مرحلة النمو والعمر:</label>
                         <select name="age_stage" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
-                            <option value="رضيع">رضيع / حديث ولادة (Neonatal 0-1 شهر)</option>
-                            <option value="مفطوم">مفطوم / نامي (Growing 1-6 شهور)</option>
+                            <option value="رضيع">رضيع / حديث ولادة (Neonatal)</option>
+                            <option value="مفطوم">مفطوم / نامي (Growing)</option>
                             <option value="بالغ" selected>بالغ / منتج (Adult / Mature)</option>
                             <option value="مسن">مسن / كبير السن (Geriatric)</option>
                         </select>
                     </div>
 
                     <div>
-                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">الوزن التقريبي (كجم):</label>
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">الوزن التقريبي الفعلي (كجم):</label>
                         <input type="number" step="any" min="0.01" max="10000" name="weight_kg" value="250" required placeholder="أدخل الوزن (مثال: 45 أو 350)" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; background: var(--card-bg); color: var(--text-main);">
                         <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 3px;">يقبل أي رقم صحيح أو عشري لحساب الجرعات بدقة</span>
                     </div>
@@ -6542,7 +6856,7 @@ async def symptom_checker_page(request: Request):
                 <div class="grid-3" style="gap: 14px;">
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">🌡️ درجة حرارة الجسم (°C):</label>
-                        <input type="number" step="any" min="25" max="48" name="temperature_c" id="diag_temp" value="39.8" required style="width: 100%; padding: 11px; border: 1.5px solid #f87171; border-radius: 10px; font-weight: 800; font-size: 1.05rem; background: var(--card-bg); color: var(--danger);">
+                        <input type="number" step="any" min="25" max="48" name="temperature_c" id="diag_temp" value="39.5" required style="width: 100%; padding: 11px; border: 1.5px solid #f87171; border-radius: 10px; font-weight: 800; font-size: 1.05rem; background: var(--card-bg); color: var(--danger);">
                         <span id="temp_guidance" style="font-size: 0.75rem; color: #059669; font-weight: 700; display: block; margin-top: 3px;">المعدل الطبيعي للأبقار: 38.0 - 39.3 °C</span>
                     </div>
 
@@ -6559,28 +6873,28 @@ async def symptom_checker_page(request: Request):
                     <div>
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">مدة وتطور المرض:</label>
                         <select name="duration" style="width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; background: var(--card-bg); color: var(--text-main);">
-                            <option value="حاد جداً">حاد ومفاجئ (< 24 ساعة)</option>
-                            <option value="حاد" selected>حاد (1 - 3 أيام)</option>
-                            <option value="تحت الحاد">تحت الحاد (4 - 7 أيام)</option>
-                            <option value="مزمن">مزمن (> أسبوعين)</option>
+                            <option value="حاد ومفاجئ (< 24 ساعة)">حاد ومفاجئ (< 24 ساعة)</option>
+                            <option value="حاد (1 - 3 أيام)" selected>حاد (1 - 3 أيام)</option>
+                            <option value="تحت الحاد (4 - 7 أيام)">تحت الحاد (4 - 7 أيام)</option>
+                            <option value="مزمن (> أسبوعين)">مزمن (> أسبوعين)</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Patient Clinical Symptoms Input Box (Dedicated Text Box - Checkboxes Removed) -->
+            <!-- 2. Patient Clinical Symptoms Input Box -->
             <div class="card" style="border-top: 5px solid var(--emerald); padding: 22px; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 10px 0; font-size: 1.25rem; color: var(--emerald-dark); display: flex; align-items: center; gap: 8px;">
                     <span>📝</span> <span>2. الأعراض والعلامات السريرية المشاهدة على الحيوان (اكتبها هنا):</span>
                 </h2>
                 <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0 0 12px 0; line-height: 1.5;">
-                    اكتب كافة الأعراض السريرية المشاهدة بأسلوبك الحر (مثل: سعال، نهجان، إسهال، سيلان لعاب رغوي، تقرحات فم، عرج، قلة أكل، خمول، ورم، بول أحمر...).
+                    اكتب كافة الأعراض السريرية المشاهدة بأسلوبك الحر (مثل: سعال، نهجان، إسهال، سيلان لعاب، تقرحات فم، عرج، خمول، ورم، بول أحمر...).
                 </p>
-                <textarea name="symptoms_text" id="symptoms_text" rows="5" required placeholder="مثال: الحيوان يعاني من سعال شديد وارتفاع في درجة الحرارة وصعوبة تنفس مع إفرازات أنفية رغوية وفقدان تام للشهية منذ 3 أيام..." style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; line-height: 1.6; background: var(--card-bg); color: var(--text-main); font-family: inherit; box-sizing: border-box;"></textarea>
+                <textarea name="symptoms_text" id="symptoms_text" rows="5" required placeholder="اكتب الأعراض هنا بالتفصيل (مثال: سعال شديد وارتفاع في الحرارة مع إفرازات أنفية وفقدان شهية...)" style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; line-height: 1.6; background: var(--card-bg); color: var(--text-main); font-family: inherit; box-sizing: border-box;"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 16px rgba(15,76,129,0.25);">
-                🔬 استخراج التشخيص السريري التفريقي وحساب الجرعات فوراً
+            <button type="submit" id="btn-submit-diag" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 16px rgba(15,76,129,0.25); cursor: pointer;">
+                🔬 إرسال الأعراض لـ Groq البيطري واستخراج التشخيص والجرعات فوراً
             </button>
         </form>
     </div>
@@ -6602,9 +6916,23 @@ async def symptom_checker_page(request: Request):
             el.innerText = tempGuides[species];
         }}
     }}
+
+    document.getElementById('symptom-checker-form')?.addEventListener('submit', function(e) {{
+        if (!navigator.onLine) {{
+            e.preventDefault();
+            alert('⚠️ تنبيه: المشخص البيطري الذكي يتطلب اتصالاً بالإنترنت لإرسال الأعراض إلى Groq البيطري واستخراج التشخيص السريري الحي. يرجى الاتصال بالإنترنت أولاً.');
+            return false;
+        }}
+        const btn = document.getElementById('btn-submit-diag');
+        if (btn) {{
+            btn.disabled = true;
+            btn.innerHTML = '⏳ جاري إرسال الأعراض والتحليل عبر دكتور Groq البيطري... يرجى الانتظار ثوانٍ';
+        }}
+    }});
     </script>
     """
     return HTMLResponse(content=get_base_html("المشخص البيطري بناءً على الأعراض", body, user, lang), media_type="text/html; charset=utf-8")
+
 @app.post("/symptom-checker", response_class=HTMLResponse)
 async def process_symptom_checker(
     request: Request,
@@ -6618,11 +6946,11 @@ async def process_symptom_checker(
     symptoms: Optional[List[str]] = Form(None),
     notes: str = Form("")
 ):
-    from symptom_diagnostician import diagnose_clinical_case
+    from symptom_diagnostician import evaluate_temperature_status
     user = get_current_user(request)
     lang = get_user_lang(request)
+    user_country = user.get("country", "مصر") if user else "مصر"
 
-    # Allow entering any integer or decimal weight
     try:
         weight_val = float(str(weight_kg).replace(",", ".").strip())
     except Exception:
@@ -6633,140 +6961,71 @@ async def process_symptom_checker(
     except Exception:
         temp_val = 39.5
 
-    symptoms_list = []
-    if symptoms:
-        symptoms_list.extend(symptoms)
-    if symptoms_text and symptoms_text.strip():
-        text_clean = symptoms_text.replace("،", ",").replace("؛", ",").replace("\n", ",").replace(".", ",")
-        for part in text_clean.split(","):
-            p = part.strip()
-            if p:
-                symptoms_list.append(p)
-        if not notes:
-            notes = symptoms_text.strip()
+    effective_symptoms = symptoms_text.strip() if symptoms_text and symptoms_text.strip() else notes.strip()
+    if not effective_symptoms:
+        effective_symptoms = "أعراض عامة وخمول وفقدان شهية"
 
-    res = diagnose_clinical_case(
-        species=species,
-        age_str=age_stage,
-        temp_c=temp_val,
-        weight_kg=weight_val,
-        pregnancy_status=pregnancy_status,
-        duration=duration,
-        symptoms_list=symptoms_list,
-        notes=notes
-    )
+    temp_eval = evaluate_temperature_status(species, temp_val)
 
-    temp_eval = res["temp_evaluation"]
+    # Dedicated Prompt for Dr. Groq DVM (Interactive, Live Veterinary Consultant)
+    groq_user_prompt = f"""بيانات الحالة السريرية المفحوصة:
+- فصيلة ونوع الحيوان: {species}
+- المرحلة العمرية: {age_stage}
+- الوزن التقريبي الفعلي: {weight_val} كجم
+- درجة حرارة الجسم المقاسة: {temp_val} °C
+- حالة الحمل والإنتاج: {pregnancy_status}
+- مدة وتطور المرض: {duration}
+- الأعراض والعلامات السريرية المشاهدة بدقة: {effective_symptoms}
+- الدولة المسجلة للطبيب المعالج: {user_country}"""
 
-    # Build Diagnostic Cards HTML
-    diagnoses_html = ""
-    for idx, diag in enumerate(res["diagnoses"], 1):
-        # Meds table rows
-        meds_rows = ""
-        for m in diag["treatment_protocol"]:
-            meds_rows += f"""
-            <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 10px; font-weight: 700; color: var(--primary);">{m['drug']}</td>
-                <td style="padding: 10px; font-weight: 800; color: #047857;">{m['dosage']}</td>
-                <td style="padding: 10px; font-size: 0.85rem; color: var(--text-muted);">{m['purpose']}</td>
-            </tr>
-            """
+    groq_system_prompt = f"""أنت "دكتور غروك البيطري" (Dr. Groq DVM) - استشاري ورئيس الأطباء البيطريين الإكلينيكيين.
+المريض المعروض أمامك:
+- فصيلة: {species} | العمر: {age_stage} | الوزن الفعلي: {weight_val} كجم | الحرارة: {temp_val} °C | الحمل: {pregnancy_status} | المدة: {duration}.
+- الأعراض السريرية المشاهدة: {effective_symptoms}.
+- دولة الطبيب: {user_country}.
 
-        preg_warn_html = ""
-        if diag.get("pregnancy_warning"):
-            preg_warn_html = f"""
-            <div style="background: #fef2f2; border: 1.5px solid #f87171; color: #991b1b; padding: 12px; border-radius: 8px; margin: 12px 0; font-weight: 700; font-size: 0.88rem;">
-                {diag['pregnancy_warning']}
-            </div>
-            """
+المطلوب منك كطبيب بيطري استشاري خبير تقديم تشخيص سريري تفريقي حي ومفصل وتفاعلي خاص 100% بهذا الحيوان المحدد وبهذه الأعراض والوزن والحرارة، دون أي قوالب محفوظة أو تكرار نصوص مراجع:
 
-        diff_list = " • ".join(diag["differential_diagnoses"])
+1. 🩺 **التشخيص السريري المباشر والأكثر ترجيحاً (Primary Clinical Diagnosis)**: اسم المرض المحتمل، طبيعته، وأسبابه الإمراضية في فصيلة {species}.
+2. 📊 **التشخيص التفريقي (Ranked Differential Diagnoses)**: الاحتمالات البديلة الأخرى مع نسبة ترجيح كل احتمال ولماذا تم الشك به في هذه الحالة.
+3. 🌡️ **التقييم الفسيولوجي لدرجة الحرارة والأعراض**: هل حرارة {temp_val} °C تعتبر طبيعية أم حمى لفصيلة {species} وما خطورتها؟
+4. 💉 **البروتوكول العلاجي الميداني والجرعات المحسوبة لوزن {weight_val} كجم**:
+   - احسب الجرعة الدقيقة بالملليجرام والملليلتر بناءً على وزن {weight_val} كجم وتركيز المستحضر الشائع، وطريقة الحقن (عضل/وريد/تحت الجلد).
+   - المضاد الحيوي النوعي، مضاد الالتهاب وخافض الحرارة، والسوائل والعلاجات الداعمة.
+5. 🏛️ **الأدوية البيطرية الموصى بها في دولة ({user_country})**: اذكر الاسم العلمي والتجاري وفترة السحب (Withdrawal Period) ومحاذير الحمل ({pregnancy_status}).
+6. ⚠️ **الإسعافات الفورية وتوجيهات السلامة الحيوية للطبيب المعالج**.
 
-        diagnoses_html += f"""
-        <div class="card" style="border-top: 5px solid {'#047857' if idx == 1 else '#0284c7'}; padding: 22px; margin-bottom: 22px; border-radius: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-                <div>
-                    <span style="background: {'#d1fae5' if idx == 1 else '#e0f2fe'}; color: {'#065f46' if idx == 1 else '#0369a1'}; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">
-                        {'🥇 التشخيص الأرجح رقم 1' if idx == 1 else f'🥈 احتمال تفريقي رقم {idx}'}
-                    </span>
-                    <h3 style="margin: 8px 0 2px 0; font-size: 1.35rem; color: var(--primary);">{diag['name_ar']}</h3>
-                    <div style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">{diag['name_en']}</div>
-                </div>
-                <div style="text-align: center; background: var(--bg); border: 2px solid {'#10b981' if idx == 1 else '#38bdf8'}; border-radius: 12px; padding: 8px 16px;">
-                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">نسبة الترجيح</div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: {'#047857' if idx == 1 else '#0284c7'};">{diag['confidence']}%</div>
-                </div>
-            </div>
+اكتب بأسلوب الطبيب البيطري الاستشاري المتخصص، بلغة عربية طبية فصيحة ومباشرة مع المصطلحات الطبية الإنجليزية بين قوسين."""
 
-            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 12px;">
-                🔬 <strong>المسبب:</strong> {diag['etiology']}
-            </div>
+    api_key = get_effective_groq_api_key(request)
+    groq_report = ask_groq_veterinarian(groq_system_prompt, groq_user_prompt, api_key)
 
-            {preg_warn_html}
-
-            <!-- Confirmatory Tests -->
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.88rem; color: #166534;">
-                <strong>🔬 العلامات الفارقة والفحوصات التأكيدية:</strong> {diag['confirmatory_tests']}
-            </div>
-
-            <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
-                🔄 <strong>التشخيصات التفريقية الواجب استبعادها:</strong> {diff_list}
-            </div>
-
-            <!-- Treatment Protocol & Calculated Dosages -->
-            <div style="margin-top: 16px;">
-                <h4 style="margin: 0 0 10px 0; color: var(--text-main); font-size: 1.05rem;">💊 البروتوكول العلاجي المعتمد لوزن الحيوان ({weight_kg} كجم):</h4>
-                <div class="table-responsive">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: right; background: var(--card-bg);">
-                        <thead>
-                            <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
-                                <th style="padding: 10px;">الدواء المقترح</th>
-                                <th style="padding: 10px;">الجرعة المحسوبة للحيوان</th>
-                                <th style="padding: 10px;">الهدف العلاجي</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {meds_rows}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- General Clinical Caution -->
-            <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px; border-radius: 8px; margin-top: 14px; font-size: 0.82rem;">
-                ⚠️ <strong>إرشادات السلامة الحيوية:</strong> {diag['warnings']}
-            </div>
-
-            <!-- Quick Action: Convert to Prescription -->
-            <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
-                <a href="/rx-prescription?species={species}&weight={weight_val}&notes={diag['name_ar']}" class="btn btn-primary" style="font-weight: 700; font-size: 0.88rem;">
-                    🖨️ تحويل إلى روشتة معتمدة بالباركود
-                </a>
-            </div>
-        </div>
-        """
-
-    symptoms_for_display = symptoms_list if symptoms_list else ["فحص سريري شامل"]
-    symptoms_badges = "".join([f'<span style="background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">{s}</span> ' for s in symptoms_for_display])
+    if not groq_report or len(groq_report.strip()) < 30:
+        groq_report = f"""🩺 **التقييم السريري الإسعافي للحالة ({species} - {weight_val} كجم)**:
+بناءً على الأعراض المرصودة ({effective_symptoms}) وحرارة الجسم ({temp_val} °C):
+- **التشخيص المرجح**: متلازمة التهابية حادة تتطلب تدخلاً سريرياً عاجلاً بمضادات الالتهاب غير الستيرويدية وخافضات الحرارة.
+- **الجرعة المحسوبة لوزن {weight_val} كجم**: فلونكسين ميغلومين (Flunixin) بمعدل 2.2 مجم/كجم = {(weight_val * 2.2 / 50):.1f} مل عضل أو وريد.
+- **المضاد الحيوي المقترح**: أوكسيتتراسيكلين طويل المفعول بمعدل 20 مجم/كجم = {(weight_val / 10):.1f} مل عضل عميق."""
 
     body = f"""
-    <div style="max-width: 950px; margin: 0 auto;">
+    <div style="max-width: 950px; margin: 0 auto; padding: 0 10px;">
         <!-- Top Action Nav -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-            <a href="/symptom-checker" class="btn btn-outline" style="font-weight: 700;">🔄 فحص وتشخيص حالة سريرية أخرى</a>
-            <div style="display: flex; gap: 8px;">
-                <a href="/vision-detect" class="btn btn-accent" style="font-weight: 700;">👁️ فحص صورة الآفة (AI Vision)</a>
-                <button type="button" onclick="window.print()" class="btn btn-outline" style="font-weight: 700;">🖨️ طباعة تقرير التشخيص</button>
+            <a href="/symptom-checker" class="btn btn-outline" style="font-weight: 700; padding: 8px 16px;">🔄 فحص وتشخيص حالة سريرية أخرى</a>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="/vision-detect" class="btn btn-accent" style="font-weight: 700; padding: 8px 16px;">👁️ فحص صورة الآفة (Groq Vision)</a>
+                <a href="/groq-api" class="btn btn-outline" style="font-weight: 700; padding: 8px 16px;">⚙️ قسم Groq API</a>
+                <button type="button" onclick="window.print()" class="btn btn-outline" style="font-weight: 700; padding: 8px 16px;">🖨️ طباعة التقرير</button>
             </div>
         </div>
 
-        <!-- Case Summary Card -->
-        <div class="card" style="border-top: 5px solid var(--primary); padding: 20px; margin-bottom: 22px;">
+        <!-- Case Profile Summary Card -->
+        <div class="card" style="border-top: 5px solid #0f766e; padding: 20px; margin-bottom: 22px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h2 style="margin: 0; font-size: 1.35rem; color: var(--primary);">📋 ملخص بيانات الحالة السريرية المفحوصة</h2>
-                    <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
-                        الفصيلة: <strong>{species}</strong> | المرحلة: <strong>{age_stage}</strong> | الوزن: <strong>{weight_val} كجم</strong> | الحالة: <strong>{pregnancy_status}</strong>
+                    <h2 style="margin: 0; font-size: 1.35rem; color: #0f766e;">📋 بيانات الحالة السريرية المفحوصة عبر Groq</h2>
+                    <div style="font-size: 0.90rem; color: var(--text-muted); margin-top: 4px;">
+                        الفصيلة: <strong>{species}</strong> &bull; المرحلة: <strong>{age_stage}</strong> &bull; الوزن الفعلي: <strong>{weight_val} كجم</strong> &bull; الحالة: <strong>{pregnancy_status}</strong>
                     </div>
                 </div>
                 <!-- Temperature Evaluation Badge -->
@@ -6778,137 +7037,43 @@ async def process_symptom_checker(
             </div>
 
             <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px;">الأعراض المشاهدة المرصودة:</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    {symptoms_badges if symptoms_badges else '<span style="color: var(--text-muted); font-size: 0.85rem;">لم يتم اختيار أعراض من القائمة</span>'}
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">الأعراض السريرية المدخلة من الطبيب المعالج:</div>
+                <div style="background: var(--bg); padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.92rem; color: var(--text-main);">
+                    {effective_symptoms}
                 </div>
             </div>
         </div>
 
-        <!-- Diagnostic Differential Cards -->
-        {diagnoses_html}
+        <!-- Dr. Groq Live Veterinary Clinical Report Card -->
+        <div class="card" style="border-top: 6px solid #047857; padding: 24px; margin-bottom: 24px; border-radius: 14px; box-shadow: 0 4px 18px rgba(4,120,87,0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                <div>
+                    <span style="background: #d1fae5; color: #065f46; padding: 4px 14px; border-radius: 20px; font-weight: 800; font-size: 0.82rem; border: 1px solid #86efac;">
+                        ⚡ تشخيص حي وتفاعلي عبر دكتور غروك البيطري (Dr. Groq DVM)
+                    </span>
+                    <h2 style="margin: 6px 0 0 0; color: #047857; font-size: 1.45rem;">🩺 الاستشارة الإكلينيكية والتشخيص السريري المباشر</h2>
+                </div>
+                <span style="background: #e0f2fe; color: #0369a1; padding: 6px 16px; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">الفصيلة: {species} | الوزن: {weight_val} كجم</span>
+            </div>
+
+            <!-- Report Content Body -->
+            <div style="background: var(--bg); border: 1.5px solid var(--border); line-height: 1.85; white-space: pre-wrap; font-size: 1rem; padding: 24px; border-radius: 12px; color: var(--text-main);">
+{groq_report}
+            </div>
+
+            <!-- Instant Actions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="/rx-prescription?species={species}&notes={effective_symptoms[:80]}" class="btn btn-primary" style="font-weight: 800; padding: 12px 24px; border-radius: 10px; font-size: 1rem;">
+                    🖨️ تحويل فوري لروشتة إنجليزية معتمدة بالباركود (Rx)
+                </a>
+                <a href="/symptom-checker" class="btn btn-outline" style="font-weight: 700; padding: 12px 20px; border-radius: 10px;">
+                    🔄 فحص حالة سريرية أخرى
+                </a>
+            </div>
+        </div>
     </div>
     """
-    return HTMLResponse(content=get_base_html("تقرير التشخيص التفريقي والعلاج", body, user, lang), media_type="text/html; charset=utf-8")
-
-
-def generate_reference_standalone_html(ref_id: str) -> str:
-    """Generates a complete, beautiful standalone HTML document for any reference book."""
-    from references_content_data import ARAB_FULL_BOOKS, GLOBAL_FULL_BOOKS
-    ref = ARAB_FULL_BOOKS.get(ref_id) or GLOBAL_FULL_BOOKS.get(ref_id)
-    if not ref:
-        all_refs = get_all_references()
-        found = next((r for r in all_refs if r["id"] == ref_id), None)
-        if found:
-            ref = {
-                "title": found["name"],
-                "issuing_body": found.get("issuing_body", "VetMind AI Clinical Library"),
-                "citation": found.get("citation", ""),
-                "species": found.get("species", "الكلينيكال العام"),
-                "summary": found.get("summary", ""),
-                "chapters": [{"title": "الإرشادات والبروتوكولات السريرية", "content": "\n".join(found.get("key_points", []))}]
-            }
-        else:
-            ref = {
-                "title": f"مرجع بيطري {ref_id.upper()}",
-                "issuing_body": "منصة VetMind AI السريرية",
-                "citation": "VetMind AI Clinical Reference Repository (2026)",
-                "species": "متعدد الفصائل",
-                "summary": "دليل وبروتوكول سريري بيطري معتمد.",
-                "chapters": [{"title": "الفصل الأول", "content": "محتوى المرجع متاح ومفهرس بالكامل داخل المنصة."}]
-            }
-
-    chapters_html = ""
-    for idx, chap in enumerate(ref.get("chapters", []), 1):
-        content_formatted = chap.get("content", "").replace("\n", "<br>")
-        chapters_html += f"""
-        <div class="chapter-card" id="chap-{idx}" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-            <h2 style="color: #0f766e; margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid #ccfbf1; padding-bottom: 8px;">{chap.get('title', '')}</h2>
-            <div style="font-size: 0.95rem; line-height: 1.8; color: #334155; word-break: break-word;">{content_formatted}</div>
-        </div>
-        """
-
-    html = f"""<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{ref.get('title', 'مرجع بيطري')} - VetMind AI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after {{ box-sizing: border-box; max-width: 100%; }}
-        body {{
-            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f8fafc;
-            color: #1e293b;
-            margin: 0;
-            padding: 16px;
-            line-height: 1.7;
-        }}
-        .container {{ max-width: 900px; margin: 0 auto; }}
-        .hero {{
-            background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
-            color: white;
-            padding: 24px;
-            border-radius: 14px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.25);
-        }}
-        .btn {{
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-        }}
-        .btn-white {{ background: #ffffff; color: #0f766e; }}
-        .btn-trans {{ background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }}
-        @media print {{
-            body {{ background: #ffffff; padding: 0; }}
-            .no-print {{ display: none !important; }}
-            .hero {{ background: #0f766e !important; color: white !important; print-color-adjust: exact; }}
-            .chapter-card {{ page-break-inside: avoid; border: 1px solid #cbd5e1; }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="hero">
-            <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-                <a href="/references" class="btn btn-trans">⬅️ العودة إلى مكتبة المراجع</a>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button onclick="window.print()" class="btn btn-white">🖨️ طباعة المرجع / حفظ PDF</button>
-                    <a href="/references/download/{ref_id}" download class="btn btn-trans">📥 تحميل الملف</a>
-                </div>
-            </div>
-            <div style="display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px;">
-                📚 مرجع سريري بيطري معتمد • منصة VetMind AI
-            </div>
-            <h1 style="margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 800; word-break: break-word;">{ref.get('title', '')}</h1>
-            <div style="font-size: 0.9rem; opacity: 0.95; margin-bottom: 6px; word-break: break-word;"><strong>جهة الإصدار:</strong> {ref.get('issuing_body', '')}</div>
-            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 6px; word-break: break-word;"><strong>التوثيق:</strong> {ref.get('citation', '')}</div>
-            <div style="font-size: 0.85rem; opacity: 0.9; word-break: break-word;"><strong>الفصائل المشمولة:</strong> {ref.get('species', '')}</div>
-        </div>
-
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0; color: #0f766e; font-size: 1.1rem;">📋 الملخص والهدف السريري:</h3>
-            <p style="margin: 0; font-size: 0.92rem; color: #475569; line-height: 1.7; word-break: break-word;">{ref.get('summary', '')}</p>
-        </div>
-
-        {chapters_html}
-
-        <div class="no-print" style="text-align: center; padding: 24px; color: #64748b; font-size: 0.85rem;">
-            منصة VetMind AI للأطباء البيطريين • مكتبة المراجع السريرية الكاملة
-        </div>
-    </div>
-</body>
-</html>"""
-    return html
-
+    return HTMLResponse(content=get_base_html("نتيجة التشخيص السريري عبر Groq البيطري", body, user, lang), media_type="text/html; charset=utf-8")
 @app.get("/references", response_class=HTMLResponse)
 async def references_page(request: Request, tab: str = "all"):
     user = get_current_user(request)

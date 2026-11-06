@@ -52,3 +52,6 @@ uploads/
 backups_vetbook_upgrade/
 
 .vercel
+
+.env
+.env.local
