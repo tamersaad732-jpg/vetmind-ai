@@ -5995,47 +5995,62 @@ async def vision_detect_page(request: Request):
 
     api_key_stored = get_effective_groq_api_key(request)
     is_groq_connected = bool(api_key_stored and api_key_stored.startswith("gsk_"))
-    
-    body = f"""
-    <div style="max-width: 950px; margin: 0 auto; padding: 0 10px;">
-        <!-- Header Banner -->
-        <div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 20px; text-align: center; border: 1px solid #38bdf8;">
-            <div style="font-size: 2.8rem; margin-bottom: 6px;">👁️</div>
-            <h1 style="margin: 0; font-size: 1.7rem; color: #ffffff;">فاحص الصور السريرية بالذكاء الاصطناعي (AI Vision)</h1>
-            <p style="color: #bae6fd; font-size: 0.95rem; margin-top: 6px; line-height: 1.5;">
-                فحص بصري دقيق لآفات الحيوانات يعمل هجيناً (أونلاين عبر Groq / سحابياً) و (أوفلاين 100% محلياً على هاتفك بدون إنترنت عبر المحرك المستقل أو نموذج LLaMA)
-            </p>
-        </div>
 
-        <!-- Fully Embedded Autonomous Veterinary Vision AI Banner -->
-        <div class="card" style="margin-bottom: 22px; border-top: 4px solid #0d9488; padding: 18px 22px; background: linear-gradient(135deg, rgba(13,148,136,0.08) 0%, rgba(3,105,161,0.08) 100%); border-radius: 14px; box-shadow: 0 4px 14px rgba(13,148,136,0.06);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 12px rgba(13,148,136,0.25);">
-                        🧠
+    groq_badge = '''
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; color: #065f46; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">🟢</span>
+            <div>
+                <strong style="color: #047857; font-size: 1.05rem;">محرك الرؤية بالذكاء الاصطناعي متصل ونشط (Groq Llama-3.2 Vision)</strong>
+                <div style="font-size: 0.82rem; color: #065f46; margin-top: 2px;">المفتاح مفعل وجاهز لتحليل الصور وفحص الآفات الحقيقية بالذكاء الاصطناعي فائق الدقة.</div>
+            </div>
+        </div>
+        <button type="button" onclick="openInlineGroqChange()" class="btn btn-outline" style="font-size: 0.82rem; padding: 6px 14px; background: white; font-weight: 700; border-radius: 8px; cursor: pointer;">تغيير المفتاح 🔑</button>
+    </div>
+    <div id="inline_change_wrap" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 20px;">
+        <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.88rem; color: #92400e;">أدخل مفتاح Groq الجديد:</label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="password" id="inline_groq_key_edit" placeholder="ألصق مفتاحك الجديد يبدأ بـ gsk_..." style="flex: 1; min-width: 240px; padding: 9px 12px; border: 1.5px solid #d97706; border-radius: 8px; font-family: monospace;">
+            <button type="button" onclick="saveInlineGroqKey('inline_groq_key_edit')" class="btn" style="background: #047857; color: white; font-weight: 700; padding: 9px 16px; border-radius: 8px;">حفظ وتفعيل ⚡</button>
+        </div>
+    </div>
+    ''' if is_groq_connected else '''
+    <div style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid #f59e0b; color: #92400e; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.6rem;">🔑</span>
+                <div>
+                    <strong style="color: #b45309; font-size: 1.05rem;">ربط محرك Groq Vision بالذكاء الاصطناعي (مجاني 100%)</strong>
+                    <div style="font-size: 0.84rem; color: #92400e; margin-top: 3px;">
+                        لضمان فحص حقيقي ودقيق لكل صورة بحسب بكسلاتها عبر سحابة Groq، اربط مفتاحك المجاني من <a href="https://console.groq.com/keys" target="_blank" style="color: #b45309; font-weight: 800; text-decoration: underline;">console.groq.com/keys</a>
                     </div>
-                    <div>
-                        <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span>نموذج الذكاء الاصطناعي البيطري المدمج (Embedded Autonomous LLaMA Core)</span>
-                            <span style="background: #dcfce7; color: #166534; font-size: 0.74rem; padding: 3px 9px; border-radius: 10px; font-weight: 800; border: 1px solid #86efac;">مدمج ونشط تلقائياً ⚡</span>
-                        </div>
-                        <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 3px; line-height: 1.5;">
-                            يعمل تلقائياً وبدقة 100% أوفلاين وأونلاين على هاتفك والكمبيوتر بدون أي تدخل منك وبدون أي برامج إضافية
-                        </div>
-                    </div>
-                </div>
-                <div id="connection-status-pill" style="font-size: 0.80rem; font-weight: 700; padding: 6px 16px; border-radius: 20px; background: #ecfdf5; color: #065f46; border: 1.5px solid #10b981; display: inline-flex; align-items: center; gap: 6px;">
-                    📶 أوفلاين وأونلاين جاهز 100%
                 </div>
             </div>
         </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+            <input type="password" id="inline_groq_key" placeholder="ألصق مفتاح Groq يبدأ بـ gsk_..." style="flex: 1; min-width: 240px; padding: 11px 14px; border: 1.5px solid #d97706; border-radius: 10px; font-family: monospace; font-size: 0.90rem; background: white; color: #1e293b;">
+            <button type="button" onclick="saveInlineGroqKey('inline_groq_key')" class="btn" style="background: #d97706; color: white; font-weight: 800; padding: 11px 20px; border-radius: 10px; cursor: pointer;">حفظ وتفعيل المفتاح ⚡</button>
+        </div>
+    </div>
+    '''
+
+    body = f"""
+    <div style="max-width: 900px; margin: 0 auto; padding: 0 10px;">
+        <!-- Header Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 20px; text-align: center; border: 1px solid #38bdf8;">
+            <div style="font-size: 2.8rem; margin-bottom: 6px;">👁️</div>
+            <h1 style="margin: 0; font-size: 1.7rem; color: #ffffff;">فاحص الصور السريرية بالذكاء الاصطناعي (Groq Multimodal Vision)</h1>
+            <p style="color: #bae6fd; font-size: 0.95rem; margin-top: 6px; line-height: 1.5;">
+                فحص بصري حقيقي وشامل لآفات الحيوانات مدعوم بنماذج Llama-3.2 Vision مع التحليل النسيجي والتشخيص التفريقي والأدوية المعتمدة
+            </p>
+        </div>
+
+        {groq_badge}
 
         <!-- Main Upload & Interactive Form -->
         <div class="card" style="border-top: 6px solid var(--accent); padding: 24px;">
-            <form id="vision-detect-form" onsubmit="event.preventDefault(); window.startAutonomousVisionDiagnosis(); return false;" action="javascript:void(0);" method="GET">
-                <input type="hidden" name="ai_mode" id="selected_ai_mode_input" value="offline_device">
-                
-                <div id="drop-zone" style="border: 2px dashed var(--accent); padding: 30px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 20px; position: relative;">
+            <form id="vision-detect-form" action="/vision-detect" method="POST" enctype="multipart/form-data">
+                <div id="drop-zone" style="border: 2px dashed var(--accent); padding: 32px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 20px; position: relative;">
                     <div style="font-size: 3rem; margin-bottom: 8px;">📸</div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">اختر صورة الآفة السريرية أو التقطها بكاميرا الهاتف</div>
                     <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">يجب رفع صورة طبية واضحة للحيوان المصاب أو موضع الإصابة (JPEG, PNG, WEBP)</div>
@@ -6070,21 +6085,18 @@ async def vision_detect_page(request: Request):
                     </div>
                 </div>
 
-                <button type="button" id="btn-run-vision" onclick="window.startAutonomousVisionDiagnosis()" class="btn btn-accent" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.25); cursor: pointer;">
-                    🚀 بدء فحص الآفة وتشخيص الحالة بالذكاء الاصطناعي فوراً
+                <button type="submit" id="btn-run-vision" class="btn btn-accent" style="width: 100%; padding: 15px; font-size: 1.15rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.25); cursor: pointer;">
+                    🚀 بدء فحص الآفة وتشخيص الحالة بالذكاء الاصطناعي (Groq Vision)
                 </button>
             </form>
         </div>
-
-        <!-- Dynamic On-Device Client-Side Results Container (for 100% Offline Analysis) -->
-        <div id="offline-results-container" style="display: none; margin-top: 24px;"></div>
 
         <!-- Local Phone / Device Storage Management & History Section -->
         <div class="card" id="local-history-section" style="margin-top: 26px; border-top: 5px solid #0d9488; padding: 22px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
                 <div>
                     <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                        <span>📱</span> <span>سجل الفحوصات المحفوظة على هذا الجهاز (المحفوظات المحلية أوفلاين)</span>
+                        <span>📱</span> <span>سجل الفحوصات المحفوظة على هذا الجهاز (المحفوظات المحلية)</span>
                     </h3>
                     <div id="storage-usage-badge" style="font-size: 0.80rem; color: var(--text-muted); margin-top: 4px;">
                         💾 يتم حساب المساحة المشغولة على هاتفك... &bull; كافة السجلات والبيانات مشفرة ومحفوظة محلياً على جهازك
@@ -6101,35 +6113,13 @@ async def vision_detect_page(request: Request):
                 <!-- Rendered dynamically from IndexedDB -->
             </div>
             <div id="local-cases-empty" style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 0.90rem;">
-                لا توجد فحوصات محفوظة محلياً على هذا الجهاز بعد. أي صورة تقوم بتحليلها ستُحفظ هنا تلقائياً لتعمل معك بدون إنترنت.
+                لا توجد فحوصات محفوظة محلياً على هذا الجهاز بعد. أي صورة تقوم بتحليلها ستُحفظ هنا تلقائياً لتعمل معك ومراجعتها في أي وقت.
             </div>
         </div>
     </div>
 
-    <!-- Hidden Canvas for Offline Image Processing -->
-    <canvas id="offline-vision-canvas" style="display: none;"></canvas>
-
     <script>
-    // 1. Unified Connection & System Status Indicator
-    function updateConnectionStatusPill() {{
-        const pill = document.getElementById('connection-status-pill');
-        if (!pill) return;
-        if (navigator.onLine) {{
-            pill.innerHTML = '🟢 النظام مدمج ونشط (أونلاين & أوفلاين)';
-            pill.style.background = '#ecfdf5';
-            pill.style.color = '#065f46';
-            pill.style.borderColor = '#10b981';
-        }} else {{
-            pill.innerHTML = '⚡ وضع أوفلاين (الذكاء الاصطناعي المدمج نشط 100%)';
-            pill.style.background = '#f0fdf4';
-            pill.style.color = '#15803d';
-            pill.style.borderColor = '#4ade80';
-        }}
-    }}
-    window.addEventListener('online', updateConnectionStatusPill);
-    window.addEventListener('offline', updateConnectionStatusPill);
-
-    // 2. Real-time Image Selection Preview
+    // 1. Real-time Image Selection Preview
     function handleImageSelection(input) {{
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
@@ -6142,320 +6132,76 @@ async def vision_detect_page(request: Request):
                 preview.src = e.target.result;
                 wrap.style.display = 'block';
                 const sizeKb = (file.size / 1024).toFixed(1);
-                meta.textContent = `${{file.name}} (${{sizeKb}} KB) - جاهزة للفحص والتشخيص الفوري`;
+                meta.textContent = `${{file.name}} (${{sizeKb}} KB) - جاهزة للفحص بالذكاء الاصطناعي`;
             }}
         }};
         reader.readAsDataURL(file);
     }}
 
-    // 3. Form Submit - 100% Embedded Autonomous Execution (Zero User Intervention)
-    window.startAutonomousVisionDiagnosis = function() {{
-        const fileInput = document.getElementById('vision-file-input');
-        const file = (fileInput && fileInput.files && fileInput.files[0]) ? fileInput.files[0] : null;
-
-        if (!file) {{
-            alert('يرجى اختيار أو التقاط صورة الآفة السريرية أولاً.');
-            return;
-        }}
-
-        const species = document.getElementById('vision_species')?.value || 'أبقار';
-        const notes = (document.getElementById('vision_notes')?.value || '').trim();
-
-        runEmbeddedVisionAi(file, species, notes);
-    }};
-
+    // 2. Form Submit & Offline Network Guard
     document.addEventListener('DOMContentLoaded', () => {{
-        updateConnectionStatusPill();
         loadLocalVisionHistory();
 
         const form = document.getElementById('vision-detect-form');
         if (form) {{
             form.addEventListener('submit', function(e) {{
-                e.preventDefault();
-                window.startAutonomousVisionDiagnosis();
-                return false;
+                const fileInput = document.getElementById('vision-file-input');
+                if (!fileInput || !fileInput.files || !fileInput.files[0]) {{
+                    e.preventDefault();
+                    alert('يرجى اختيار أو التقاط صورة الآفة السريرية أولاً.');
+                    return false;
+                }}
+
+                if (!navigator.onLine) {{
+                    e.preventDefault();
+                    alert('⚠️ تنبيه طبي: فحص الصور بالذكاء الاصطناعي الحقيقي (Groq Vision) يتطلب اتصالاً بالإنترنت لفحص بكسلات الصورة بدقة عبر النموذج السحابي العملاق (Llama-3.2 Vision). يرجى الاتصال بالإنترنت أولاً للتشخيص، أو مراجعة الحالات السابقة المحفوظة على هاتفك أدناه.');
+                    return false;
+                }}
+
+                const btn = document.getElementById('btn-run-vision');
+                if (btn) {{
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ جاري فحص الآفة وتشخيص الحالة عبر الذكاء الاصطناعي الحقيقي (Groq Vision)... يرجى الانتظار ثوانٍ';
+                }}
             }});
         }}
     }});
 
-    // 4. Embedded Multi-Layer Autonomous AI Vision Engine
-    // Automatically runs inside the app on Mobile (iOS/Android) and Desktop (Windows/Mac)
-    async function runEmbeddedVisionAi(file, species, notes) {{
-        const btn = document.getElementById('btn-run-vision');
-        if (btn) {{
-            btn.disabled = true;
-            btn.innerHTML = '⏳ جاري الفحص النسيجي والتشخيص بالذكاء الاصطناعي المدمج...';
+    // 3. Inline Groq Key Management
+    function openInlineGroqChange() {{
+        const wrap = document.getElementById('inline_change_wrap');
+        if (wrap) {{
+            wrap.style.display = (wrap.style.display === 'none' || wrap.style.display === '') ? 'block' : 'none';
         }}
-
-        const reader = new FileReader();
-        reader.onload = async function(evt) {{
-            const fullDataUrl = evt.target.result;
-            const base64Content = fullDataUrl.includes(',') ? fullDataUrl.split(',')[1] : fullDataUrl;
-
-            // Silent probe for local Ollama daemon (if running in background on PC) with 1.2s timeout
-            let llamaResponseText = null;
-            if (window.location.protocol === 'http:') {{
-                try {{
-                    const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 1200);
-                const res = await fetch('http://localhost:11434/api/generate', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{
-                        model: 'llama3.2-vision',
-                        prompt: `Veterinary Clinical Lesion Diagnosis for species: (${{species}}). Notes: (${{notes || 'Comprehensive'}}). Provide clinical impression, differential diagnosis, and treatment in Arabic with English terms.`,
-                        images: [base64Content],
-                        stream: false
-                    }}),
-                    signal: controller.signal
-                }});
-                clearTimeout(timeoutId);
-                if (res.ok) {{
-                    const json = await res.json();
-                    if (json && json.response && json.response.trim().length > 15) {{
-                        llamaResponseText = json.response.trim();
-                    }}
-                }}
-                }} catch (silentErr) {{
-                    // Seamlessly proceed to embedded native neural vision engine
-                }}
-            }}
-
-            // Native In-Browser Neural Image Processing (Runs 100% locally on phone & PC)
-            const img = new Image();
-            img.onload = function() {{
-                const canvas = document.getElementById('offline-vision-canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = Math.min(img.width, 600);
-                canvas.height = Math.round(img.height * (canvas.width / img.width));
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imgData.data;
-                const totalPixels = data.length / 4;
-
-                let redCount = 0;
-                let darkCount = 0;
-                let yellowCount = 0;
-                let blueSkyCount = 0;
-                let greenLawnCount = 0;
-
-                for (let i = 0; i < data.length; i += 4) {{
-                    const r = data[i];
-                    const g = data[i+1];
-                    const b = data[i+2];
-
-                    if (r > 130 && r > g * 1.25 && r > b * 1.25) redCount++;
-                    if (r < 55 && g < 55 && b < 55) darkCount++;
-                    if (r > 175 && g > 155 && b < 125) yellowCount++;
-                    if (b > r + 30 && b > g + 20) blueSkyCount++;
-                    if (g > r + 35 && g > b + 35) greenLawnCount++;
-                }}
-
-                const erythemaScore = Math.min(95, Math.round((redCount / totalPixels) * 350));
-                const necrosisScore = Math.min(90, Math.round((darkCount / totalPixels) * 300));
-                const exudateScore = Math.min(85, Math.round((yellowCount / totalPixels) * 280));
-
-                const aspectRatio = img.width / img.height;
-                const isWallpaper = (aspectRatio > 1.55 && aspectRatio < 1.95) && ((blueSkyCount / totalPixels > 0.25) || (greenLawnCount / totalPixels > 0.35));
-
-                renderEmbeddedVisionResults(fullDataUrl, isWallpaper, erythemaScore, necrosisScore, exudateScore, species, notes, llamaResponseText);
-
-                if (btn) {{
-                    btn.disabled = false;
-                    btn.innerHTML = '🚀 بدء فحص الآفة وتشخيص الحالة بالذكاء الاصطناعي فوراً';
-                }}
-            }};
-            img.src = fullDataUrl;
-        }};
-        reader.readAsDataURL(file);
     }}
 
-    // 5. Render Unified Embedded Clinical Diagnostic Results
-    function renderEmbeddedVisionResults(dataUrl, isWallpaper, erythema, necrosis, exudate, species, notes, llamaAddendum) {{
-        const container = document.getElementById('offline-results-container');
-        if (!container) return;
-
-        let isClinical = !isWallpaper;
-        let lesionName = 'التهاب واحتقان نسيجي سطحي';
-        let drugsList = [];
-        let differentialDiagnoses = [];
-        let treatmentProtocol = ``;
-
-        if (isClinical) {{
-            const nLower = (notes || '').toLowerCase();
-            if (nLower.includes('ضرع') || nLower.includes('حلمة') || erythema > 35) {{
-                lesionName = 'التهاب الضرع السريري الحاد (Acute Clinical Mastitis)';
-                differentialDiagnoses = [
-                    {{ name: 'التهاب الضرع البكتيري الحاد (Coliform / Staph Mastitis)', prob: 85 }},
-                    {{ name: 'وذمة ما بعد الولادة (Physiological Udder Edema)', prob: 10 }},
-                    {{ name: 'رضوض أو كدمات موضعية بالحلمات', prob: 5 }}
-                ];
-                treatmentProtocol = `1. تفريغ الضرع بالكامل وغسله بمطهر فسيولوجي دافئ.\n2. حقن محقن ضرع متخصص يحتوي على مضاد حيوي واسع المدى مع كورتيزون مضاد للالتهاب.\n3. إعطاء مضاد التهاب غير ستيرويدي جهازي (فلونكسين ميغلومين أو ميلوكسيكام) بالوريد أو العضل لتخفيف الألم والحرارة.`;
-                drugsList = [
-                    {{ name: 'محاقن ضرع معتمدة (Ubrolexin / Mastijet)', function: 'مضاد حيوي موضعي داخل قناة الحلمة' }},
-                    {{ name: 'فلونكسين ميغلومين 5% (Finadyne / Flunixin)', function: 'مضاد التهاب ومسكن للألم شديد الفعالية' }},
-                    {{ name: 'أوكسيتتراسيكلين 20% طويل المفعول (Oxytetracycline 20% L.A.)', function: 'مضاد حيوي جهازي واسع الطيف' }}
-                ];
-            }} else if (nLower.includes('حافر') || nLower.includes('عرج') || necrosis > 30) {{
-                lesionName = 'عفن الحوافر وتعفن القدم المعدي (Infectious Pododermatitis / Foot Rot)';
-                differentialDiagnoses = [
-                    {{ name: 'تعفن الحوافر البكتيري (Fusobacterium necrophorum)', prob: 88 }},
-                    {{ name: 'تقرحات الحوافر الناتجة عن الحمى القلاعية (FMD)', prob: 8 }},
-                    {{ name: 'خراج كعب الحافر الميكانيكي', prob: 4 }}
-                ];
-                treatmentProtocol = `1. تنظيف الحافر جيداً بالماء الفاتر وتقليم الأجزاء المتنخرة بعناية.\n2. رش موضعي برذاذ أوكسيتتراسيكلين (CTC Spray) وتطبيق حمام كبريتات النحاس 5%.\n3. حقن مضاد حيوي نسيجي عميق في العضل لمدة 3 أيام.`;
-                drugsList = [
-                    {{ name: 'رذاذ أوكسي تتراسيكلين الموضعي (CTC Spray / Alamycin)', function: 'مطهر ومضاد حيوي موضعي سريع الجفاف' }},
-                    {{ name: 'بنسلين مع ستربتومايسين (Pen-Strep 20/20)', function: 'مضاد حيوي جهازي نوعي لعفن الحوافر' }},
-                    {{ name: 'كبريتات النحاس الموضعية (Copper Sulfate 5%)', function: 'محلول معقم ومقسي لقرن الحافر' }}
-                ];
-            }} else if (nLower.includes('جلد') || nLower.includes('فطر') || nLower.includes('قوباء')) {{
-                lesionName = 'القوباء الحلقية والالتهاب الجلدي الفطري (Bovine Dermatophytosis / Ringworm)';
-                differentialDiagnoses = [
-                    {{ name: 'قوباء حلقية فطرية (Trichophyton verrucosum)', prob: 90 }},
-                    {{ name: 'جرب حيواني طفيلي (Sarcoptic / Psoroptic Mange)', prob: 7 }},
-                    {{ name: 'تحسس جلدي تلامسي', prob: 3 }}
-                ];
-                treatmentProtocol = `1. إزالة القشور بلطف باستخدام فرشاة مبللة بمحلول يود مخفف.\n2. دهان موضعي بمحلول إينيلكونازول (Enilconazole) أو صبغة اليود 5%.\n3. حقن إيفرمكتين 1% تحت الجلد للوقاية من الطفيليات المصاحبة.`;
-                drugsList = [
-                    {{ name: 'محلول إينيلكونازول الموضعي (Imaverol 100 mg/ml)', function: 'مضاد فطريات نوعي للقوباء الحلقية' }},
-                    {{ name: 'صبغة اليود المعتمدة (Povidone Iodine 10%)', function: 'مطهر ومجفف للآفات الجلدية' }},
-                    {{ name: 'إيفرمكتين 1% حقناً (Ivermectin 1%)', function: 'مضاد طفيليات داخلية وخارجية' }}
-                ];
+    function saveInlineGroqKey(inputId) {{
+        const input = document.getElementById(inputId || 'inline_groq_key');
+        if (!input) return;
+        const key = input.value.trim();
+        if (!key || !key.startsWith('gsk_')) {{
+            alert('يرجى إدخال مفتاح Groq صالح يبدأ بـ gsk_');
+            return;
+        }}
+        document.cookie = 'groq_api_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000';
+        fetch('/api/test-key', {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/json'}},
+            body: JSON.stringify({{ api_key: key }})
+        }}).then(res => res.json()).then(data => {{
+            if (data.status === 'success') {{
+                alert('✅ ' + data.message);
+                location.reload();
             }} else {{
-                lesionName = 'التهاب واحتقان نسيجي سطحي (Superficial Tissue Inflammation)';
-                differentialDiagnoses = [
-                    {{ name: 'التهاب موضعي حاد (Acute Localized Inflammation)', prob: 80 }},
-                    {{ name: 'كدمة أو جرح رضي سطحي', prob: 15 }},
-                    {{ name: 'لدغة حشرات أو تحسس نسيجي', prob: 5 }}
-                ];
-                treatmentProtocol = `1. تطهير موضعي لطيف بمحلول ملحي معقم أو كلورهيكسيدين.\n2. وضع مرهم مضاد حيوي موضعي لمنع العدوى البكتيرية الثانوية.\n3. متابعة الحرارة والعلامات الحيوية.`;
-                drugsList = [
-                    {{ name: 'مرهم جنتامايسين أو تتراسيكلين الموضعي', function: 'مضاد حيوي موضعي واقٍ من التلوث' }},
-                    {{ name: 'بخاخ معقم للجروح (Antiseptic Wound Spray)', function: 'حماية وتطهير موضعي سريع' }}
-                ];
+                alert('❌ ' + data.message);
             }}
-        }}
-
-        let resultHtml = '';
-        if (!isClinical) {{
-            resultHtml = `
-            <div class="card" style="border-top: 6px solid #ef4444; padding: 24px;">
-                <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 18px; color: #991b1b; text-align: center;">
-                    <div style="font-size: 2.4rem; margin-bottom: 6px;">❌</div>
-                    <h3 style="margin: 0; font-size: 1.25rem;">تنبيه: الصورة المرفقة ليست حالة مرضية أو سريرية لحيوان</h3>
-                    <p style="margin: 8px 0 0 0; font-size: 0.92rem; line-height: 1.6;">
-                        تم تصنيف الصورة كـ (خلفية شاشة / منظر عام / صورة غير طبية) عبر محرك الذكاء الاصطناعي المدمج، ولا تحتوي على أي معالم نسيجية أو آفات سريرية.<br>
-                        <strong>لم يتم اقتراح أي أدوية لعدم وجود إصابة مرضية.</strong>
-                    </p>
-                </div>
-            </div>`;
-        }} else {{
-            const drugsHtml = drugsList.map(d => `
-                <div style="padding: 10px 14px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;">
-                    <div style="font-weight: 700; color: #047857;">💊 ${{d.name}}</div>
-                    <div style="font-size: 0.82rem; color: #475569;">الوظيفة الإكلينيكية: ${{d.function}}</div>
-                </div>
-            `).join('');
-
-            const diffsHtml = differentialDiagnoses.map((df, idx) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border);">
-                    <span style="font-weight: 600; color: var(--text-main);">${{idx + 1}}. ${{df.name}}</span>
-                    <span style="font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 6px; font-size: 0.82rem;">${{df.prob}}%</span>
-                </div>
-            `).join('');
-
-            const llamaHtml = llamaAddendum ? `
-            <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
-                <div style="font-weight: 800; color: #166534; margin-bottom: 6px;">🦙 التحليل البصري المعمق (Enhanced LLaMA Vision Insights):</div>
-                <div style="font-size: 0.88rem; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${{llamaAddendum}}</div>
-            </div>
-            ` : '';
-
-            resultHtml = `
-            <div class="card" style="border-top: 6px solid #0d9488; padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
-                    <div>
-                        <span style="background: #ccfbf1; color: #0f766e; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.82rem;">
-                            🧠 محرك الذكاء الاصطناعي المدمج (Embedded AI Vision)
-                        </span>
-                        <h2 style="margin: 6px 0 0 0; font-size: 1.35rem; color: #0f766e;">${{lesionName}}</h2>
-                    </div>
-                    <a href="/rx-prescription?species=${{encodeURIComponent(species)}}&notes=${{encodeURIComponent(lesionName)}}" class="btn btn-primary" style="font-weight: 700; padding: 9px 18px; border-radius: 10px;">
-                        📋 تحويل فوري لروشتة إنجليزية معتمدة (Rx)
-                    </a>
-                </div>
-
-                <!-- Metrics Gauges -->
-                <div class="grid-3" style="gap: 12px; margin: 18px 0;">
-                    <div class="card" style="background: #fef2f2; border: 1.5px solid #fecaca; text-align: center; padding: 14px;">
-                        <div style="font-size: 0.85rem; color: #991b1b; font-weight: 700;">درجة الاحتقان والالتهاب</div>
-                        <div style="font-size: 2.2rem; font-weight: 800; color: #dc2626; margin: 4px 0;">${{erythema}}%</div>
-                        <div style="font-size: 0.75rem; color: #991b1b;">احتقان نسيجي ووذمة دموية</div>
-                    </div>
-                    <div class="card" style="background: #f8fafc; border: 1.5px solid #cbd5e1; text-align: center; padding: 14px;">
-                        <div style="font-size: 0.85rem; color: #475569; font-weight: 700;">درجة التنخر النسيجي</div>
-                        <div style="font-size: 2.2rem; font-weight: 800; color: #334155; margin: 4px 0;">${{necrosis}}%</div>
-                        <div style="font-size: 0.75rem; color: #475569;">تآكل خلوي وجلبات قشرية</div>
-                    </div>
-                    <div class="card" style="background: #fffbeb; border: 1.5px solid #fde68a; text-align: center; padding: 14px;">
-                        <div style="font-size: 0.85rem; color: #92400e; font-weight: 700;">درجة النضح والإفرازات</div>
-                        <div style="font-size: 2.2rem; font-weight: 800; color: #d97706; margin: 4px 0;">${{exudate}}%</div>
-                        <div style="font-size: 0.75rem; color: #92400e;">إفرازات قيحية ومخاطية</div>
-                    </div>
-                </div>
-
-                ${{llamaHtml}}
-
-                <!-- Differentials -->
-                <div style="background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 18px;">
-                    <div style="font-weight: 800; color: var(--text-main); margin-bottom: 8px;">📊 التشخيص التفريقي السريري المرجح:</div>
-                    ${{diffsHtml}}
-                </div>
-
-                <!-- Emergency Protocol -->
-                <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
-                    <div style="font-weight: 800; color: #166534; margin-bottom: 6px;">💉 الإسعاف الميداني والبروتوكول العلاجي الفوري:</div>
-                    <div style="font-size: 0.88rem; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${{treatmentProtocol}}</div>
-                </div>
-
-                <!-- Registered Local Drugs -->
-                <div style="background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px;">
-                    <div style="font-weight: 800; color: var(--text-main); margin-bottom: 10px;">🏛️ الأدوية المسجلة المعتمدة المخصصة للحالة:</div>
-                    ${{drugsHtml}}
-                </div>
-            </div>`;
-        }}
-
-        container.innerHTML = resultHtml;
-        container.style.display = 'block';
-        container.scrollIntoView({{ behavior: 'smooth' }});
-
-        // Save automatically to local phone/device storage
-        saveVisionCaseLocally({{
-            id: 'case_' + Date.now(),
-            date: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', {{ hour: '2-digit', minute: '2-digit' }}),
-            species: species,
-            lesionName: lesionName,
-            isClinical: isClinical,
-            imageThumb: dataUrl.length > 50000 ? dataUrl.slice(0, 50000) : dataUrl,
-            reportSummary: isClinical ? lesionName : 'صورة مصنفة كغير بيطرية'
+        }}).catch(() => {{
+            alert('✅ تم حفظ المفتاح بنجاح!');
+            location.reload();
         }});
     }}
 
-    // 6. Local Phone/Device Storage Operations (IndexedDB & localStorage)
-    async function saveVisionCaseLocally(caseObj) {{
-        if (window.VetMindOffline && window.VetMindOffline.saveItem) {{
-            await window.VetMindOffline.saveItem('vision_cases', caseObj);
-        }} else {{
-            const list = JSON.parse(localStorage.getItem('vm_local_vision_cases') || '[]');
-            list.unshift(caseObj);
-            localStorage.setItem('vm_local_vision_cases', JSON.stringify(list));
-        }}
-        loadLocalVisionHistory();
-    }}
-
+    // 4. Local Phone Storage History Operations
     async function loadLocalVisionHistory() {{
         const grid = document.getElementById('local-cases-grid');
         const emptyDiv = document.getElementById('local-cases-empty');
@@ -6466,7 +6212,9 @@ async def vision_detect_page(request: Request):
         if (window.VetMindOffline && window.VetMindOffline.getAllItems) {{
             cases = await window.VetMindOffline.getAllItems('vision_cases');
         }} else {{
-            cases = JSON.parse(localStorage.getItem('vm_local_vision_cases') || '[]');
+            try {{
+                cases = JSON.parse(localStorage.getItem('vm_local_vision_cases') || '[]');
+            }} catch(e) {{ cases = []; }}
         }}
 
         if (usageBadge && window.VetMindOffline && window.VetMindOffline.getStorageSizeEst) {{
@@ -6502,7 +6250,7 @@ async def vision_detect_page(request: Request):
                         📋 روشتة
                     </a>
                     <button type="button" onclick="deleteLocalVisionCase('${{c.id}}')" class="btn btn-outline" style="border-color: #fca5a5; color: #dc2626; font-size: 0.78rem; padding: 6px 10px; font-weight: 700;" title="حذف السجل لتفريغ مساحة الهاتف">
-                        🗑️ حذف لتفريغ المساحة
+                        🗑️ حذف
                     </button>
                 </div>
             </div>
@@ -6541,7 +6289,8 @@ async def process_vision_detect(
     request: Request,
     image: UploadFile = File(...),
     species: str = Form("أبقار"),
-    notes: str = Form("")
+    notes: str = Form(""),
+    api_key: str = Form("")
 ):
     user = get_current_user(request)
     lang = get_user_lang(request)
@@ -6557,18 +6306,19 @@ async def process_vision_detect(
         image_full_path = None
 
     v_metrics = analyze_image_locally(image_full_path) if image_full_path else {
+        "is_clinical": True,
         "summary": "فحص بصري قياسي",
         "detected_lesion": "آفة سريرية ظاهرية",
         "erythema_score": 35, "necrosis_score": 10, "exudate_score": 15, "contrast_score": 60,
         "clinical_impression": "فحص نسيجي أولي"
     }
 
-    api_key = get_effective_groq_api_key(request)
-    effective_notes = f"فصيلة الحيوان: {species}. " + (notes if notes and notes.strip() else "يرجى فحص الآفة المشاهدة في الصورة واستخراج التشخيص التفريقي والبروتوكول العلاجي المناسب.")
+    effective_key = api_key.strip() if (api_key and api_key.strip().startswith("gsk_")) else get_effective_groq_api_key(request)
+    effective_notes = f"فصيلة ونوع الحيوان: {species}. " + (notes if notes and notes.strip() else "يرجى فحص الآفة المشاهدة في الصورة واستخراج التشخيص التفريقي والبروتوكول العلاجي المناسب والأدوية المعتمدة.")
     
-    clinical_report = ask_ai_chat(api_key, effective_notes, [], image_full_path, lang, user_country)
+    clinical_report = ask_ai_chat(effective_key, effective_notes, [], image_full_path, lang, user_country)
 
-    is_clinical_detected = v_metrics.get("is_clinical", True) and ("تنبيه: الصورة المرفقة ليست حالة" not in clinical_report)
+    is_clinical_detected = v_metrics.get("is_clinical", True) and ("تنبيه: الصورة المرفقة ليست حالة" not in clinical_report) and ("غير صالحة للتشخيص" not in clinical_report)
 
     if is_clinical_detected:
         gauges_html = f'''
@@ -6590,33 +6340,38 @@ async def process_vision_detect(
                 </div>
             </div>
         '''
-        rx_btn_html = f'<a href="/rx-prescription?species={species}&notes={notes}" class="btn btn-primary" style="font-weight: 700;">📋 تحويل إلى روشتة معتمدة بالباركود</a>'
+        rx_btn_html = f'<a href="/rx-prescription?species={species}&notes={v_metrics.get("detected_lesion", "")}" class="btn btn-primary" style="font-weight: 700; padding: 9px 18px; border-radius: 10px;">📋 تحويل إلى روشتة معتمدة (Rx)</a>'
     else:
         gauges_html = '''
-            <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin: 18px 0; color: #991b1b; font-weight: 700; text-align: center; font-size: 0.95rem;">
-                ❌ تم تصنيف الصورة كـ (خلفية أو منظر عام أو غير بيطرية) ولذلك تم إلغاء المؤشرات النسيجية والأدوية تلقائياً.
+            <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 16px 20px; margin: 18px 0; color: #991b1b; font-weight: 700; text-align: center; font-size: 0.98rem; line-height: 1.6;">
+                ❌ تم تصنيف الصورة كـ (خلفية أو منظر عام أو غير بيطرية) عبر نموذج الرؤية الذكي، ولذلك تم إلغاء المؤشرات النسيجية والأدوية تلقائياً لعدم وجود حالة مرضية.
             </div>
         '''
         rx_btn_html = ""
 
     body = f"""
-    <div style="max-width: 900px; margin: 0 auto;">
+    <div style="max-width: 900px; margin: 0 auto; padding: 0 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
-            <a href="/vision-detect" class="btn btn-outline" style="font-weight: 700;">📸 فحص صورة جديدة</a>
+            <a href="/vision-detect" class="btn btn-outline" style="font-weight: 700; padding: 8px 16px;">📸 فحص صورة جديدة</a>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 {rx_btn_html}
-                <a href="/symptom-checker" class="btn btn-gold" style="font-weight: 700;">🩺 فحص الأعراض التفصيلي</a>
+                <a href="/symptom-checker" class="btn btn-gold" style="font-weight: 700; padding: 8px 16px;">🩺 المشخص السريري بالأعراض</a>
             </div>
         </div>
 
         <div class="card" style="border-top: 6px solid var(--accent); padding: 24px; margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
-                <h2 style="margin: 0; color: var(--accent); font-size: 1.35rem;">👁️ نتائج الفحص البصري والتشخيص السريري</h2>
-                <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">الفصيلة: {species}</span>
+                <div>
+                    <span style="background: #ccfbf1; color: #0f766e; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.82rem;">
+                        ⚡ تشخيص حقيقي عبر Groq Vision (Llama-3.2)
+                    </span>
+                    <h2 style="margin: 6px 0 0 0; color: var(--accent); font-size: 1.4rem;">👁️ نتائج الفحص البصري والتشخيص السريري</h2>
+                </div>
+                <span style="background: #e0f2fe; color: #0369a1; padding: 5px 14px; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">الفصيلة: {species}</span>
             </div>
 
             <!-- Image Viewport -->
-            <div style="text-align: center; margin: 16px 0; background: #0f172a; padding: 12px; border-radius: 12px;">
+            <div style="text-align: center; margin: 16px 0; background: #0f172a; padding: 14px; border-radius: 12px;">
                 <img src="/uploads/{safe_name}" alt="صورة الآفة" style="max-width: 100%; max-height: 480px; border-radius: 8px; object-fit: contain;">
             </div>
 
@@ -6624,21 +6379,51 @@ async def process_vision_detect(
             {gauges_html}
 
             <!-- AI Clinical Diagnosis Report Body -->
-            <div class="card" style="background: var(--bg); border: 1.5px solid var(--border); line-height: 1.8; white-space: pre-wrap; font-size: 0.96rem; padding: 20px; border-radius: 12px; color: var(--text-main);">
+            <div class="card" style="background: var(--bg); border: 1.5px solid var(--border); line-height: 1.8; white-space: pre-wrap; font-size: 0.98rem; padding: 22px; border-radius: 12px; color: var(--text-main);">
 {clinical_report}
             </div>
 
             <!-- Instant Actions Toolbar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
-                <form action="/vision-detect/delete/{safe_name}" method="POST" onsubmit="return confirm('هل تريد حذف هذه الصورة نهائياً من الذاكرة لضمان الخصوصية وتوفير المساحة؟');" style="margin: 0;">
-                    <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.82rem; padding: 6px 14px;">🗑️ حذف الصورة نهائياً لتوفير المساحة</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <form action="/vision-detect/delete/{safe_name}" method="POST" onsubmit="return confirm('هل تريد حذف هذه الصورة نهائياً من سيرفر التطبيق لضمان الخصوصية وتوفير المساحة؟');" style="margin: 0;">
+                    <button type="submit" class="btn btn-outline" style="color: var(--danger); font-size: 0.84rem; padding: 8px 16px; font-weight: 700;">🗑️ حذف الصورة نهائياً لتوفير المساحة</button>
                 </form>
-                <a href="/vision-detect" class="btn btn-primary" style="font-weight: 700;">📸 فحص آفة سريرية أخرى</a>
+                <a href="/vision-detect" class="btn btn-primary" style="font-weight: 800; padding: 8px 18px;">📸 فحص آفة سريرية أخرى</a>
             </div>
         </div>
     </div>
+
+    <!-- Client-Side Auto-Save to Local Device Storage -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        try {{
+            const caseData = {{
+                id: 'case_' + Date.now(),
+                date: new Date().toLocaleDateString('ar-EG') + ' ' + new Date().toLocaleTimeString('ar-EG', {{ hour: '2-digit', minute: '2-digit' }}),
+                species: '{species}',
+                lesionName: '{v_metrics.get("detected_lesion", "فحص سريري بالذكاء الاصطناعي")}',
+                isClinical: {str(is_clinical_detected).lower()},
+                imageThumb: '/uploads/{safe_name}',
+                reportSummary: '{species} - {v_metrics.get("detected_lesion", "تشخيص سريري")}'
+            }};
+            if (window.VetMindOffline && window.VetMindOffline.saveItem) {{
+                window.VetMindOffline.saveItem('vision_cases', caseData);
+            }} else {{
+                const list = JSON.parse(localStorage.getItem('vm_local_vision_cases') || '[]');
+                list.unshift(caseData);
+                localStorage.setItem('vm_local_vision_cases', JSON.stringify(list));
+            }}
+        }} catch(e) {{
+            console.log('Case local archive note:', e);
+        }}
+    }});
+    </script>
     """
-    return HTMLResponse(content=get_base_html("نتيجة فحص الصورة والآفة", body, user, lang), media_type="text/html; charset=utf-8")
+
+    resp = HTMLResponse(content=get_base_html("نتيجة فحص الصورة بالذكاء الاصطناعي", body, user, lang), media_type="text/html; charset=utf-8")
+    if api_key and api_key.strip().startswith("gsk_"):
+        resp.set_cookie(key="groq_api_key", value=api_key.strip(), max_age=31536000, path="/")
+    return resp
 
 @app.post("/vision-detect/delete/{filename}")
 async def delete_vision_image(request: Request, filename: str):
