@@ -3224,7 +3224,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8', { scope: '/' }).catch(function(e) {
+        navigator.serviceWorker.register('/sw.js?v=9', { scope: '/' }).catch(function(e) {
             console.log('SW note:', e);
         });
     });
@@ -6273,7 +6273,7 @@ async def vision_detect_page(request: Request):
         let lesionName = 'التهاب واحتقان نسيجي سطحي';
         let drugsList = [];
         let differentialDiagnoses = [];
-        let treatmentProtocol = '';
+        let treatmentProtocol = ``;
 
         if (isClinical) {{
             const nLower = (notes || '').toLowerCase();
@@ -6284,7 +6284,7 @@ async def vision_detect_page(request: Request):
                     {{ name: 'وذمة ما بعد الولادة (Physiological Udder Edema)', prob: 10 }},
                     {{ name: 'رضوض أو كدمات موضعية بالحلمات', prob: 5 }}
                 ];
-                treatmentProtocol = '1. تفريغ الضرع بالكامل وغسله بمطهر فسيولوجي دافئ.\n2. حقن محقن ضرع متخصص يحتوي على مضاد حيوي واسع المدى مع كورتيزون مضاد للالتهاب.\n3. إعطاء مضاد التهاب غير ستيرويدي جهازي (فلونكسين ميغلومين أو ميلوكسيكام) بالوريد أو العضل لتخفيف الألم والحرارة.';
+                treatmentProtocol = `1. تفريغ الضرع بالكامل وغسله بمطهر فسيولوجي دافئ.\n2. حقن محقن ضرع متخصص يحتوي على مضاد حيوي واسع المدى مع كورتيزون مضاد للالتهاب.\n3. إعطاء مضاد التهاب غير ستيرويدي جهازي (فلونكسين ميغلومين أو ميلوكسيكام) بالوريد أو العضل لتخفيف الألم والحرارة.`;
                 drugsList = [
                     {{ name: 'محاقن ضرع معتمدة (Ubrolexin / Mastijet)', function: 'مضاد حيوي موضعي داخل قناة الحلمة' }},
                     {{ name: 'فلونكسين ميغلومين 5% (Finadyne / Flunixin)', function: 'مضاد التهاب ومسكن للألم شديد الفعالية' }},
@@ -6297,7 +6297,7 @@ async def vision_detect_page(request: Request):
                     {{ name: 'تقرحات الحوافر الناتجة عن الحمى القلاعية (FMD)', prob: 8 }},
                     {{ name: 'خراج كعب الحافر الميكانيكي', prob: 4 }}
                 ];
-                treatmentProtocol = '1. تنظيف الحافر جيداً بالماء الفاتر وتقليم الأجزاء المتنخرة بعناية.\n2. رش موضعي برذاذ أوكسيتتراسيكلين (CTC Spray) وتطبيق حمام كبريتات النحاس 5%.\n3. حقن مضاد حيوي نسيجي عميق في العضل لمدة 3 أيام.';
+                treatmentProtocol = `1. تنظيف الحافر جيداً بالماء الفاتر وتقليم الأجزاء المتنخرة بعناية.\n2. رش موضعي برذاذ أوكسيتتراسيكلين (CTC Spray) وتطبيق حمام كبريتات النحاس 5%.\n3. حقن مضاد حيوي نسيجي عميق في العضل لمدة 3 أيام.`;
                 drugsList = [
                     {{ name: 'رذاذ أوكسي تتراسيكلين الموضعي (CTC Spray / Alamycin)', function: 'مطهر ومضاد حيوي موضعي سريع الجفاف' }},
                     {{ name: 'بنسلين مع ستربتومايسين (Pen-Strep 20/20)', function: 'مضاد حيوي جهازي نوعي لعفن الحوافر' }},
@@ -6310,7 +6310,7 @@ async def vision_detect_page(request: Request):
                     {{ name: 'جرب حيواني طفيلي (Sarcoptic / Psoroptic Mange)', prob: 7 }},
                     {{ name: 'تحسس جلدي تلامسي', prob: 3 }}
                 ];
-                treatmentProtocol = '1. إزالة القشور بلطف باستخدام فرشاة مبللة بمحلول يود مخفف.\n2. دهان موضعي بمحلول إينيلكونازول (Enilconazole) أو صبغة اليود 5%.\n3. حقن إيفرمكتين 1% تحت الجلد للوقاية من الطفيليات المصاحبة.';
+                treatmentProtocol = `1. إزالة القشور بلطف باستخدام فرشاة مبللة بمحلول يود مخفف.\n2. دهان موضعي بمحلول إينيلكونازول (Enilconazole) أو صبغة اليود 5%.\n3. حقن إيفرمكتين 1% تحت الجلد للوقاية من الطفيليات المصاحبة.`;
                 drugsList = [
                     {{ name: 'محلول إينيلكونازول الموضعي (Imaverol 100 mg/ml)', function: 'مضاد فطريات نوعي للقوباء الحلقية' }},
                     {{ name: 'صبغة اليود المعتمدة (Povidone Iodine 10%)', function: 'مطهر ومجفف للآفات الجلدية' }},
@@ -6323,7 +6323,7 @@ async def vision_detect_page(request: Request):
                     {{ name: 'كدمة أو جرح رضي سطحي', prob: 15 }},
                     {{ name: 'لدغة حشرات أو تحسس نسيجي', prob: 5 }}
                 ];
-                treatmentProtocol = '1. تطهير موضعي لطيف بمحلول ملحي معقم أو كلورهيكسيدين.\n2. وضع مرهم مضاد حيوي موضعي لمنع العدوى البكتيرية الثانوية.\n3. متابعة الحرارة والعلامات الحيوية.';
+                treatmentProtocol = `1. تطهير موضعي لطيف بمحلول ملحي معقم أو كلورهيكسيدين.\n2. وضع مرهم مضاد حيوي موضعي لمنع العدوى البكتيرية الثانوية.\n3. متابعة الحرارة والعلامات الحيوية.`;
                 drugsList = [
                     {{ name: 'مرهم جنتامايسين أو تتراسيكلين الموضعي', function: 'مضاد حيوي موضعي واقٍ من التلوث' }},
                     {{ name: 'بخاخ معقم للجروح (Antiseptic Wound Spray)', function: 'حماية وتطهير موضعي سريع' }}
