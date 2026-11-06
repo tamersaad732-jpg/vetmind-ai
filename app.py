@@ -3224,7 +3224,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(e) {
+        navigator.serviceWorker.register('/sw.js?v=8', { scope: '/' }).catch(function(e) {
             console.log('SW note:', e);
         });
     });
