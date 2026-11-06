@@ -3224,7 +3224,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9', { scope: '/' }).catch(function(e) {
+        navigator.serviceWorker.register('/sw.js?v=10', { scope: '/' }).then(function(reg) { reg.update(); }).catch(function(e) {
             console.log('SW note:', e);
         });
     });
@@ -6032,7 +6032,7 @@ async def vision_detect_page(request: Request):
 
         <!-- Main Upload & Interactive Form -->
         <div class="card" style="border-top: 6px solid var(--accent); padding: 24px;">
-            <form id="vision-detect-form" action="/vision-detect" method="POST" enctype="multipart/form-data">
+            <form id="vision-detect-form" onsubmit="event.preventDefault(); window.startAutonomousVisionDiagnosis(); return false;" action="javascript:void(0);" method="GET">
                 <input type="hidden" name="ai_mode" id="selected_ai_mode_input" value="offline_device">
                 
                 <div id="drop-zone" style="border: 2px dashed var(--accent); padding: 30px 20px; text-align: center; border-radius: 14px; background: var(--bg); margin-bottom: 20px; position: relative;">
@@ -6070,7 +6070,7 @@ async def vision_detect_page(request: Request):
                     </div>
                 </div>
 
-                <button type="submit" id="btn-run-vision" class="btn btn-accent" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.25); cursor: pointer;">
+                <button type="button" id="btn-run-vision" onclick="window.startAutonomousVisionDiagnosis()" class="btn btn-accent" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 800; justify-content: center; border-radius: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.25); cursor: pointer;">
                     🚀 بدء فحص الآفة وتشخيص الحالة بالذكاء الاصطناعي فوراً
                 </button>
             </form>
@@ -6149,28 +6149,33 @@ async def vision_detect_page(request: Request):
     }}
 
     // 3. Form Submit - 100% Embedded Autonomous Execution (Zero User Intervention)
+    window.startAutonomousVisionDiagnosis = function() {{
+        const fileInput = document.getElementById('vision-file-input');
+        const file = (fileInput && fileInput.files && fileInput.files[0]) ? fileInput.files[0] : null;
+
+        if (!file) {{
+            alert('يرجى اختيار أو التقاط صورة الآفة السريرية أولاً.');
+            return;
+        }}
+
+        const species = document.getElementById('vision_species')?.value || 'أبقار';
+        const notes = (document.getElementById('vision_notes')?.value || '').trim();
+
+        runEmbeddedVisionAi(file, species, notes);
+    }};
+
     document.addEventListener('DOMContentLoaded', () => {{
         updateConnectionStatusPill();
         loadLocalVisionHistory();
 
         const form = document.getElementById('vision-detect-form');
-        if (!form) return;
-
-        form.addEventListener('submit', async function(e) {{
-            e.preventDefault();
-            const fileInput = document.getElementById('vision-file-input');
-            const file = fileInput.files ? fileInput.files[0] : null;
-
-            if (!file) {{
-                alert('يرجى اختيار أو التقاط صورة الآفة السريرية أولاً.');
-                return;
-            }}
-
-            const species = document.getElementById('vision_species')?.value || 'أبقار';
-            const notes = (document.getElementById('vision_notes')?.value || '').trim();
-
-            runEmbeddedVisionAi(file, species, notes);
-        }});
+        if (form) {{
+            form.addEventListener('submit', function(e) {{
+                e.preventDefault();
+                window.startAutonomousVisionDiagnosis();
+                return false;
+            }});
+        }}
     }});
 
     // 4. Embedded Multi-Layer Autonomous AI Vision Engine
@@ -6189,8 +6194,9 @@ async def vision_detect_page(request: Request):
 
             // Silent probe for local Ollama daemon (if running in background on PC) with 1.2s timeout
             let llamaResponseText = null;
-            try {{
-                const controller = new AbortController();
+            if (window.location.protocol === 'http:') {{
+                try {{
+                    const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 1200);
                 const res = await fetch('http://localhost:11434/api/generate', {{
                     method: 'POST',
@@ -6210,8 +6216,9 @@ async def vision_detect_page(request: Request):
                         llamaResponseText = json.response.trim();
                     }}
                 }}
-            }} catch (silentErr) {{
-                // Seamlessly proceed to embedded native neural vision engine
+                }} catch (silentErr) {{
+                    // Seamlessly proceed to embedded native neural vision engine
+                }}
             }}
 
             // Native In-Browser Neural Image Processing (Runs 100% locally on phone & PC)
